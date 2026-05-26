@@ -24,10 +24,13 @@ const okTabSender = { id: RUNTIME_ID, tab: { id: 7 }, url: "https://example.com/
 const okUiSender  = { id: RUNTIME_ID, url: `chrome-extension://${RUNTIME_ID}/popup/popup.html`, origin: `chrome-extension://${RUNTIME_ID}` };
 
 describe("F1 — externally reachable surface", () => {
-  it("externally_connectable explicitly empty (no external extensions, no web pages)", () => {
-    expect(manifest.externally_connectable).toBeDefined();
-    expect(manifest.externally_connectable.ids).toEqual([]);
-    expect(manifest.externally_connectable.matches).toEqual([]);
+  it("externally_connectable is absent (MV3 hardening — see manifest pass v5)", () => {
+    // Declaring an empty externally_connectable block produced a Chrome
+    // console warning ("specifies neither 'matches' nor 'ids'; nothing
+    // will be able to connect"). Since Kedayam intentionally exposes no
+    // external messaging API, the field is removed entirely. Reintroducing
+    // it (even as empty arrays) regresses reviewer-grade hygiene.
+    expect(manifest.externally_connectable).toBeUndefined();
   });
 
   it("web_accessible_resources is minimal: only the MAIN-world shim", () => {

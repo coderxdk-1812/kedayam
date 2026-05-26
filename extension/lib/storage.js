@@ -200,7 +200,7 @@ function isPlainObject(v) {
   return proto === Object.prototype || proto === null;
 }
 
-function deepMerge(base, override) {
+export function deepMerge(base, override) {
   if (Array.isArray(base) || Array.isArray(override)) return override ?? base;
   if (!isPlainObject(base)) {
     // Allow primitive overrides; reject non-plain object overrides to keep

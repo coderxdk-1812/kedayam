@@ -411,9 +411,86 @@ export async function evaluateUrl(url, ctx = {}) {
       ...(_authHas("iframe-origin-swap") ? [{ id: "iframe-credential-form" }] : []),
     ],
   };
+
+  // --- Contextual dampening (security-research / educational pages) ---
+  // Reduces VISUAL/TEXTUAL false positives on legitimate pages that discuss
+  // phishing, host benign demo auth content, or document OAuth flows.
+  // Behavioral evidence bypasses this entirely (computed below) — we never
+  // dampen external POST, cross-origin creds, OAuth spoof, MFA harvest,
+  // threat-intel hits, or auth-flow anomalies.
+  const _earlyPhishSigs = _phishingForArb.signals || [];
+  const _earlyHasSig = (id) => _earlyPhishSigs.some((s) => s.id === id);
+  const _behavioralEvidenceEarly = !!(
+    _phishingForArb.externalFormPost || _phishingForArb.oauthSpoof ||
+    _earlyHasSig("iframe-credential-form") || _earlyHasSig("iframe-login") ||
+    (sb && sb.malicious) || (vt && vt.malicious) ||
+    _authHas("credential-relay") || _authHas("oauth-token-drift") ||
+    _authHas("iframe-origin-swap")
+  );
+  const secContext = analyzeSecurityContext({
+    host, path: parsed.pathname, pageContext,
+  });
+  let dampening = 0;
+  let lookalikeForArb = lookalike;
+  let cloneForArb = clone || {};
+  let phishingForArb = _phishingForArb;
+  if (secContext.score >= SECURITY_CONTEXT_THRESHOLD &&
+      !_behavioralEvidenceEarly && !allowlistRoot) {
+    dampening = secContext.score;
+    lookalikeForArb = {
+      ...lookalike,
+      confidence: dampenConfidence(lookalike.confidence, dampening),
+    };
+    cloneForArb = {
+      ...cloneForArb,
+      confidence: dampenConfidence(cloneForArb.confidence, dampening),
+    };
+    // Strip text-only impersonation flags + visual-only caps. Behavioral
+    // flags (externalFormPost, oauthSpoof, iframe-credential-form,
+    // credentialHarvest with real password fields) are preserved.
+    phishingForArb = {
+      ..._phishingForArb,
+      brandImpersonation: false,
+      confidence: dampenConfidence(_phishingForArb.confidence || 0, dampening),
+      // Visual-only forced status from phishing heuristics must not stand
+      // on educational pages without behavioral corroboration.
+      forceStatus: _phishingForArb.externalFormPost || _phishingForArb.oauthSpoof
+        ? _phishingForArb.forceStatus
+        : null,
+      cap: _phishingForArb.externalFormPost || _phishingForArb.oauthSpoof
+        ? _phishingForArb.cap
+        : null,
+    };
+    // Offset the visual-only penalty already applied to `score` via fired
+    // signals (lookalike, clone, brand-text). The offset is bounded and
+    // never raises an unknown auth page out of suspicious territory because
+    // the soft pre-cap (line ~387) is still applied below.
+    const visualPenalty = fired
+      .filter((s) => s.id === "lookalike" || s.id === "clone" ||
+                     s.id === "brand-impersonation" || s.id === "auth-layout-clone")
+      .reduce((a, s) => a + Math.abs(s.contribution), 0);
+    const offset = Math.round(Math.min(visualPenalty, 30) * dampening * 0.8);
+    if (offset > 0) {
+      addTrust({
+        id: "security-context",
+        title: "Security-research / educational context",
+        detail: `Visual heuristics softened — ${secContext.reasons.join("; ") || "context signals"}.`,
+        points: offset,
+      });
+    } else {
+      // Surface even with zero offset so audit trail captures the decision.
+      pass({
+        id: "security-context", category: "trust", severity: "info",
+        title: "Security-research / educational context",
+        detail: `Visual heuristics softened pending behavioral evidence — ${secContext.reasons.join("; ") || "context signals"}.`,
+      });
+    }
+  }
+
   const arb = arbitrate({
     allowlistRoot, isReputableRoot, isTrustedProvider, hasAuthWorkflow,
-    lookalike, idnSpoof, clone: clone || {}, phishing: _phishingForArb,
+    lookalike: lookalikeForArb, idnSpoof, clone: cloneForArb,
+    phishing: phishingForArb,
     gsbMalicious: !!(sb && sb.malicious),
     vtMalicious: !!(vt && vt.malicious),
   });

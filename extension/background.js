@@ -51,6 +51,8 @@ chrome.alarms?.onAlarm.addListener((a) => {
     for (const id of redirectChains.keys()) if (!live.has(id)) redirectChains.delete(id);
     for (const id of lastScanned.keys()) if (!live.has(id)) lastScanned.delete(id);
   }).catch(() => {});
+  // M-05 — sweep expired activity log entries on every heartbeat.
+  sweepExpiredActivity().catch(() => {});
 });
 
 // New top-frame navigation starts a fresh redirect chain.

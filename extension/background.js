@@ -137,7 +137,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           if (tabId != null && data.context) {
             pageContexts.set(tabId, data.context);
             const url = sender.tab?.url;
-            if (url && isInjectableUrl(url)) void scan(url, tabId, false, true);
+            if (url && isInjectableUrl(url)) {
+              // Fault-contained: a malformed/oversized context must not
+              // bring down the message handler or prevent the response.
+              scan(url, tabId, false, true).catch(() => {});
+            }
           }
           sendResponse({ ok: true });
           break;

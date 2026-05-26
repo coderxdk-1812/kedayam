@@ -72,16 +72,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Kedayam — Browser Shield" },
+      { name: "description", content: "Real-time phishing prevention, sensitive data protection, and browser-level threat intelligence — privacy-first, MV3." },
+      { name: "author", content: "Kedayam" },
+      { property: "og:title", content: "Kedayam — Browser Shield" },
+      { property: "og:description", content: "Real-time phishing prevention, sensitive data protection, and browser-level threat intelligence — privacy-first, MV3." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Kedayam — Browser Shield" },
+      { name: "twitter:description", content: "Real-time phishing prevention, sensitive data protection, and browser-level threat intelligence — privacy-first, MV3." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2481bc57-ff6b-4b8b-9e78-8d41155c81a3/id-preview-746861a9--647e740f-965c-4889-bffc-97fa74383a37.lovable.app-1778248870905.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2481bc57-ff6b-4b8b-9e78-8d41155c81a3/id-preview-746861a9--647e740f-965c-4889-bffc-97fa74383a37.lovable.app-1778248870905.png" },
     ],
     links: [
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon.png" },
+      { rel: "apple-touch-icon", sizes: "128x128", href: "/icons/icon128.png" },
       {
         rel: "stylesheet",
         href: appCss,
@@ -96,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>

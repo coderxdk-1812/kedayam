@@ -1,0 +1,12 @@
+<!doctype html>
+<!-- ADFS internal portal — realistic Microsoft ADFS layout. -->
+<html lang="en"><head><meta charset="utf-8"><title>Sign In</title></head>
+<body>
+<form action="https://adfs.acme.internal/adfs/ls" method="post" id="loginForm">
+  <h1>Sign in with your organizational account</h1>
+  <input type="email" name="UserName" placeholder="someone@example.com">
+  <input type="password" name="Password" placeholder="Password">
+  <input type="hidden" name="AuthMethod" value="FormsAuthentication">
+  <button type="submit">Sign in</button>
+</form>
+</body></html>

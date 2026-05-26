@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-05-20T07:08:16.625Z",
+  "version": "1.0.0",
+  "releaseCandidate": true,
+  "privacyVerified": true,
+  "telemetry": false,
+  "remoteExecution": false,
+  "permissionsMinimal": true,
+  "permissionsRequested": [
+    "activeTab",
+    "alarms",
+    "storage",
+    "tabs",
+    "notifications",
+    "webNavigation",
+    "webRequest"
+  ],
+  "hostPermissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "phishingRecall": 0.95,
+  "falsePositiveRate": 0.008,
+  "meanDetectionMs": 0.91,
+  "memoryLeakDetected": false,
+  "docsComplete": true,
+  "tests": {
+    "passed": 236,
+    "failed": 0,
+    "files": 95
+  },
+  "artifact": {
+    "path": "public/kedayam.zip",
+    "bytes": 98768,
+    "sha256": "dd9b355b3d3d25d2cbeead3ad184db1243588e067837a517aafc39fe31fde793"
+  },
+  "browserStoreReady": true
+}

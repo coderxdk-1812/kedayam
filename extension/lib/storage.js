@@ -67,19 +67,79 @@ export async function setSessionOverride(domain, payload) {
   });
 }
 
-// Activity log (capped, no user content — only metadata).
+// Activity log (capped + TTL — privacy hygiene, M-05).
+//
+// Retention policy:
+//   - Hard cap: ACTIVITY_MAX entries (ring buffer).
+//   - Soft TTL:  ACTIVITY_TTL_MS — entries older than this are dropped on
+//     every append AND on the periodic sweep.
+//   - Local-only. No telemetry. No raw page content, clipboard, or
+//     credential-derived material is ever stored (callers are responsible
+//     for never passing such payloads in; this is enforced by callers and
+//     covered by tests/privacy/logRetention.test.js).
+export const ACTIVITY_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const ACTIVITY_MAX = 200;
+
+// Field-level allowlist — anything outside this list is stripped before
+// persistence so a future caller can never silently leak sensitive data
+// into the local activity log.
+const ACTIVITY_ALLOWED_FIELDS = new Set([
+  "kind", "host", "score", "status", "ruleId", "reason", "severity",
+]);
+
+function sanitizeActivityEntry(entry) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+  const out = {};
+  for (const k of Object.keys(entry)) {
+    if (!ACTIVITY_ALLOWED_FIELDS.has(k)) continue;
+    const v = entry[k];
+    if (v == null) continue;
+    if (typeof v === "string") out[k] = v.slice(0, 256);
+    else if (typeof v === "number" && Number.isFinite(v)) out[k] = v;
+    else if (typeof v === "boolean") out[k] = v;
+  }
+  return out;
+}
+
+function dropExpired(list, now = Date.now()) {
+  if (!Array.isArray(list)) return [];
+  const cutoff = now - ACTIVITY_TTL_MS;
+  return list.filter((e) => e && typeof e.at === "number" && e.at >= cutoff);
+}
+
 export async function appendActivity(entry) {
   const key = `${NS}:activity`;
+  const safe = sanitizeActivityEntry(entry);
+  if (!safe) return;
   const { [key]: list = [] } = await chrome.storage.local.get(key);
-  const next = [{ ...entry, at: Date.now() }, ...list].slice(0, 200);
+  const pruned = dropExpired(list);
+  const next = [{ ...safe, at: Date.now() }, ...pruned].slice(0, ACTIVITY_MAX);
   await chrome.storage.local.set({ [key]: next });
 }
 
 export async function getActivity() {
   const key = `${NS}:activity`;
   const { [key]: list = [] } = await chrome.storage.local.get(key);
-  return list;
+  const pruned = dropExpired(list);
+  // Opportunistically persist the pruned form so cleanup is deterministic
+  // even for read-only callers.
+  if (pruned.length !== list.length) {
+    try { await chrome.storage.local.set({ [key]: pruned }); } catch {}
+  }
+  return pruned;
 }
+
+/** Periodic cleanup hook — call from the background heartbeat. */
+export async function sweepExpiredActivity() {
+  const key = `${NS}:activity`;
+  const { [key]: list = [] } = await chrome.storage.local.get(key);
+  const pruned = dropExpired(list);
+  if (pruned.length !== list.length) {
+    await chrome.storage.local.set({ [key]: pruned });
+  }
+  return { kept: pruned.length, removed: list.length - pruned.length };
+}
+
 
 export async function clearAllCaches() {
   const all = await chrome.storage.local.get(null);

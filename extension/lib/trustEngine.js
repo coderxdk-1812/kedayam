@@ -477,12 +477,16 @@ export async function evaluateUrl(url, ctx = {}) {
         detail: `Visual heuristics softened — ${secContext.reasons.join("; ") || "context signals"}.`,
         points: offset,
       });
+      score = Math.min(100, score + offset);
     } else {
       // Surface even with zero offset so audit trail captures the decision.
       pass({
         id: "security-context", category: "trust", severity: "info",
         title: "Security-research / educational context",
         detail: `Visual heuristics softened pending behavioral evidence — ${secContext.reasons.join("; ") || "context signals"}.`,
+      });
+    }
+
       });
     }
   }

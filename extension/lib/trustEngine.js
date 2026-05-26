@@ -24,6 +24,11 @@ import { arbitrate } from "./arbitration.js";
 import { trustDecay } from "./trustDecay.js";
 import { deriveSuspicion } from "./suspicionLevels.js";
 import { buildArbitrationTrace } from "./arbitrationTrace.js";
+import {
+  analyzeSecurityContext,
+  SECURITY_CONTEXT_THRESHOLD,
+  dampenConfidence,
+} from "./securityContext.js";
 
 const NEW_DOMAIN_DAYS = 60;
 const KNOWN_REPUTABLE_ROOTS = new Set([

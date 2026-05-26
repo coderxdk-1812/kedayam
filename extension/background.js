@@ -4,7 +4,7 @@ import {
   getSettings, saveSettings, getCache, setCache,
   appendActivity, getActivity, clearAllCaches,
   getSessionOverride, setSessionOverride,
-  getSafeDomainStats, bumpSafeDomain,
+  getSafeDomainStats, bumpSafeDomain, sweepExpiredActivity,
 } from "./lib/storage.js";
 import { rootDomain } from "./lib/lookalike.js";
 import { InjectionRegistry, ensureInjected, isInjectableUrl } from "./lib/injection.js";

@@ -8,7 +8,7 @@ describe("R3 — country-code secondary domain extraction", () => {
     // .nz
     ["bank.co.nz", "bank.co.nz"],
     ["sub.bank.co.nz", "bank.co.nz"],
-    ["www.bank.co.nz", "www.bank.co.nz"], // www strip happens upstream
+    ["www.bank.co.nz", "bank.co.nz"],
     // .au
     ["commbank.com.au", "commbank.com.au"],
     ["foo.commbank.com.au", "commbank.com.au"],

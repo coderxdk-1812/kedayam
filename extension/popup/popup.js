@@ -86,13 +86,21 @@ function renderSignals(result) {
   const explainBlock = explanation ? `
     <div class="explain" data-verdict="${escapeHtml(explanation.verdict)}">
       <div class="explain-headline">${escapeHtml(explanation.headline)}</div>
-      ${explanation.bullets?.length ? `<ul class="explain-bullets">${
-        explanation.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")
-      }</ul>` : ""}
+      ${explanation.summary ? `<p class="explain-summary">${escapeHtml(explanation.summary)}</p>` : ""}
+      ${explanation.bullets?.length ? `
+        <div class="explain-sub">What we noticed</div>
+        <ul class="explain-bullets">${
+          explanation.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")
+        }</ul>` : ""}
+      ${explanation.recommendation ? `
+        <div class="explain-reco"><strong>What to do:</strong> ${escapeHtml(explanation.recommendation)}</div>` : ""}
       ${explanation.triggeredRules?.length ? `
-        <div class="explain-rules">Triggered protections: ${
-          explanation.triggeredRules.slice(0, 4).map((r) => `<code>${escapeHtml(r)}</code>`).join(" · ")
-        }</div>` : ""}
+        <details class="explain-tech">
+          <summary>Technical details</summary>
+          <div class="explain-rules">Triggered protections: ${
+            explanation.triggeredRules.slice(0, 4).map((r) => `<code>${escapeHtml(r)}</code>`).join(" · ")
+          }</div>
+        </details>` : ""}
     </div>` : "";
 
   // Show fired signals first (sorted by impact), then passing checks.

@@ -177,12 +177,52 @@ export async function resetSafeDomain(root) {
   await chrome.storage.local.set({ [key]: stats });
 }
 
+// FIND-02 — prototype-pollution-safe deep merge.
+//
+// `deepMerge` is used to overlay user settings on DEFAULT_SETTINGS. A merge
+// payload from a buggy/compromised caller could otherwise set `__proto__`,
+// `prototype`, or `constructor` and contaminate every plain object in the
+// extension's runtime. We are not externally reachable today, but reviewers
+// flag any unsanitized merge; this closes the hygiene gap and prevents
+// future regressions.
+//
+// Rules:
+//   - Forbidden keys (`__proto__`, `prototype`, `constructor`) are silently
+//     ignored at every depth.
+//   - Source objects are never mutated; the result is always a plain object.
+//   - Behavior for all other keys is unchanged so existing settings
+//     semantics are preserved.
+const FORBIDDEN_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+
+function isPlainObject(v) {
+  if (v === null || typeof v !== "object" || Array.isArray(v)) return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
+}
+
 function deepMerge(base, override) {
   if (Array.isArray(base) || Array.isArray(override)) return override ?? base;
-  if (typeof base !== "object" || base === null) return override ?? base;
-  const out = { ...base };
-  for (const k of Object.keys(override || {})) {
-    out[k] = deepMerge(base[k], override[k]);
+  if (!isPlainObject(base)) {
+    // Allow primitive overrides; reject non-plain object overrides to keep
+    // the merge result a plain object.
+    if (override !== undefined && !isPlainObject(override)) return override;
+    if (!isPlainObject(override)) return override ?? base;
+    base = {};
   }
-  return out;
+  const out = Object.create(null);
+  // Seed with base own enumerable keys (skipping forbidden).
+  for (const k of Object.keys(base)) {
+    if (FORBIDDEN_KEYS.has(k)) continue;
+    out[k] = base[k];
+  }
+  if (isPlainObject(override)) {
+    for (const k of Object.keys(override)) {
+      if (FORBIDDEN_KEYS.has(k)) continue;
+      out[k] = deepMerge(out[k], override[k]);
+    }
+  }
+  // Re-attach Object.prototype so callers can do `result.foo` ergonomically
+  // without losing the prototype-poisoning guarantee (forbidden keys were
+  // never copied in).
+  return Object.assign({}, out);
 }

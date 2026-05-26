@@ -10,7 +10,7 @@ import {
   sanitizePageContext,
 } from "../../extension/lib/messageSchemas.js";
 import { analyzeClone } from "../../extension/lib/cloneDetection.js";
-import { phishingHeuristics } from "../../extension/lib/phishingHeuristics.js";
+import { analyzePhishing } from "../../extension/lib/phishingHeuristics.js";
 
 // Build a deeply malformed pageContext that historically crashed the scan
 // pipeline with "X.filter is not a function".
@@ -70,7 +70,7 @@ describe("R1 — malformed pageContext sanitization", () => {
     for (const { ctx } of malformedShapes) {
       const clean = sanitizePageContext(ctx);
       expect(() => analyzeClone(clean)).not.toThrow();
-      expect(() => phishingHeuristics({
+      expect(() => analyzePhishing({
         pageOrigin: clean.pageOrigin,
         host: "x.test",
         rootHost: "x.test",

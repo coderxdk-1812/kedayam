@@ -486,10 +486,8 @@ export async function evaluateUrl(url, ctx = {}) {
         detail: `Visual heuristics softened pending behavioral evidence — ${secContext.reasons.join("; ") || "context signals"}.`,
       });
     }
-
-      });
-    }
   }
+
 
   const arb = arbitrate({
     allowlistRoot, isReputableRoot, isTrustedProvider, hasAuthWorkflow,

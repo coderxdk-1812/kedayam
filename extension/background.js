@@ -216,9 +216,6 @@ async function scan(url, tabId, notify, force = false) {
     const settings = await getSettings();
     const safeDomainStats = await getSafeDomainStats();
     const pageCtx = hasPageContext ? pageContexts.get(tabId) : null;
-    // Issue NEW-02 — pass the locally-built authFlow snapshot through to the
-    // trust engine. Already-existing rules (credentialRelay, oauthTokenDrift,
-    // iframeOriginSwap) and trustDecay() consume `ctx.authFlow.anomalies`.
     const result = await evaluateUrl(url, {
       settings,
       redirectChain: redirectChains.get(tabId) || [],
@@ -250,7 +247,18 @@ async function scan(url, tabId, notify, force = false) {
       } catch {}
     }
     return result;
-  })().finally(() => inflight.delete(cacheKey));
+  })().catch((err) => {
+    // FIND-01 / fail-safe scan pipeline — a rejected scan MUST NOT kill
+    // future scans for this tab. We log a redacted diagnostics entry,
+    // mark the tab badge as degraded, and let the next navigation /
+    // pageContext push trigger a fresh attempt normally.
+    health.recordError(err, `scan:${tabId ?? "n/a"}`);
+    log.warn("scan failed — entering degraded mode for tab", {
+      tabId, error: String(err?.message || err).slice(0, 200),
+    });
+    markBadgeDegraded(tabId);
+    return null;
+  }).finally(() => inflight.delete(cacheKey));
 
   inflight.set(cacheKey, promise);
   return promise;

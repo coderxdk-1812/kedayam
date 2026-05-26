@@ -274,3 +274,13 @@ function maybeBadge(tabId, result) {
     chrome.action.setBadgeText({ text: String(result.score), tabId });
   } catch {}
 }
+
+// Fault-contained degraded state — never leaves a stale "all clear" badge
+// on a tab whose scan crashed. The next successful scan will overwrite it.
+function markBadgeDegraded(tabId) {
+  if (tabId == null) return;
+  try {
+    chrome.action.setBadgeBackgroundColor({ color: "#6b7280", tabId });
+    chrome.action.setBadgeText({ text: "…", tabId });
+  } catch {}
+}

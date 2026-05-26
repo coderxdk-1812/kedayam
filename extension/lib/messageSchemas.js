@@ -37,6 +37,84 @@ function tooManyKeys(obj) {
   return obj && typeof obj === "object" && Object.keys(obj).length > MAX_PAYLOAD_KEYS;
 }
 
+// ----------------------------------------------------------------------
+// FIND-01 — strict pageContext schema sanitization.
+//
+// pageContext is the largest attacker-influenced surface in the extension:
+// a hostile or buggy page can deliver any shape over postMessage→content→bg.
+// Earlier versions trusted that fields like `forms` were arrays and crashed
+// the scan pipeline with `forms.filter is not a function`, silently
+// disabling protection for the tab (a per-tab detection DoS).
+//
+// `sanitizePageContext` is a deterministic, dependency-free, bounded-cost,
+// side-effect-free normalizer. Any malformed field is replaced with a safe
+// default; downstream consumers can traverse the result without runtime
+// guards.
+// ----------------------------------------------------------------------
+
+const PCTX_MAX_STR = 8 * 1024;
+const PCTX_MAX_SMALL_STR = 2048;
+const PCTX_MAX_ARRAY = 256;
+const PCTX_MAX_FORMS = 64;
+const PCTX_MAX_OAUTH = 16;
+
+const safeStr = (v, max = PCTX_MAX_SMALL_STR) =>
+  typeof v === "string" ? v.slice(0, max) : "";
+const safeBool = (v) => v === true;
+const safeArr = (v, max = PCTX_MAX_ARRAY) =>
+  Array.isArray(v) ? v.filter((x) => x !== undefined).slice(0, max) : [];
+const safeStrArr = (v, max = PCTX_MAX_ARRAY, itemMax = PCTX_MAX_SMALL_STR) =>
+  safeArr(v, max).filter((x) => typeof x === "string").map((s) => s.slice(0, itemMax));
+
+function safeForm(f) {
+  if (!f || typeof f !== "object" || Array.isArray(f)) return null;
+  return {
+    action: safeStr(f.action, PCTX_MAX_SMALL_STR),
+    method: safeStr(f.method, 16),
+    hasPassword: safeBool(f.hasPassword),
+    hasEmailLike: safeBool(f.hasEmailLike),
+    hasOtp: safeBool(f.hasOtp),
+    fieldCount: Number.isInteger(f.fieldCount) && f.fieldCount >= 0 && f.fieldCount < 1e4
+      ? f.fieldCount : 0,
+    hiddenFields: Number.isInteger(f.hiddenFields) && f.hiddenFields >= 0 && f.hiddenFields < 1e4
+      ? f.hiddenFields : 0,
+  };
+}
+
+function safeAuthFlow(a) {
+  if (!a || typeof a !== "object" || Array.isArray(a)) return null;
+  return {
+    anomalies: safeArr(a.anomalies, 32)
+      .filter((x) => x && typeof x === "object" && !Array.isArray(x))
+      .map((x) => ({
+        id: safeStr(x.id, 64),
+        severity: safeStr(x.severity, 16),
+        detail: safeStr(x.detail, 256),
+      })),
+    state: safeStr(a.state, 32),
+  };
+}
+
+export function sanitizePageContext(ctx) {
+  if (!ctx || typeof ctx !== "object" || Array.isArray(ctx)) return null;
+  if (Object.keys(ctx).length > MAX_PAYLOAD_KEYS) return null;
+  return Object.freeze({
+    pageOrigin: safeStr(ctx.pageOrigin, PCTX_MAX_SMALL_STR),
+    title: safeStr(ctx.title, PCTX_MAX_SMALL_STR),
+    visibleText: safeStr(ctx.visibleText, PCTX_MAX_STR),
+    favicon: safeStr(ctx.favicon, PCTX_MAX_SMALL_STR),
+    hasPasswordField: safeBool(ctx.hasPasswordField),
+    topLevelIframe: safeBool(ctx.topLevelIframe),
+    scripts: safeStrArr(ctx.scripts),
+    styles:  safeStrArr(ctx.styles),
+    images:  safeStrArr(ctx.images),
+    links:   safeStrArr(ctx.links),
+    oauthButtons: safeStrArr(ctx.oauthButtons, PCTX_MAX_OAUTH, 64),
+    forms: safeArr(ctx.forms, PCTX_MAX_FORMS).map(safeForm).filter(Boolean),
+    authFlow: safeAuthFlow(ctx.authFlow),
+  });
+}
+
 /**
  * Map of accepted message types → validator. Validators return
  * { ok: true, value } with a sanitized payload, or { ok: false, error }.
@@ -50,10 +128,14 @@ export const SCHEMAS = Object.freeze({
     return { ok: true, value: { url: m.url, tabId: m.tabId ?? null, force: !!m.force } };
   },
   pageContext: (m) => {
-    if (!m || typeof m.context !== "object" || m.context === null)
+    if (!m || typeof m.context !== "object" || m.context === null ||
+        Array.isArray(m.context))
       return { ok: false, error: "pageContext.context" };
     if (tooManyKeys(m.context)) return { ok: false, error: "pageContext.size" };
-    return { ok: true, value: { context: m.context } };
+    // Strict schema normalization — downstream code never sees raw input.
+    const clean = sanitizePageContext(m.context);
+    if (!clean) return { ok: false, error: "pageContext.shape" };
+    return { ok: true, value: { context: clean } };
   },
   getSettings: () => ({ ok: true, value: {} }),
   saveSettings: (m) => {

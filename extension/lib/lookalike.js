@@ -131,15 +131,48 @@ export function toUnicodeHost(hostname) {
     .toLowerCase();
 }
 
+// ----------------------------------------------------------------------
+// M-03 — Embedded Public Suffix List (PSL) subset.
+//
+// We need correct eTLD+1 ("root domain") extraction for country-code
+// secondary domains used by major banking and identity providers in our
+// supported regions. Embedding the full PSL would bloat the bundle and
+// require periodic refreshes; instead we ship a deterministic, bounded
+// subset covering AU, NZ, ZA, UK, JP, BR, IN — the highest-impact regions
+// for the protected brands above.
+//
+// Lookup is O(1) per suffix length and never hits the network.
+// ----------------------------------------------------------------------
+const PSL_TWO_LEVEL = new Set([
+  // United Kingdom
+  "co.uk", "org.uk", "ac.uk", "gov.uk", "net.uk", "ltd.uk", "plc.uk", "me.uk",
+  // India
+  "co.in", "net.in", "org.in", "gen.in", "firm.in", "ind.in", "ac.in", "gov.in",
+  // Australia
+  "com.au", "net.au", "org.au", "edu.au", "gov.au", "asn.au", "id.au",
+  // New Zealand
+  "co.nz", "net.nz", "org.nz", "ac.nz", "govt.nz", "school.nz", "geek.nz",
+  // South Africa
+  "co.za", "net.za", "org.za", "web.za", "gov.za", "ac.za",
+  // Japan
+  "co.jp", "ne.jp", "or.jp", "ac.jp", "go.jp", "ad.jp", "ed.jp", "gr.jp",
+  // Brazil
+  "com.br", "net.br", "org.br", "gov.br", "edu.br", "ind.br",
+  // Singapore / Hong Kong / others frequently seen with brand spoofing
+  "com.sg", "edu.sg", "com.hk", "org.hk", "com.mx", "com.ar", "com.tr",
+]);
+
 export function rootDomain(host) {
+  if (!host || typeof host !== "string") return host;
   const parts = host.split(".");
   if (parts.length <= 2) return host;
-  // crude eTLD handling — fine for risk heuristics
-  const tld2 = ["co.uk", "co.in", "com.au", "com.br", "co.jp", "org.uk"];
   const last2 = parts.slice(-2).join(".");
-  if (tld2.includes(last2) && parts.length >= 3) return parts.slice(-3).join(".");
+  if (PSL_TWO_LEVEL.has(last2) && parts.length >= 3) {
+    return parts.slice(-3).join(".");
+  }
   return parts.slice(-2).join(".");
 }
+
 
 export function lookalikeAnalysis(hostname) {
   if (!hostname) return { match: null, confidence: 0, reasons: [] };

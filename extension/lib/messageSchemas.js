@@ -89,7 +89,12 @@ function safeAuthFlow(a) {
       .map((x) => ({
         id: safeStr(x.id, 64),
         severity: safeStr(x.severity, 16),
-        detail: safeStr(x.detail, 256),
+        // Canonical field name across the pipeline is `explain` (set by
+        // buildAuthFlowSnapshot in content.js and authFlowGraph.js, read by
+        // behavioral rules and the explainability layer). Accept `detail`
+        // as a legacy alias so an older content script paired with a newer
+        // background never produces blank popup text.
+        explain: safeStr(x.explain || x.detail, 256),
       })),
     state: safeStr(a.state, 32),
   };

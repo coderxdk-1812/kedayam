@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Two-step verification</title></head>
+<body>
+  <h1>Enter your verification code</h1>
+  <p>We sent a 6-digit code to your phone.</p>
+  <form action="/mfa" method="post">
+    <input inputmode="numeric" maxlength="6" name="otp" autocomplete="one-time-code">
+    <button type="submit">Continue</button>
+  </form>
+</body></html>

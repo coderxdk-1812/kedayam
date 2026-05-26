@@ -5,8 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "dev:extension": "bun scripts/generate-icons.mjs && bun scripts/validate-extension.mjs extension",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:extension": "bun scripts/package-extension.mjs",
+    "validate:extension": "bun scripts/generate-icons.mjs && bun scripts/validate-extension.mjs extension",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -50,6 +56,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^12.38.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
@@ -68,7 +75,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "^1.7.0",
+    "@lovable.dev/vite-tanstack-config": "^1.5.1",
+    "@playwright/test": "^1.59.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
@@ -79,9 +87,11 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
+    "jsdom": "^29.1.1",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.1.5"
   }
 }

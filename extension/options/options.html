@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kedayam — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div>
+            <div class="brand-name">Kedayam</div>
+            <div class="brand-tag">Settings</div>
+          </div>
+        </div>
+        <nav>
+          <a href="#detection" class="active">Detection</a>
+          <a href="#regions">PII regions</a>
+          <a href="#api">API keys</a>
+          <a href="#allowlist">Allowlist</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#cache">Cache & data</a>
+        </nav>
+        <div class="footer">All scanning runs locally on your device.</div>
+      </aside>
+
+      <main>
+        <header>
+          <h1>Configure your shield</h1>
+          <p>Tune what Kedayam watches for, where it focuses, and which APIs it consults.</p>
+        </header>
+
+        <section id="detection" class="card">
+          <h2>Detection</h2>
+          <div class="row">
+            <label>
+              <span>Sensitivity</span>
+              <small>Higher sensitivity flags more, with more false positives.</small>
+            </label>
+            <select id="sensitivity">
+              <option value="lenient">Lenient</option>
+              <option value="balanced">Balanced</option>
+              <option value="strict">Strict</option>
+            </select>
+          </div>
+          <div class="toggle-grid">
+            <label class="toggle"><input type="checkbox" data-key="detection.pasteInterception" /><span>Paste interception</span><small>Warn before pasting secrets / PII into forms.</small></label>
+            <label class="toggle"><input type="checkbox" data-key="detection.fileScanning" /><span>File upload scanning</span><small>Inspect text files locally before they leave your browser.</small></label>
+            <label class="toggle"><input type="checkbox" data-key="detection.permissionMonitoring" /><span>Permission monitoring</span><small>Flag camera / mic / location requests on low-trust pages.</small></label>
+            <label class="toggle"><input type="checkbox" data-key="detection.redirectAnalysis" /><span>Redirect analysis</span><small>Penalise long redirect chains in trust scoring.</small></label>
+            <label class="toggle"><input type="checkbox" data-key="detection.cloneDetection" /><span>Clone-site detection</span><small>Cross-check assets to spot cloned login pages.</small></label>
+          </div>
+        </section>
+
+        <section id="regions" class="card">
+          <h2>PII regions</h2>
+          <p class="muted">Choose which regional patterns to look for. India and US use locale-specific formats.</p>
+          <div class="toggle-grid">
+            <label class="toggle"><input type="checkbox" data-key="detection.regions.india" /><span>India</span><small>Aadhaar, PAN, +91 numbers.</small></label>
+            <label class="toggle"><input type="checkbox" data-key="detection.regions.us" /><span>United States</span><small>SSN, US phone formats.</small></label>
+            <label class="toggle"><input type="checkbox" data-key="detection.regions.eu" /><span>European Union</span><small>IBAN.</small></label>
+            <label class="toggle"><input type="checkbox" data-key="detection.regions.global" /><span>Global</span><small>Emails, cards, API keys, tokens.</small></label>
+          </div>
+        </section>
+
+        <section id="api" class="card">
+          <h2>External intelligence</h2>
+          <p class="muted">Optional. Without keys, Kedayam still works using local heuristics.</p>
+          <div class="row">
+            <label><span>Google Safe Browsing API key</span><small>Stored locally in this browser only.</small></label>
+            <input type="password" id="gsb" autocomplete="off" />
+          </div>
+          <div class="row">
+            <label><span>VirusTotal API key</span><small>Used to consult community detection engines.</small></label>
+            <input type="password" id="vt" autocomplete="off" />
+          </div>
+        </section>
+
+        <section id="allowlist" class="card">
+          <h2>Trusted domains</h2>
+          <p class="muted">Domains here are still evaluated, but the trust floor is raised to 80.</p>
+          <div class="row">
+            <input type="text" id="allow-input" placeholder="example.com" />
+            <button class="primary" id="allow-add">Add</button>
+          </div>
+          <ul id="allow-list" class="chip-list"></ul>
+        </section>
+
+        <section id="privacy" class="card">
+          <h2>Privacy</h2>
+          <label class="toggle"><input type="checkbox" data-key="privacy.telemetryOptIn" /><span>Anonymous threat statistics</span><small>Opt-in only. No URLs, no content, no personal data.</small></label>
+          <label class="toggle"><input type="checkbox" data-key="privacy.cacheSafeDomains" /><span>Cache safe domains</span><small>Skip API calls for sites repeatedly scored safe.</small></label>
+          <div class="callout">
+            Kedayam never stores typed text, pasted content, file contents, or passwords.
+            All sensitive scanning happens entirely on your device.
+          </div>
+        </section>
+
+        <section id="cache" class="card">
+          <h2>Cache & data</h2>
+          <button class="ghost" id="clear-cache">Clear cached evaluations</button>
+        </section>
+
+        <div id="saved-toast" class="toast">Saved</div>
+      </main>
+    </div>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

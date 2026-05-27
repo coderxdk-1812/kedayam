@@ -12,6 +12,7 @@ export default defineConfig({
       "tests/resilience/**/*.test.{js,ts}",
       "tests/privacy/**/*.test.{js,ts}",
       "tests/calibration/**/*.test.{js,ts}",
+      "tests/ux/**/*.test.{js,ts}",
     ],
   },
 });

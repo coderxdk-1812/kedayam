@@ -422,6 +422,7 @@ export async function evaluateUrl(url, ctx = {}) {
   const _earlyHasSig = (id) => _earlyPhishSigs.some((s) => s.id === id);
   const _behavioralEvidenceEarly = !!(
     _phishingForArb.externalFormPost || _phishingForArb.oauthSpoof ||
+    _phishingForArb.credentialHarvest ||
     _earlyHasSig("iframe-credential-form") || _earlyHasSig("iframe-login") ||
     (sb && sb.malicious) || (vt && vt.malicious) ||
     _authHas("credential-relay") || _authHas("oauth-token-drift") ||

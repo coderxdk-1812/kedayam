@@ -158,18 +158,19 @@ export function explainVerdict(verdict) {
     .map((s) => ({
       id: s.id, title: s.title, severity: s.severity,
       points: s.contribution, detail: s.detail || "",
-      plain: PLAIN_BY_SIGNAL_ID[s.id] || s.title,
+      plain: friendlyPhrase(PLAIN_BY_SIGNAL_ID[s.id], s.title),
     }));
 
   const contributingTrust = trust.slice(0, 5).map((t) => ({
     id: t.id, title: t.title, points: t.contribution, detail: t.detail || "",
-    plain: PLAIN_BY_SIGNAL_ID[t.id] || t.title,
+    plain: friendlyPhrase(PLAIN_BY_SIGNAL_ID[t.id], t.title),
   }));
 
-  const headline = buildHeadline(verdict, contributingRisks);
-  const summary = buildSummary(verdict, contributingRisks);
-  const recommendation = buildRecommendation(verdict);
-  const bullets = buildBullets(verdict, contributingRisks, rules);
+  const headline = clamp(buildHeadline(verdict, contributingRisks));
+  const summary = clamp(buildSummary(verdict, contributingRisks));
+  const recommendation = clamp(buildRecommendation(verdict));
+  const bullets = buildBullets(verdict, contributingRisks, rules)
+    .map(clamp).filter(Boolean);
 
   return {
     verdict: verdict.status,
@@ -191,11 +192,11 @@ function buildHeadline(v, risks) {
   const host = v.host || "This page";
   if (v.status === "dangerous") {
     // Tests assert this string contains "dangerous" — keep the word.
-    const r = risks[0]?.plain || risks[0]?.title || "multiple strong warning signs";
+    const r = risks[0]?.plain || "we found several strong warning signs";
     return `${host} looks dangerous — ${lower(r)}`;
   }
   if (v.status === "suspicious") {
-    const r = risks[0]?.plain || risks[0]?.title || "a few things here don't add up";
+    const r = risks[0]?.plain || "a few things here don't add up";
     return `${host} doesn't look quite right — ${lower(r)}`;
   }
   return `${host} looks safe.`;
@@ -228,18 +229,41 @@ function buildBullets(v, risks, rules) {
   const out = [];
   const seen = new Set();
   for (const r of risks.slice(0, 3)) {
-    const text = r.plain || r.title;
+    const text = r.plain;
     if (text && !seen.has(text)) { out.push(text); seen.add(text); }
   }
   for (const r of rules) {
     if (out.length >= 4) break;
-    const text = PLAIN_BY_RULE_ID[r.id] || r.reason;
+    // Never fall back to the raw rule id — only a curated phrase or a
+    // sanitized .reason that doesn't read like internal jargon.
+    const text = PLAIN_BY_RULE_ID[r.id] || friendlyPhrase(null, r.reason);
     if (text && !seen.has(text)) { out.push(text); seen.add(text); }
   }
   if (!out.length && v.status === "safe") {
     out.push("No phishing or impersonation warning signs.");
   }
   return out;
+}
+
+// Pick a user-facing phrase. Prefer a curated plain-English version; only
+// fall back to the raw title/reason if it looks readable. A "raw" string
+// that contains a rule-id shape ("auth-flow-anomaly") or a known acronym
+// is rejected in favor of a generic, calm description.
+function friendlyPhrase(curated, raw) {
+  const c = (curated || "").trim();
+  if (c) return c;
+  const r = (raw || "").trim();
+  if (!r) return "";
+  if (JARGON_RE.test(r)) {
+    return "Something about this page doesn't match what we'd expect from a trustworthy site.";
+  }
+  return r;
+}
+
+function clamp(s) {
+  if (!s) return s;
+  if (s.length <= MAX_USER_STR) return s;
+  return s.slice(0, MAX_USER_STR - 1).trimEnd() + "…";
 }
 
 function lower(s) {

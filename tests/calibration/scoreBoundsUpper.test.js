@@ -28,6 +28,14 @@ const settings = {
 const INFORMATIONAL_SCORE_FLOOR = 55; // anything below is in alarm territory
 const INFO_ONLY_SEVERITIES = new Set(["info", "low", "medium"]);
 
+function researchCtx(title, text) {
+  return {
+    pageOrigin: "https://example.org",
+    title, visibleText: text,
+    forms: [], hasPasswordField: false,
+  };
+}
+
 function expectInformational(verdict) {
   // Status ceiling — never escalates past "suspicious", and the explicit
   // "dangerous" wording is forbidden on documentation/research pages.

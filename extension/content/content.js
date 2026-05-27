@@ -509,11 +509,21 @@
       // Detect any password field even outside a <form> (modern SPAs).
       const hasPasswordField = !!document.querySelector("input[type=password]");
       // Visible text excerpt for brand/auth phrasing detection.
+      // Hidden DOM (display:none, visibility:hidden, opacity:0, aria-hidden,
+      // off-screen traps, <script>/<style>/<template>/<noscript>) MUST NOT
+      // contribute to phishing keyword scoring or explanation text — that
+      // would let attackers inflate confidence via invisible payloads and
+      // would muddy the user-facing reasons we surface. Only collect text
+      // a real user would plausibly see on the page.
+      const titleText = (document.title || "").trim();
       const textNodes = Array.from(document.querySelectorAll(
-        "title, h1, h2, h3, button, a, label, p, span"
-      )).slice(0, 200);
-      const visibleText = textNodes.map((n) => (n.textContent || "").trim())
-        .filter(Boolean).join(" ").slice(0, 4000);
+        "h1, h2, h3, button, a, label, p, span"
+      )).slice(0, 400);
+      const visibleText = (titleText + " " + textNodes
+        .filter(isUserVisible)
+        .map((n) => (n.textContent || "").trim())
+        .filter(Boolean)
+        .join(" ")).slice(0, 4000);
       // OAuth-style buttons by visible text.
       const oauthRe = /sign in with (google|microsoft|apple|facebook|github|twitter|x|linkedin)/i;
       const oauthButtons = Array.from(new Set(
@@ -544,6 +554,41 @@
       };
       try { chrome.runtime.sendMessage({ type: "pageContext", context: ctx }, () => void chrome.runtime.lastError); } catch {}
     } catch {}
+  }
+
+  // Accessibility-aware visibility check. Excludes display:none, visibility:
+  // hidden, opacity:0, aria-hidden subtrees, off-screen "trap" nodes, and
+  // hostile script/style/template/noscript content. Keeps legitimately
+  // visible auth prompts and accessible labels intact. Best-effort: failures
+  // default to "visible" so we never silently drop real user-facing text.
+  function isUserVisible(el) {
+    try {
+      if (!el || !(el instanceof Element)) return false;
+      const tag = el.tagName;
+      if (tag === "SCRIPT" || tag === "STYLE" || tag === "TEMPLATE" ||
+          tag === "NOSCRIPT") return false;
+      // aria-hidden anywhere up the tree means assistive tech ignores it —
+      // so should we.
+      if (el.closest('[aria-hidden="true"]')) return false;
+      const cs = (typeof getComputedStyle === "function")
+        ? getComputedStyle(el) : null;
+      if (cs) {
+        if (cs.display === "none" || cs.visibility === "hidden" ||
+            cs.visibility === "collapse") return false;
+        const op = parseFloat(cs.opacity);
+        if (!Number.isNaN(op) && op === 0) return false;
+      }
+      // Off-screen traps: zero-area or pushed far outside the viewport in a
+      // way no real user would ever see. We only reject *fully* zero-sized
+      // boxes; sticky/fixed nav with non-zero size stays in.
+      if (typeof el.getBoundingClientRect === "function") {
+        const r = el.getBoundingClientRect();
+        if (r && r.width === 0 && r.height === 0) return false;
+      }
+      return true;
+    } catch {
+      return true;
+    }
   }
 
   function safeOrigin(u) {

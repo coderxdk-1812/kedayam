@@ -22,35 +22,103 @@
 
 const SEVERITY_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 
+// Bound on every user-facing string we emit. Long, run-on sentences are a
+// readability tax and a place where internal jargon can leak through.
+const MAX_USER_STR = 220;
+
+// Internal terms that should never appear in user-facing text. We strip
+// risks/rules whose only available wording is one of these (or contains
+// raw rule-id syntax like "csp-downgrade"). Diagnostics still keep the raw
+// IDs internally — this only governs what the popup shows.
+const JARGON_RE =
+  /\b(CSP|OAuth issuer|eTLD\+1|JWT|XSS|CSRF|MITM|AiTM|SAML|JOSE|HSTS|TLS|CORS|PKCE)\b|\b[a-z]+(?:-[a-z]+){1,}\b/;
+
 // Plain-language translations for the signal IDs the engine emits.
-// Keep these short (one sentence), concrete, and second-person where useful.
+// Keep these short, concrete, and in second person where useful. No jargon,
+// no acronyms, no rule IDs — these strings go straight to non-technical users.
 const PLAIN_BY_SIGNAL_ID = Object.freeze({
   "lookalike":
     "The web address looks almost identical to a well-known site, but it isn't the real one.",
   "credential-form":
     "This page is asking for your password, and we can't confirm who actually runs it.",
+  "credential-form-trusted":
+    "This page asks for a password, and it's hosted on a site we recognize.",
   "credential-relay":
     "If you signed in here, your username and password would be sent to a different website.",
   "external-form-post":
-    "The login form would send your details to a completely different website than the one shown in the address bar.",
+    "This login form would send your details to a different website than the one you're on.",
   "oauth-token-drift":
-    "The sign-in process is redirecting through a place that doesn't match the service you started with.",
+    "The sign-in is redirecting through a place that doesn't match the service you started with.",
+  "oauth-impersonation":
+    "A 'sign in with' button on this page goes somewhere that isn't the real provider.",
   "mfa-only-unknown":
     "It's asking only for a one-time security code, on a site we can't verify — a common trick to capture codes.",
+  "brand-impersonation":
+    "This page uses the name and look of a well-known brand, but it isn't hosted by that brand.",
   "brand-keyword-mismatch":
     "The page talks about a well-known brand, but it isn't hosted by that brand.",
   "iframe-origin-swap":
     "Part of this page was quietly replaced with content from another site after it loaded.",
+  "iframe-credential-form":
+    "The login box on this page is loaded from a different website than the one you visited.",
+  "iframe-login":
+    "The sign-in here happens inside a frame that doesn't match the page address.",
   "csp-downgrade":
-    "This login page is missing the standard safety protections that real login pages normally have.",
+    "This login page is missing the standard safety protections real login pages normally have.",
+  "form-javascript":
+    "The login form sends your details through a script instead of the normal way, which makes it harder to verify where they go.",
+  "hidden-login-fields":
+    "The login form contains hidden fields a normal sign-in wouldn't need.",
+  "domain-spoofing":
+    "The web address is dressed up to look like a different, well-known site.",
+  "idn-risk-cap":
+    "The web address uses look-alike letters from other alphabets to imitate a real site.",
+  "auth-keyword":
+    "Words like 'login' or 'verify' appear in the web address itself — a common trick on fake pages.",
+  "no-https":
+    "The connection to this site isn't encrypted, so anything you type could be read by others on the network.",
+  "userinfo":
+    "The web address contains a username before the site name — a trick used to disguise where you really are.",
+  "ip-host":
+    "This page is hosted on a bare numeric address instead of a normal website name.",
+  "long-redirects":
+    "You were bounced through many hops before landing here — unusual for a normal site.",
+  "cross-domain-redirects":
+    "You were sent across several different websites before landing here.",
+  "gsb":
+    "Google Safe Browsing has flagged this address.",
+  "vt":
+    "Multiple security vendors have flagged this address.",
+  "clone":
+    "This page looks like a copy of a real, well-known site.",
+  "auth-risk":
+    "The sign-in setup here has some unusual aspects.",
   "https-trust":
     "The connection to this site is encrypted.",
+  "known-reputable":
+    "This is a well-known, established website.",
+  "trusted-provider":
+    "This is a recognized sign-in provider.",
+  "allowlist":
+    "This site is on your trusted list.",
+  "allowlist-trust":
+    "This site is on your trusted list.",
   "safelisted":
     "This site is on your trusted list.",
+  "learned-safe":
+    "You've used this site safely before.",
+  "learned-safe-trust":
+    "You've used this site safely before.",
+  "no-auth-risk":
+    "We didn't see any sign-in trickery on this page.",
+  "established-domain":
+    "This website has been around for a long time.",
+  "security-context":
+    "This page looks like it's discussing security, not performing a sign-in.",
 });
 
-// Plain-language summaries for arbitration rule IDs (the higher-level
-// "why we capped the score" reasons). Falls back to rule.reason if unknown.
+// Plain-language summaries for arbitration rule IDs. Falls back to a sanitized
+// version of rule.reason if unknown; never falls back to the raw id.
 const PLAIN_BY_RULE_ID = Object.freeze({
   "lookalike-creds":
     "The web address copies a famous brand and is asking you to log in.",
@@ -90,18 +158,19 @@ export function explainVerdict(verdict) {
     .map((s) => ({
       id: s.id, title: s.title, severity: s.severity,
       points: s.contribution, detail: s.detail || "",
-      plain: PLAIN_BY_SIGNAL_ID[s.id] || s.title,
+      plain: friendlyPhrase(PLAIN_BY_SIGNAL_ID[s.id], s.title),
     }));
 
   const contributingTrust = trust.slice(0, 5).map((t) => ({
     id: t.id, title: t.title, points: t.contribution, detail: t.detail || "",
-    plain: PLAIN_BY_SIGNAL_ID[t.id] || t.title,
+    plain: friendlyPhrase(PLAIN_BY_SIGNAL_ID[t.id], t.title),
   }));
 
-  const headline = buildHeadline(verdict, contributingRisks);
-  const summary = buildSummary(verdict, contributingRisks);
-  const recommendation = buildRecommendation(verdict);
-  const bullets = buildBullets(verdict, contributingRisks, rules);
+  const headline = clamp(buildHeadline(verdict, contributingRisks));
+  const summary = clamp(buildSummary(verdict, contributingRisks));
+  const recommendation = clamp(buildRecommendation(verdict));
+  const bullets = buildBullets(verdict, contributingRisks, rules)
+    .map(clamp).filter(Boolean);
 
   return {
     verdict: verdict.status,
@@ -123,11 +192,11 @@ function buildHeadline(v, risks) {
   const host = v.host || "This page";
   if (v.status === "dangerous") {
     // Tests assert this string contains "dangerous" — keep the word.
-    const r = risks[0]?.plain || risks[0]?.title || "multiple strong warning signs";
+    const r = risks[0]?.plain || "we found several strong warning signs";
     return `${host} looks dangerous — ${lower(r)}`;
   }
   if (v.status === "suspicious") {
-    const r = risks[0]?.plain || risks[0]?.title || "a few things here don't add up";
+    const r = risks[0]?.plain || "a few things here don't add up";
     return `${host} doesn't look quite right — ${lower(r)}`;
   }
   return `${host} looks safe.`;
@@ -160,18 +229,41 @@ function buildBullets(v, risks, rules) {
   const out = [];
   const seen = new Set();
   for (const r of risks.slice(0, 3)) {
-    const text = r.plain || r.title;
+    const text = r.plain;
     if (text && !seen.has(text)) { out.push(text); seen.add(text); }
   }
   for (const r of rules) {
     if (out.length >= 4) break;
-    const text = PLAIN_BY_RULE_ID[r.id] || r.reason;
+    // Never fall back to the raw rule id — only a curated phrase or a
+    // sanitized .reason that doesn't read like internal jargon.
+    const text = PLAIN_BY_RULE_ID[r.id] || friendlyPhrase(null, r.reason);
     if (text && !seen.has(text)) { out.push(text); seen.add(text); }
   }
   if (!out.length && v.status === "safe") {
     out.push("No phishing or impersonation warning signs.");
   }
   return out;
+}
+
+// Pick a user-facing phrase. Prefer a curated plain-English version; only
+// fall back to the raw title/reason if it looks readable. A "raw" string
+// that contains a rule-id shape ("auth-flow-anomaly") or a known acronym
+// is rejected in favor of a generic, calm description.
+function friendlyPhrase(curated, raw) {
+  const c = (curated || "").trim();
+  if (c) return c;
+  const r = (raw || "").trim();
+  if (!r) return "";
+  if (JARGON_RE.test(r)) {
+    return "Something about this page doesn't match what we'd expect from a trustworthy site.";
+  }
+  return r;
+}
+
+function clamp(s) {
+  if (!s) return s;
+  if (s.length <= MAX_USER_STR) return s;
+  return s.slice(0, MAX_USER_STR - 1).trimEnd() + "…";
 }
 
 function lower(s) {

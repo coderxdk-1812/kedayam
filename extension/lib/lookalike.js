@@ -160,7 +160,16 @@ const PSL_TWO_LEVEL = new Set([
   "com.br", "net.br", "org.br", "gov.br", "edu.br", "ind.br",
   // Singapore / Hong Kong / others frequently seen with brand spoofing
   "com.sg", "edu.sg", "com.hk", "org.hk", "com.mx", "com.ar", "com.tr",
+  // Pakistan
+  "com.pk", "net.pk", "org.pk", "edu.pk", "gov.pk", "gob.pk",
+  // Kenya
+  "co.ke", "ne.ke", "or.ke", "ac.ke", "go.ke", "sc.ke", "me.ke",
+  // Nigeria
+  "com.ng", "net.ng", "org.ng", "edu.ng", "gov.ng", "sch.ng",
+  // Indonesia
+  "co.id", "net.id", "or.id", "ac.id", "go.id", "sch.id", "web.id", "my.id",
 ]);
+
 
 export function rootDomain(host) {
   if (!host || typeof host !== "string") return host;

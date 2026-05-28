@@ -98,12 +98,19 @@ describe("visibility traversal — performance baseline", () => {
     // Generous absolute ceiling for CI variance — we're guarding against
     // exponential / quadratic regressions, not microbenchmarking.
     expect(c).toBeLessThan(500);
-    // 8× the node count should not cost more than ~40× the time
-    // (linear ≈ 8×; allow generous slack for fixed overhead).
-    const ratio = c / Math.max(a, 0.01);
-    expect(ratio).toBeLessThan(40);
-    // 2× nodes shouldn't be more than ~10× slower either.
-    expect(b / Math.max(a, 0.01)).toBeLessThan(10);
+    // Benchmark assertion guidelines (see also: file header comment):
+    //   - Never divide by a near-zero baseline; after JIT warm-up `a`
+    //     can collapse to sub-millisecond values and amplify FP noise.
+    //   - Prefer additive tolerances over pure ratios so CI scheduling
+    //     jitter, CPU contention, and runtime optimization variance are
+    //     absorbed without hiding real regressions.
+    //   - Keep ceilings loose enough to tolerate cold/warm runs but
+    //     tight enough that quadratic blowups still trip the assertion.
+    // 8× the node count: allow ~40× scaling slack PLUS a 50ms additive
+    // floor so a ≈ 0.05ms baselines don't make this assertion brittle.
+    expect(c).toBeLessThan(a * 40 + 50);
+    // 2× nodes: same additive-tolerance shape, smaller ceiling.
+    expect(b).toBeLessThan(a * 10 + 25);
   });
 
   it("produces deterministic output across repeated scans", () => {

@@ -30,8 +30,12 @@ const MAX_USER_STR = 220;
 // risks/rules whose only available wording is one of these (or contains
 // raw rule-id syntax like "csp-downgrade"). Diagnostics still keep the raw
 // IDs internally — this only governs what the popup shows.
+// Match acronyms, OR identifier-shaped tokens with 3+ hyphen segments
+// (e.g. "auth-flow-anomaly", "cross-origin-credential-post"). Two-segment
+// hyphenated English ("sign-in", "two-factor", "well-known", "password-reset")
+// is NOT considered jargon.
 const JARGON_RE =
-  /\b(CSP|OAuth issuer|eTLD\+1|JWT|XSS|CSRF|MITM|AiTM|SAML|JOSE|HSTS|TLS|CORS|PKCE)\b|\b[a-z]+(?:-[a-z]+){1,}\b/;
+  /\b(CSP|OAuth issuer|eTLD\+1|JWT|XSS|CSRF|MITM|AiTM|SAML|JOSE|HSTS|TLS|CORS|PKCE)\b|\b[a-z]+(?:-[a-z]+){2,}\b/;
 
 // Plain-language translations for the signal IDs the engine emits.
 // Keep these short, concrete, and in second person where useful. No jargon,

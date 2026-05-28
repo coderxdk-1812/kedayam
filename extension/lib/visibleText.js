@@ -43,11 +43,50 @@ export function isUserVisible(el, getStyle) {
       if (cs.visibility === "hidden" || cs.visibility === "collapse") return false;
       const op = parseFloat(cs.opacity);
       if (!Number.isNaN(op) && op === 0) return false;
+      // Bounded, high-confidence CSS hiding patterns. Each check is a cheap
+      // string/regex test against an already-fetched style object — no
+      // additional reflow, no ancestor walk. Default-to-visible on parse
+      // uncertainty (see file header).
+      const tf = typeof cs.transform === "string" ? cs.transform : "";
+      if (tf && tf !== "none") {
+        // translate(X|Y|3d)(...) with a coordinate <= -3000px is a classic
+        // offscreen-trap pattern (e.g. translateX(-9999px)).
+        const m = tf.match(/translate(?:X|Y|3d)?\(\s*(-?\d+(?:\.\d+)?)(px|rem|em)?/i);
+        if (m) {
+          const v = parseFloat(m[1]);
+          if (!Number.isNaN(v) && v <= -3000) return false;
+        }
+      }
+      // clip-path: inset(100%) / inset(50% 50% 50% 50%) — fully clipped.
+      const cp = typeof cs.clipPath === "string" ? cs.clipPath : "";
+      if (/inset\(\s*100%\s*\)/i.test(cp)) return false;
+      // Legacy clip: rect(0,0,0,0) — the canonical sr-only hide pattern,
+      // BUT sr-only utilities typically pair this with width/height: 1px
+      // and position: absolute to keep screen-reader access. We DO want
+      // to exclude these from visible-text scoring since a sighted user
+      // cannot perceive them, while leaving accessibility unaffected
+      // (browser AT reads them directly from the DOM, not from us).
+      const clip = typeof cs.clip === "string" ? cs.clip : "";
+      if (/rect\(\s*0(?:px)?\s*,?\s*0(?:px)?\s*,?\s*0(?:px)?\s*,?\s*0(?:px)?\s*\)/i.test(clip)) {
+        return false;
+      }
+      // Extreme offscreen absolute/fixed positioning (top/left <= -3000px).
+      if (cs.position === "absolute" || cs.position === "fixed") {
+        const offscreen = (v) => {
+          if (typeof v !== "string") return false;
+          const m2 = v.match(/^(-?\d+(?:\.\d+)?)(px)?$/);
+          if (!m2) return false;
+          const n = parseFloat(m2[1]);
+          return !Number.isNaN(n) && n <= -3000;
+        };
+        if (offscreen(cs.left) || offscreen(cs.top)) return false;
+      }
     }
     if (typeof el.getBoundingClientRect === "function") {
       const r = el.getBoundingClientRect();
       if (r && r.width === 0 && r.height === 0) return false;
     }
+
     return true;
   } catch {
     return true;

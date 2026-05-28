@@ -13,6 +13,17 @@
 //   2. extraction is deterministic across repeated runs
 //   3. no measurable memory growth across repeated scans
 //   4. ancestor aria-hidden traversal is bounded (deep nesting stays fast)
+//
+// Benchmark testing guidelines (apply to any perf test in this repo):
+//   * Never assert on raw timing ratios with a near-zero denominator —
+//     a fast warm-run baseline (sub-millisecond) makes the ratio explode
+//     under trivial CI noise. Use `expect(c).toBeLessThan(a * K + N)`
+//     style additive tolerances instead.
+//   * Prefer absolute ceilings sized for the slowest realistic CI shape.
+//   * Do not assume JIT stability, deterministic scheduling, or stable
+//     wall-clock resolution across runs.
+//   * Never paper over flakiness with retries, sleeps, or probabilistic
+//     thresholds — fix the assertion shape.
 
 import { describe, it, expect } from "vitest";
 import { extractVisibleText, isUserVisible } from "../../extension/lib/visibleText.js";

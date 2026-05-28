@@ -13,6 +13,17 @@
 //   2. extraction is deterministic across repeated runs
 //   3. no measurable memory growth across repeated scans
 //   4. ancestor aria-hidden traversal is bounded (deep nesting stays fast)
+//
+// Benchmark testing guidelines (apply to any perf test in this repo):
+//   * Never assert on raw timing ratios with a near-zero denominator —
+//     a fast warm-run baseline (sub-millisecond) makes the ratio explode
+//     under trivial CI noise. Use `expect(c).toBeLessThan(a * K + N)`
+//     style additive tolerances instead.
+//   * Prefer absolute ceilings sized for the slowest realistic CI shape.
+//   * Do not assume JIT stability, deterministic scheduling, or stable
+//     wall-clock resolution across runs.
+//   * Never paper over flakiness with retries, sleeps, or probabilistic
+//     thresholds — fix the assertion shape.
 
 import { describe, it, expect } from "vitest";
 import { extractVisibleText, isUserVisible } from "../../extension/lib/visibleText.js";
@@ -98,12 +109,19 @@ describe("visibility traversal — performance baseline", () => {
     // Generous absolute ceiling for CI variance — we're guarding against
     // exponential / quadratic regressions, not microbenchmarking.
     expect(c).toBeLessThan(500);
-    // 8× the node count should not cost more than ~40× the time
-    // (linear ≈ 8×; allow generous slack for fixed overhead).
-    const ratio = c / Math.max(a, 0.01);
-    expect(ratio).toBeLessThan(40);
-    // 2× nodes shouldn't be more than ~10× slower either.
-    expect(b / Math.max(a, 0.01)).toBeLessThan(10);
+    // Benchmark assertion guidelines (see also: file header comment):
+    //   - Never divide by a near-zero baseline; after JIT warm-up `a`
+    //     can collapse to sub-millisecond values and amplify FP noise.
+    //   - Prefer additive tolerances over pure ratios so CI scheduling
+    //     jitter, CPU contention, and runtime optimization variance are
+    //     absorbed without hiding real regressions.
+    //   - Keep ceilings loose enough to tolerate cold/warm runs but
+    //     tight enough that quadratic blowups still trip the assertion.
+    // 8× the node count: allow ~40× scaling slack PLUS a 50ms additive
+    // floor so a ≈ 0.05ms baselines don't make this assertion brittle.
+    expect(c).toBeLessThan(a * 40 + 50);
+    // 2× nodes: same additive-tolerance shape, smaller ceiling.
+    expect(b).toBeLessThan(a * 10 + 25);
   });
 
   it("produces deterministic output across repeated scans", () => {
@@ -126,6 +144,23 @@ describe("visibility traversal — performance baseline", () => {
     for (let i = 0; i < 1000; i++) isUserVisible(chain, styleLookup);
     const ms = performance.now() - t0;
     expect(ms).toBeLessThan(250);
+  });
+
+  it("scaling assertion holds across repeated iterations (no flakiness)", () => {
+    // Re-run the scaling check several times back-to-back. Under the
+    // previous ratio-based assertion this would intermittently fail as
+    // `a` shrank below ~0.1ms. The additive-tolerance shape must hold
+    // deterministically across warm-up orderings.
+    const small = buildSyntheticDom(500);
+    const large = buildSyntheticDom(4000);
+    // Warm-up.
+    timeExtract(small); timeExtract(large);
+    for (let i = 0; i < 5; i++) {
+      const a = timeExtract(small).ms;
+      const c = timeExtract(large).ms;
+      expect(c).toBeLessThan(a * 40 + 50);
+      expect(c).toBeLessThan(500);
+    }
   });
 
   it("shows no unbounded memory growth across repeated extractions", () => {

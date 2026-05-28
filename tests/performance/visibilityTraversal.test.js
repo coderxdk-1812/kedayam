@@ -146,6 +146,23 @@ describe("visibility traversal — performance baseline", () => {
     expect(ms).toBeLessThan(250);
   });
 
+  it("scaling assertion holds across repeated iterations (no flakiness)", () => {
+    // Re-run the scaling check several times back-to-back. Under the
+    // previous ratio-based assertion this would intermittently fail as
+    // `a` shrank below ~0.1ms. The additive-tolerance shape must hold
+    // deterministically across warm-up orderings.
+    const small = buildSyntheticDom(500);
+    const large = buildSyntheticDom(4000);
+    // Warm-up.
+    timeExtract(small); timeExtract(large);
+    for (let i = 0; i < 5; i++) {
+      const a = timeExtract(small).ms;
+      const c = timeExtract(large).ms;
+      expect(c).toBeLessThan(a * 40 + 50);
+      expect(c).toBeLessThan(500);
+    }
+  });
+
   it("shows no unbounded memory growth across repeated extractions", () => {
     const nodes = buildSyntheticDom(1000);
     // 50 repeated scans — if anything caches per-call, heap would balloon.

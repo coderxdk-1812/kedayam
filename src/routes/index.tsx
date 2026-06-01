@@ -289,9 +289,6 @@ function Index() {
                 </div>
                 <h3 className="mt-5 font-semibold">{step.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">{step.copy}</p>
-                <div className="mt-5 rounded-xl border border-border bg-background/35 p-4">
-                  <div className="h-20 rounded-lg border border-dashed border-border bg-surface/50" aria-label={`${step.title} screenshot placeholder`} />
-                </div>
               </motion.article>
             ))}
           </div>

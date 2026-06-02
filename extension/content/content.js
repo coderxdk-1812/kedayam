@@ -701,7 +701,12 @@
     if (!STATE.settings?.detection?.permissionMonitoring) return;
     const status = STATE.lastResult?.status;
     if (status !== "suspicious" && status !== "dangerous") return;
-    const what = req?.what || (req?.video ? "camera" : req?.audio ? "microphone" : req?.geolocation ? "location" : "device");
+    const rawWhat = req?.what || (req?.video ? "camera" : req?.audio ? "microphone" : req?.geolocation ? "location" : "device");
+    // Allowlist: the legitimate MAIN-world shim only ever emits these values.
+    // Any page-dispatched event with a different `what` is normalized to
+    // "device" so untrusted strings can never reach innerHTML.
+    const ALLOWED_PERMS = new Set(["camera", "microphone", "location", "clipboard"]);
+    const what = ALLOWED_PERMS.has(rawWhat) ? rawWhat : "device";
     const r = root();
     const toast = document.createElement("div");
     toast.className = "ked-toast";
@@ -709,7 +714,7 @@
     toast.innerHTML = `
       <span class="ked-toast-dot"></span>
       <div>
-        <div style="font-weight:600">${location.hostname} requested ${what}</div>
+        <div style="font-weight:600">${escapeHtml(location.hostname)} requested ${escapeHtml(what)}</div>
         <div class="ked-tiny">This site has a low trust score. Deny if you didn't initiate this.</div>
       </div>`;
     r.appendChild(toast);

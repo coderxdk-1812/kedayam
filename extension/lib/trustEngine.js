@@ -240,37 +240,14 @@ export async function evaluateUrl(url, ctx = {}) {
     });
   }
 
-  // --- clone-website detection (DOM-based, only when content provides it) ---
   // Pre-compute root reputation so clone weighting can adapt.
   const _isReputableEarly = KNOWN_REPUTABLE_ROOTS.has(root);
   const _isTrustedEarly = TRUSTED_LOGIN_PROVIDERS.has(root);
   const _trustedEarly = _isReputableEarly || _isTrustedEarly;
-  let clone = null;
-  if (pageContext && settings?.detection?.cloneDetection !== false) {
-    clone = analyzeClone(pageContext);
-    if (clone.confidence >= 0.4) {
-      // On reputable / trusted roots, visual similarity is expected
-      // (e.g. github.com loads assets from githubassets.com). Surface
-      // it as informational only — do not subtract trust.
-      const trustedClone = _trustedEarly && !clone.brandImageMismatch;
-      fire({
-        id: "clone", category: "clone",
-        severity: trustedClone
-          ? "info"
-          : (clone.confidence >= 0.8 ? "critical" : "high"),
-        title: trustedClone
-          ? "Page shares layout characteristics with known providers"
-          : "Page resembles a cloned brand site",
-        detail: trustedClone
-          ? "No credential theft behavior detected; visual similarity alone is not actionable on a known root."
-          : clone.reasons.join("; "),
-        weight: trustedClone ? 0 : 35,
-        confidence: clone.confidence,
-      });
-    }
-  }
 
   // --- phishing / credential-harvest (DOM-based) ---
+  // Run phishing FIRST so clone detection can require behavioral
+  // corroboration before contributing meaningful weight.
   let phishing = null;
   if (pageContext) {
     phishing = analyzePhishing(pageContext);
@@ -282,6 +259,50 @@ export async function evaluateUrl(url, ctx = {}) {
       pass({ id: "auth-risk", category: "behavior", severity: phishing.authRisk === "low" ? "info" : phishing.authRisk,
         title: `Authentication risk: ${phishing.authRisk}`,
         detail: "Auth workflows are evaluated with a conservative trust baseline." });
+    }
+  }
+
+  // --- clone-website detection (DOM-based, only when content provides it) ---
+  let clone = null;
+  if (pageContext && settings?.detection?.cloneDetection !== false) {
+    // Pass phishing summary so clone gating can require corroboration.
+    const cloneCtx = {
+      ...pageContext,
+      phishing: phishing ? {
+        credentialHarvest: !!phishing.credentialHarvest,
+        externalFormPost: !!phishing.externalFormPost,
+        oauthSpoof: !!phishing.oauthSpoof,
+        brandImpersonation: !!phishing.brandImpersonation,
+      } : null,
+    };
+    clone = analyzeClone(cloneCtx);
+    if (clone.confidence >= 0.4) {
+      // On reputable / trusted roots, visual similarity is expected. Surface
+      // it as informational only — do not subtract trust.
+      const trustedClone = _trustedEarly && !clone.brandImageMismatch;
+      const hasCorroboration = !!(cloneCtx.phishing && (
+        cloneCtx.phishing.credentialHarvest ||
+        cloneCtx.phishing.externalFormPost ||
+        cloneCtx.phishing.oauthSpoof ||
+        cloneCtx.phishing.brandImpersonation
+      ));
+      fire({
+        id: "clone", category: "clone",
+        severity: trustedClone || !hasCorroboration
+          ? "info"
+          : (clone.confidence >= 0.8 ? "critical" : "high"),
+        title: trustedClone
+          ? "Page shares layout characteristics with known providers"
+          : (hasCorroboration
+              ? "Page resembles a cloned brand site"
+              : "Visual similarity to a known brand layout"),
+        detail: trustedClone
+          ? "No credential theft behavior detected; visual similarity alone is not actionable on a known root."
+          : clone.reasons.join("; "),
+        // Clone alone never dangerously penalizes — needs corroboration.
+        weight: trustedClone ? 0 : (hasCorroboration ? 35 : 0),
+        confidence: clone.confidence,
+      });
     }
   }
 

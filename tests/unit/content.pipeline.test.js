@@ -20,26 +20,30 @@ describe("content scan pipeline contract", () => {
     expect(v.riskScore).toBeLessThanOrEqual(1);
   });
 
-  it("clone detector composes with auth-layout corroboration", () => {
-    // Simulated cloned Microsoft login on a foreign domain — branding +
-    // structural layout must agree before we escalate.
+  it("clone detector composes with auth-layout + brand-image corroboration", () => {
+    // Simulated cloned Microsoft login on a foreign domain. Multi-signal
+    // gating requires ≥2 independent indicators (branding + layout) before
+    // confidence rises — asset overlap alone is never sufficient.
     const ctx = {
       pageOrigin: "https://m1cros0ft-signin.example.org",
       scripts: ["https://m1cros0ft-signin.example.org/app.js"],
-      styles: ["https://aadcdn.msauth.net/style.css"],
-      images: ["https://aadcdn.msauth.net/logo.png"],
-      favicon: "https://aadcdn.msauth.net/favicon.ico",
+      styles: ["https://m1cros0ft-signin.example.org/style.css"],
+      images: ["https://microsoft.com/logo.png"],
+      favicon: "https://microsoft.com/favicon.ico",
       title: "Sign in to your Microsoft account",
       visibleText: "Sign in Use your Microsoft account",
-      forms: [{ hasPassword: false, hasEmailLike: true, hasOtp: false,
+      forms: [{ hasPassword: true, hasEmailLike: true, hasOtp: false,
         hiddenCount: 2, fieldsCount: 4 }],
       oauthButtons: [],
       hasLogoImage: true, hasHeading: true, firstFieldKind: "email",
+      phishing: { credentialHarvest: true, brandImpersonation: true },
     };
     const c = analyzeClone(ctx);
+    expect(c.signalCount).toBeGreaterThanOrEqual(2);
     expect(c.confidence).toBeGreaterThan(0.5);
     expect(c.layout).toBeTruthy();
   });
+
 
   it("explanation contract surfaces headline + bullets", () => {
     const verdict = {

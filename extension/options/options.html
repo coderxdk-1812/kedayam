@@ -17,6 +17,7 @@
         </div>
         <nav>
           <a href="#detection" class="active">Detection</a>
+          <a href="#threatfeed">Threat feed</a>
           <a href="#regions">PII regions</a>
           <a href="#api">API keys</a>
           <a href="#allowlist">Allowlist</a>
@@ -46,22 +47,101 @@
             </select>
           </div>
           <div class="toggle-grid">
-            <label class="toggle"><input type="checkbox" data-key="detection.pasteInterception" /><span>Paste interception</span><small>Warn before pasting secrets / PII into forms.</small></label>
-            <label class="toggle"><input type="checkbox" data-key="detection.fileScanning" /><span>File upload scanning</span><small>Inspect text files locally before they leave your browser.</small></label>
-            <label class="toggle"><input type="checkbox" data-key="detection.permissionMonitoring" /><span>Permission monitoring</span><small>Flag camera / mic / location requests on low-trust pages.</small></label>
-            <label class="toggle"><input type="checkbox" data-key="detection.redirectAnalysis" /><span>Redirect analysis</span><small>Penalise long redirect chains in trust scoring.</small></label>
-            <label class="toggle"><input type="checkbox" data-key="detection.cloneDetection" /><span>Clone-site detection</span><small>Cross-check assets to spot cloned login pages.</small></label>
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.pasteInterception" /><span
+                >Paste interception</span
+              ><small>Warn before pasting secrets / PII into forms.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.fileScanning" /><span
+                >File upload scanning</span
+              ><small>Inspect text files locally before they leave your browser.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.permissionMonitoring" /><span
+                >Permission monitoring</span
+              ><small>Flag camera / mic / location requests on low-trust pages.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.redirectAnalysis" /><span
+                >Redirect analysis</span
+              ><small>Penalise long redirect chains in trust scoring.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.cloneDetection" /><span
+                >Clone-site detection</span
+              ><small>Cross-check assets to spot cloned login pages.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.localBlocklist" /><span
+                >Threat blocklist</span
+              ><small
+                >Match hosts against the bundled phishing/malware list (offline, no keys).</small
+              ></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.clickFixGuard" /><span
+                >ClickFix / fake-CAPTCHA guard</span
+              ><small>Block pages that copy a system command and tell you to run it.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.downloadGuard" /><span
+                >Malicious-download guard</span
+              ><small>Warn before executable downloads on low-trust pages.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.urlReputation" /><span
+                >URL reputation</span
+              ><small>Flag abused TLDs, shorteners, and brand-in-subdomain spoofs.</small></label
+            >
+          </div>
+        </section>
+
+        <section id="threatfeed" class="card">
+          <h2>Threat feed (free, opt-in)</h2>
+          <p class="muted">
+            The bundled blocklist always works offline. Enable auto-update to layer thousands more
+            entries from FREE public feeds (URLhaus, Phishing Army, OpenPhish). Only the feed files
+            are downloaded — your browsing is never sent anywhere.
+          </p>
+          <label class="toggle"
+            ><input type="checkbox" data-key="detection.threatFeedAutoUpdate" /><span
+              >Auto-update threat feed</span
+            ><small>Refresh every 6 hours from free public sources.</small></label
+          >
+          <div class="row">
+            <label
+              ><span>Update now</span
+              ><small id="feed-status"
+                >Pulls the latest free blocklists into local storage.</small
+              ></label
+            >
+            <button class="ghost" id="feed-refresh">Update threat feed</button>
           </div>
         </section>
 
         <section id="regions" class="card">
           <h2>PII regions</h2>
-          <p class="muted">Choose which regional patterns to look for. India and US use locale-specific formats.</p>
+          <p class="muted">
+            Choose which regional patterns to look for. India and US use locale-specific formats.
+          </p>
           <div class="toggle-grid">
-            <label class="toggle"><input type="checkbox" data-key="detection.regions.india" /><span>India</span><small>Aadhaar, PAN, +91 numbers.</small></label>
-            <label class="toggle"><input type="checkbox" data-key="detection.regions.us" /><span>United States</span><small>SSN, US phone formats.</small></label>
-            <label class="toggle"><input type="checkbox" data-key="detection.regions.eu" /><span>European Union</span><small>IBAN.</small></label>
-            <label class="toggle"><input type="checkbox" data-key="detection.regions.global" /><span>Global</span><small>Emails, cards, API keys, tokens.</small></label>
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.regions.india" /><span>India</span
+              ><small>Aadhaar, PAN, +91 numbers.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.regions.us" /><span>United States</span
+              ><small>SSN, US phone formats.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.regions.eu" /><span>European Union</span
+              ><small>IBAN.</small></label
+            >
+            <label class="toggle"
+              ><input type="checkbox" data-key="detection.regions.global" /><span>Global</span
+              ><small>Emails, cards, API keys, tokens.</small></label
+            >
           </div>
         </section>
 
@@ -69,18 +149,26 @@
           <h2>External intelligence</h2>
           <p class="muted">Optional. Without keys, Kedayam still works using local heuristics.</p>
           <div class="row">
-            <label><span>Google Safe Browsing API key</span><small>Stored locally in this browser only.</small></label>
+            <label
+              ><span>Google Safe Browsing API key</span
+              ><small>Stored locally in this browser only.</small></label
+            >
             <input type="password" id="gsb" autocomplete="off" />
           </div>
           <div class="row">
-            <label><span>VirusTotal API key</span><small>Used to consult community detection engines.</small></label>
+            <label
+              ><span>VirusTotal API key</span
+              ><small>Used to consult community detection engines.</small></label
+            >
             <input type="password" id="vt" autocomplete="off" />
           </div>
         </section>
 
         <section id="allowlist" class="card">
           <h2>Trusted domains</h2>
-          <p class="muted">Domains here are still evaluated, but the trust floor is raised to 80.</p>
+          <p class="muted">
+            Domains here are still evaluated, but the trust floor is raised to 80.
+          </p>
           <div class="row">
             <input type="text" id="allow-input" placeholder="example.com" />
             <button class="primary" id="allow-add">Add</button>
@@ -90,11 +178,19 @@
 
         <section id="privacy" class="card">
           <h2>Privacy</h2>
-          <label class="toggle"><input type="checkbox" data-key="privacy.telemetryOptIn" /><span>Anonymous threat statistics</span><small>Opt-in only. No URLs, no content, no personal data.</small></label>
-          <label class="toggle"><input type="checkbox" data-key="privacy.cacheSafeDomains" /><span>Cache safe domains</span><small>Skip API calls for sites repeatedly scored safe.</small></label>
+          <label class="toggle"
+            ><input type="checkbox" data-key="privacy.telemetryOptIn" /><span
+              >Anonymous threat statistics</span
+            ><small>Opt-in only. No URLs, no content, no personal data.</small></label
+          >
+          <label class="toggle"
+            ><input type="checkbox" data-key="privacy.cacheSafeDomains" /><span
+              >Cache safe domains</span
+            ><small>Skip API calls for sites repeatedly scored safe.</small></label
+          >
           <div class="callout">
-            Kedayam never stores typed text, pasted content, file contents, or passwords.
-            All sensitive scanning happens entirely on your device.
+            Kedayam never stores typed text, pasted content, file contents, or passwords. All
+            sensitive scanning happens entirely on your device.
           </div>
         </section>
 

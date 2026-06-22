@@ -20,12 +20,19 @@
       permissionMonitoring: true,
       redirectAnalysis: true,
       cloneDetection: true,
+      localBlocklist: true,
+      clickFixGuard: true,
+      downloadGuard: true,
+      urlReputation: true,
+      threatFeedAutoUpdate: false,
     },
   };
   const STATE = { settings: DEFAULT_SETTINGS, lastResult: null, settingsLoaded: false };
   const sessionTrusted = new Set();
   const DEV = !chrome.runtime.getManifest?.().update_url;
-  const debug = (...args) => { if (DEV) console.info("[Kedayam]", ...args); };
+  const debug = (...args) => {
+    if (DEV) console.info("[Kedayam]", ...args);
+  };
 
   // ---------- Ephemeral replay store (Issue NEW-01) ----------
   // Inlined mirror of lib/ephemeralReplay.js (content scripts are not modules).
@@ -48,8 +55,11 @@
       if (typeof payload !== "string" || !payload.length) return null;
       const tok = `kr_${++counter}_${Math.random().toString(36).slice(2, 10)}`;
       const e = { payload, expires: Date.now() + TTL, timer: null };
-      try { e.timer = setTimeout(() => zeroize(tok), TTL); } catch {}
-      store.set(tok, e); evict();
+      try {
+        e.timer = setTimeout(() => zeroize(tok), TTL);
+      } catch {}
+      store.set(tok, e);
+      evict();
       return tok;
     }
     function consume(tok) {
@@ -60,9 +70,13 @@
       return v;
     }
     function zeroize(tok) {
-      const e = store.get(tok); if (!e) return;
-      try { if (e.timer) clearTimeout(e.timer); } catch {}
-      e.payload = ""; e.timer = null;
+      const e = store.get(tok);
+      if (!e) return;
+      try {
+        if (e.timer) clearTimeout(e.timer);
+      } catch {}
+      e.payload = "";
+      e.timer = null;
       store.delete(tok);
     }
     return { store: storeFn, consume, zeroize, _size: () => store.size };
@@ -72,53 +86,199 @@
   // Ephemeral, in-memory scanner. NO raw value is ever persisted, transmitted,
   // or returned upstream — findings carry redacted previews only.
   const PATTERNS = [
-    { id: "email", label: "Email address", sev: "low", region: "global", re: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, conf: 0.7 },
-    { id: "phoneIN", label: "Indian phone number", sev: "medium", region: "india", re: /(?:\+?91[\s-]?)?[6-9]\d{9}\b/g, conf: 0.7 },
-    { id: "phoneUS", label: "US phone number", sev: "medium", region: "us", re: /\b(?:\+?1[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g, conf: 0.7 },
-    { id: "aadhaar", label: "Aadhaar", sev: "critical", region: "india", re: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, conf: 0.9 },
-    { id: "pan", label: "PAN", sev: "high", region: "india", re: /\b[A-Z]{5}\d{4}[A-Z]\b/g, conf: 0.9 },
-    { id: "ssn", label: "US SSN", sev: "critical", region: "us", re: /\b(?!000|666|9\d\d)\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b/g, conf: 0.95 },
-    { id: "iban", label: "IBAN", sev: "high", region: "eu", re: /\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b/g, conf: 0.85 },
-    { id: "card", label: "Credit card", sev: "critical", region: "global", re: /\b(?:\d[ -]*?){13,19}\b/g, validate: (s) => luhn(s.replace(/\D/g, "")), conf: 0.92 },
-    { id: "aws", label: "AWS access key", sev: "critical", region: "global", re: /\b(AKIA|ASIA)[0-9A-Z]{16}\b/g, conf: 0.98 },
-    { id: "gh", label: "GitHub token", sev: "critical", region: "global", re: /\bghp_[A-Za-z0-9]{36}\b|\bgithub_pat_[A-Za-z0-9_]{60,}\b/g, conf: 0.99 },
-    { id: "slack", label: "Slack token", sev: "critical", region: "global", re: /\bxox[abps]-[A-Za-z0-9-]{10,}\b/g, conf: 0.97 },
-    { id: "stripe", label: "Stripe key", sev: "critical", region: "global", re: /\b(sk|rk)_(live|test)_[A-Za-z0-9]{24,}\b/g, conf: 0.99 },
-    { id: "openai", label: "OpenAI / LLM key", sev: "critical", region: "global", re: /\bsk-(?:proj-|ant-)?[A-Za-z0-9_-]{32,}\b/g, conf: 0.95 },
-    { id: "gcp", label: "Google Cloud API key", sev: "critical", region: "global", re: /\bAIza[0-9A-Za-z\-_]{35}\b/g, conf: 0.97 },
-    { id: "jwt", label: "JWT", sev: "high", region: "global", re: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g, conf: 0.9 },
-    { id: "pk", label: "Private key", sev: "critical", region: "global", re: /-----BEGIN ((RSA|EC|OPENSSH|PGP) )?PRIVATE KEY-----/g, conf: 1 },
+    {
+      id: "email",
+      label: "Email address",
+      sev: "low",
+      region: "global",
+      re: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
+      conf: 0.7,
+    },
+    {
+      id: "phoneIN",
+      label: "Indian phone number",
+      sev: "medium",
+      region: "india",
+      re: /(?:\+?91[\s-]?)?[6-9]\d{9}\b/g,
+      conf: 0.7,
+    },
+    {
+      id: "phoneUS",
+      label: "US phone number",
+      sev: "medium",
+      region: "us",
+      re: /\b(?:\+?1[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
+      conf: 0.7,
+    },
+    {
+      id: "aadhaar",
+      label: "Aadhaar",
+      sev: "critical",
+      region: "india",
+      re: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
+      conf: 0.9,
+    },
+    {
+      id: "pan",
+      label: "PAN",
+      sev: "high",
+      region: "india",
+      re: /\b[A-Z]{5}\d{4}[A-Z]\b/g,
+      conf: 0.9,
+    },
+    {
+      id: "ssn",
+      label: "US SSN",
+      sev: "critical",
+      region: "us",
+      re: /\b(?!000|666|9\d\d)\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b/g,
+      conf: 0.95,
+    },
+    {
+      id: "iban",
+      label: "IBAN",
+      sev: "high",
+      region: "eu",
+      re: /\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b/g,
+      conf: 0.85,
+    },
+    {
+      id: "card",
+      label: "Credit card",
+      sev: "critical",
+      region: "global",
+      re: /\b(?:\d[ -]*?){13,19}\b/g,
+      validate: (s) => luhn(s.replace(/\D/g, "")),
+      conf: 0.92,
+    },
+    {
+      id: "aws",
+      label: "AWS access key",
+      sev: "critical",
+      region: "global",
+      re: /\b(AKIA|ASIA)[0-9A-Z]{16}\b/g,
+      conf: 0.98,
+    },
+    {
+      id: "gh",
+      label: "GitHub token",
+      sev: "critical",
+      region: "global",
+      re: /\bghp_[A-Za-z0-9]{36}\b|\bgithub_pat_[A-Za-z0-9_]{60,}\b/g,
+      conf: 0.99,
+    },
+    {
+      id: "slack",
+      label: "Slack token",
+      sev: "critical",
+      region: "global",
+      re: /\bxox[abps]-[A-Za-z0-9-]{10,}\b/g,
+      conf: 0.97,
+    },
+    {
+      id: "stripe",
+      label: "Stripe key",
+      sev: "critical",
+      region: "global",
+      re: /\b(sk|rk)_(live|test)_[A-Za-z0-9]{24,}\b/g,
+      conf: 0.99,
+    },
+    {
+      id: "openai",
+      label: "OpenAI / LLM key",
+      sev: "critical",
+      region: "global",
+      re: /\bsk-(?:proj-|ant-)?[A-Za-z0-9_-]{32,}\b/g,
+      conf: 0.95,
+    },
+    {
+      id: "gcp",
+      label: "Google Cloud API key",
+      sev: "critical",
+      region: "global",
+      re: /\bAIza[0-9A-Za-z\-_]{35}\b/g,
+      conf: 0.97,
+    },
+    {
+      id: "jwt",
+      label: "JWT",
+      sev: "high",
+      region: "global",
+      re: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g,
+      conf: 0.9,
+    },
+    {
+      id: "pk",
+      label: "Private key",
+      sev: "critical",
+      region: "global",
+      re: /-----BEGIN ((RSA|EC|OPENSSH|PGP) )?PRIVATE KEY-----/g,
+      conf: 1,
+    },
   ];
 
   // Documentation / dev / example contexts where matches should be suppressed.
   const PLACEHOLDER_TOKENS = [
-    "your_", "<your", "example", "placeholder", "xxxxxxxx", "lorem",
-    "ipsum", "abc123", "password123", "changeme", "demo_", "sample_",
-    "fake_", "test_only", "dotenv", "process.env.", "sk_test_",
+    "your_",
+    "<your",
+    "example",
+    "placeholder",
+    "xxxxxxxx",
+    "lorem",
+    "ipsum",
+    "abc123",
+    "password123",
+    "changeme",
+    "demo_",
+    "sample_",
+    "fake_",
+    "test_only",
+    "dotenv",
+    "process.env.",
+    "sk_test_",
   ];
-  const DOC_CONTEXT = /\b(curl\s+-X|fetch\(|axios\.|require\(|import\s+\{|getenv|process\.env|export\s+(const|let|var)|api\s+reference|see\s+docs|getting started|tutorial)\b/i;
+  const DOC_CONTEXT =
+    /\b(curl\s+-X|fetch\(|axios\.|require\(|import\s+\{|getenv|process\.env|export\s+(const|let|var)|api\s+reference|see\s+docs|getting started|tutorial)\b/i;
   // Hosts where we silence warnings — developer tools, docs, internal envs.
-  const DEV_SUPPRESS_HOSTS = /(^|\.)(github\.com|gitlab\.com|stackoverflow\.com|stackexchange\.com|developer\.mozilla\.org|docs\.|developer\.|api\.|swagger\.|postman\.com|notion\.so|localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/i;
+  const DEV_SUPPRESS_HOSTS =
+    /(^|\.)(github\.com|gitlab\.com|stackoverflow\.com|stackexchange\.com|developer\.mozilla\.org|docs\.|developer\.|api\.|swagger\.|postman\.com|notion\.so|localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/i;
   function isDevHost() {
-    try { return DEV_SUPPRESS_HOSTS.test(location.hostname); } catch { return false; }
+    try {
+      return DEV_SUPPRESS_HOSTS.test(location.hostname);
+    } catch {
+      return false;
+    }
   }
 
   function luhn(num) {
     if (!/^\d+$/.test(num) || num.length < 13 || num.length > 19) return false;
-    let s = 0, alt = false;
+    let s = 0,
+      alt = false;
     for (let i = num.length - 1; i >= 0; i--) {
-      let n = +num[i]; if (alt) { n *= 2; if (n > 9) n -= 9; } s += n; alt = !alt;
+      let n = +num[i];
+      if (alt) {
+        n *= 2;
+        if (n > 9) n -= 9;
+      }
+      s += n;
+      alt = !alt;
     }
     return s % 10 === 0;
   }
   function entropy(s) {
     const f = Object.create(null);
     for (const c of s) f[c] = (f[c] || 0) + 1;
-    let H = 0; for (const c in f) { const p = f[c] / s.length; H -= p * Math.log2(p); }
+    let H = 0;
+    for (const c in f) {
+      const p = f[c] / s.length;
+      H -= p * Math.log2(p);
+    }
     return H;
   }
   function sliceWindow(text, offset, len) {
-    return text.slice(Math.max(0, offset - 80), Math.min(text.length, offset + len + 80)).toLowerCase();
+    return text
+      .slice(Math.max(0, offset - 80), Math.min(text.length, offset + len + 80))
+      .toLowerCase();
   }
   function hasPlaceholderToken(win) {
     const lower = win.toLowerCase();
@@ -136,13 +296,19 @@
   // argument MUST be discarded by the caller immediately after this returns.
   function scan(text) {
     if (!text || typeof text !== "string" || text.length > 200000) return [];
-    const regions = STATE.settings?.detection?.regions || { india: true, us: true, eu: true, global: true };
+    const regions = STATE.settings?.detection?.regions || {
+      india: true,
+      us: true,
+      eu: true,
+      global: true,
+    };
     const docCtx = DOC_CONTEXT.test(text);
     const out = [];
     for (const p of PATTERNS) {
       if (p.region !== "global" && !regions[p.region]) continue;
       p.re.lastIndex = 0;
-      let m, count = 0;
+      let m,
+        count = 0;
       while ((m = p.re.exec(text)) && count < 25) {
         count++;
         const raw = m[0];
@@ -155,7 +321,13 @@
           conf *= 0.6;
           if (conf < 0.5) continue;
         }
-        out.push({ kind: p.id, label: p.label, severity: p.sev, confidence: conf, value: redact(raw) });
+        out.push({
+          kind: p.id,
+          label: p.label,
+          severity: p.sev,
+          confidence: conf,
+          value: redact(raw),
+        });
         if (out.length > 30) return dedupe(out);
       }
     }
@@ -164,7 +336,13 @@
     for (const tok of (text.match(/[A-Za-z0-9+/_=-]{32,}/g) || []).slice(0, 40)) {
       if (entropy(tok) < 4.5) continue;
       if (hasPlaceholderToken(tok)) continue;
-      out.push({ kind: "entropy", label: "High-entropy blob", severity: "low", confidence: 0.5, value: redact(tok) });
+      out.push({
+        kind: "entropy",
+        label: "High-entropy blob",
+        severity: "low",
+        confidence: 0.5,
+        value: redact(tok),
+      });
     }
     return dedupe(out);
   }
@@ -174,7 +352,12 @@
   }
   function dedupe(a) {
     const s = new Set();
-    return a.filter((f) => { const k = f.kind + ":" + f.value; if (s.has(k)) return false; s.add(k); return true; });
+    return a.filter((f) => {
+      const k = f.kind + ":" + f.value;
+      if (s.has(k)) return false;
+      s.add(k);
+      return true;
+    });
   }
   function topSev(findings) {
     const o = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -199,7 +382,9 @@
   // introspect signatures, thresholds, or arbitration internals. Tests import
   // the relevant pure modules directly and do not depend on window globals.
   if (DEV) {
-    try { window.__kedayam = Object.freeze({ scan, decideAction }); } catch {}
+    try {
+      window.__kedayam = Object.freeze({ scan, decideAction });
+    } catch {}
   }
 
   // ---------- Overlay root ----------
@@ -233,7 +418,8 @@
   function showWarningModal({ title, body, severity, items, onContinue, onTrust }) {
     return new Promise((resolve) => {
       const r = root();
-      const old = r.querySelector(".ked-backdrop"); old?.remove();
+      const old = r.querySelector(".ked-backdrop");
+      old?.remove();
       const backdrop = document.createElement("div");
       backdrop.className = "ked-backdrop";
       backdrop.innerHTML = `
@@ -241,9 +427,17 @@
           <div class="ked-eyebrow"><span class="ked-dot"></span><span>Kedayam · ${severity} risk</span></div>
           <h2 id="ked-title">${escapeHtml(title)}</h2>
           <p>${escapeHtml(body)}</p>
-          ${items?.length ? `<div class="ked-list">${items.map((i) => `
+          ${
+            items?.length
+              ? `<div class="ked-list">${items
+                  .map(
+                    (i) => `
             <div class="ked-item"><span>${escapeHtml(i.label)}</span><small>${escapeHtml(i.value || "")}</small></div>
-          `).join("")}</div>` : ""}
+          `,
+                  )
+                  .join("")}</div>`
+              : ""
+          }
           <div class="ked-actions">
             <button class="ked-btn-secondary" data-act="cancel">Go back</button>
             ${onTrust ? `<button class="ked-btn-secondary" data-act="trust">Trust this site for the session</button>` : ""}
@@ -253,8 +447,14 @@
         </div>`;
       r.appendChild(backdrop);
 
-      const close = (val) => { backdrop.remove(); document.removeEventListener("keydown", onKey); resolve(val); };
-      const onKey = (e) => { if (e.key === "Escape") close("cancel"); };
+      const close = (val) => {
+        backdrop.remove();
+        document.removeEventListener("keydown", onKey);
+        resolve(val);
+      };
+      const onKey = (e) => {
+        if (e.key === "Escape") close("cancel");
+      };
       document.addEventListener("keydown", onKey);
       backdrop.addEventListener("click", (e) => {
         const act = e.target?.dataset?.act;
@@ -267,176 +467,226 @@
     });
   }
 
-  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c])); }
+  function escapeHtml(s) {
+    return String(s).replace(
+      /[&<>"']/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+    );
+  }
 
   // ---------- Paste interception ----------
-  document.addEventListener("paste", (e) => {
-    if (!STATE.settings?.detection?.pasteInterception) return;
-    const target = e.target;
-    if (!target || !(target instanceof Element)) return;
-    const tag = target.tagName;
-    if (!["INPUT", "TEXTAREA"].includes(tag) && !target.isContentEditable) return;
-    let text = e.clipboardData?.getData("text/plain") || "";
-    if (!text || text.length > 50000) return;
-    const findings = scan(text);
-    const action = decideAction(findings);
-    // SECURITY: drop the raw payload from local scope ASAP — only redacted
-    // findings continue from here.
-    text = null;
-    if (action === "ignore") return;
-    if (sessionTrusted.has(location.hostname)) return;
-    const sev = topSev(findings);
+  document.addEventListener(
+    "paste",
+    (e) => {
+      if (!STATE.settings?.detection?.pasteInterception) return;
+      const target = e.target;
+      if (!target || !(target instanceof Element)) return;
+      const tag = target.tagName;
+      if (!["INPUT", "TEXTAREA"].includes(tag) && !target.isContentEditable) return;
+      let text = e.clipboardData?.getData("text/plain") || "";
+      if (!text || text.length > 50000) return;
+      const findings = scan(text);
+      const action = decideAction(findings);
+      // SECURITY: drop the raw payload from local scope ASAP — only redacted
+      // findings continue from here.
+      text = null;
+      if (action === "ignore") return;
+      if (sessionTrusted.has(location.hostname)) return;
+      const sev = topSev(findings);
 
-    if (action === "toast") {
-      showToast({ severity: "safe", title: "Kedayam noticed personal data", body: `${findings.length} item${findings.length === 1 ? "" : "s"} stayed local.` });
-      log({ kind: "paste-allowed", host: location.hostname, count: findings.length });
-      return;
-    }
+      if (action === "toast") {
+        showToast({
+          severity: "safe",
+          title: "Kedayam noticed personal data",
+          body: `${findings.length} item${findings.length === 1 ? "" : "s"} stayed local.`,
+        });
+        log({ kind: "paste-allowed", host: location.hostname, count: findings.length });
+        return;
+      }
 
-    // action === "warn"
-    e.preventDefault(); e.stopPropagation();
-    // Issue NEW-01: capture the intercepted payload into the ephemeral
-    // replay store BEFORE the modal opens. We do NOT re-read the clipboard
-    // at "Continue" time — that requires the "clipboardRead" permission,
-    // which the extension does not (and should not) hold globally. The
-    // token is single-use, bounded TTL, zeroized on consume / expiry.
-    const replayToken = ephemeralReplay.store(text || "");
-    text = null;
-    showWarningModal({
-      severity: sev === "critical" || sev === "high" ? "high" : "medium",
-      title: "Sensitive data detected in your paste",
-      body: `You're about to paste ${findings.length} item${findings.length === 1 ? "" : "s"} that look like personal or secret information into ${location.hostname}.`,
-      items: findings.slice(0, 6),
-      onContinue: () => {
-        let replayText = ephemeralReplay.consume(replayToken) || "";
-        try {
-          if (!replayText) {
-            // Token expired or already consumed — explain rather than fail
-            // silently. User never gets stuck in a "Continue does nothing" loop.
-            showToast({ severity: "safe",
-              title: "Paste replay expired",
-              body: "Re-copy and try again. Nothing was sent." });
-            return;
+      // action === "warn"
+      e.preventDefault();
+      e.stopPropagation();
+      // Issue NEW-01: capture the intercepted payload into the ephemeral
+      // replay store BEFORE the modal opens. We do NOT re-read the clipboard
+      // at "Continue" time — that requires the "clipboardRead" permission,
+      // which the extension does not (and should not) hold globally. The
+      // token is single-use, bounded TTL, zeroized on consume / expiry.
+      const replayToken = ephemeralReplay.store(text || "");
+      text = null;
+      showWarningModal({
+        severity: sev === "critical" || sev === "high" ? "high" : "medium",
+        title: "Sensitive data detected in your paste",
+        body: `You're about to paste ${findings.length} item${findings.length === 1 ? "" : "s"} that look like personal or secret information into ${location.hostname}.`,
+        items: findings.slice(0, 6),
+        onContinue: () => {
+          let replayText = ephemeralReplay.consume(replayToken) || "";
+          try {
+            if (!replayText) {
+              // Token expired or already consumed — explain rather than fail
+              // silently. User never gets stuck in a "Continue does nothing" loop.
+              showToast({
+                severity: "safe",
+                title: "Paste replay expired",
+                body: "Re-copy and try again. Nothing was sent.",
+              });
+              return;
+            }
+            if (target.isContentEditable) {
+              document.execCommand("insertText", false, replayText);
+            } else {
+              const start = target.selectionStart ?? target.value.length;
+              const end = target.selectionEnd ?? target.value.length;
+              target.value = target.value.slice(0, start) + replayText + target.value.slice(end);
+              target.dispatchEvent(new Event("input", { bubbles: true }));
+              target.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          } catch {
+          } finally {
+            replayText = "";
+            log({ kind: "paste-allowed", host: location.hostname, count: findings.length });
           }
-          if (target.isContentEditable) {
-            document.execCommand("insertText", false, replayText);
-          } else {
-            const start = target.selectionStart ?? target.value.length;
-            const end = target.selectionEnd ?? target.value.length;
-            target.value = target.value.slice(0, start) + replayText + target.value.slice(end);
-            target.dispatchEvent(new Event("input", { bubbles: true }));
-            target.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-        } catch {}
-        finally {
-          replayText = "";
-          log({ kind: "paste-allowed", host: location.hostname, count: findings.length });
-        }
-      },
-      onTrust: () => sessionTrusted.add(location.hostname),
-    }).then((act) => {
-      // Always zeroize on close (cancel/escape/continue) — defence in depth.
-      ephemeralReplay.zeroize(replayToken);
-      if (act === "cancel") log({ kind: "paste-blocked", host: location.hostname, count: findings.length });
-    });
-  }, true);
+        },
+        onTrust: () => sessionTrusted.add(location.hostname),
+      }).then((act) => {
+        // Always zeroize on close (cancel/escape/continue) — defence in depth.
+        ephemeralReplay.zeroize(replayToken);
+        if (act === "cancel")
+          log({ kind: "paste-blocked", host: location.hostname, count: findings.length });
+      });
+    },
+    true,
+  );
 
   // Form submission interception — catches credential-bearing POSTs that
   // skipped the paste path (typed values, password manager autofill).
-  document.addEventListener("submit", (e) => {
-    if (!STATE.settings?.detection?.pasteInterception) return;
-    const form = e.target;
-    if (!(form instanceof HTMLFormElement)) return;
-    if (sessionTrusted.has(location.hostname)) return;
-    try {
-      let combined = "";
-      for (const el of form.elements) {
-        if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) continue;
-        const t = (el.type || "").toLowerCase();
-        if (t === "password" || t === "submit" || t === "button" || t === "hidden") continue;
-        if (typeof el.value === "string" && el.value.length < 2000) combined += " " + el.value;
-      }
-      const findings = scan(combined);
-      combined = null;
-      const validated = findings.filter((f) => f.confidence >= 0.85 && f.kind !== "entropy" && f.kind !== "email");
-      if (!validated.length) return;
-      const action = topSev(validated);
-      if (action !== "critical" && action !== "high") return;
-      // Cross-origin form action raises severity. Same-origin/blank we only toast.
-      const actionAttr = form.getAttribute("action") || "";
-      let crossOrigin = false;
+  document.addEventListener(
+    "submit",
+    (e) => {
+      if (!STATE.settings?.detection?.pasteInterception) return;
+      const form = e.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (sessionTrusted.has(location.hostname)) return;
       try {
-        if (actionAttr) {
-          const u = new URL(actionAttr, location.href);
-          crossOrigin = u.hostname && u.hostname !== location.hostname;
+        let combined = "";
+        for (const el of form.elements) {
+          if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) continue;
+          const t = (el.type || "").toLowerCase();
+          if (t === "password" || t === "submit" || t === "button" || t === "hidden") continue;
+          if (typeof el.value === "string" && el.value.length < 2000) combined += " " + el.value;
         }
+        const findings = scan(combined);
+        combined = null;
+        const validated = findings.filter(
+          (f) => f.confidence >= 0.85 && f.kind !== "entropy" && f.kind !== "email",
+        );
+        if (!validated.length) return;
+        const action = topSev(validated);
+        if (action !== "critical" && action !== "high") return;
+        // Cross-origin form action raises severity. Same-origin/blank we only toast.
+        const actionAttr = form.getAttribute("action") || "";
+        let crossOrigin = false;
+        try {
+          if (actionAttr) {
+            const u = new URL(actionAttr, location.href);
+            crossOrigin = u.hostname && u.hostname !== location.hostname;
+          }
+        } catch {}
+        if (!crossOrigin) {
+          showToast({
+            severity: "safe",
+            title: "Kedayam reviewed your submission locally",
+            body: `${validated.length} sensitive item${validated.length === 1 ? "" : "s"} detected.`,
+          });
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        showWarningModal({
+          severity: "high",
+          title: "This form posts sensitive data to a different domain",
+          body: `${location.hostname} is sending what looks like credentials or secrets to a different site. Confirm before submitting.`,
+          items: validated.slice(0, 6),
+          onContinue: () => {
+            try {
+              form.submit();
+            } catch {}
+          },
+          onTrust: () => sessionTrusted.add(location.hostname),
+        });
       } catch {}
-      if (!crossOrigin) {
-        showToast({ severity: "safe", title: "Kedayam reviewed your submission locally", body: `${validated.length} sensitive item${validated.length === 1 ? "" : "s"} detected.` });
-        return;
-      }
-      e.preventDefault(); e.stopPropagation();
-      showWarningModal({
-        severity: "high",
-        title: "This form posts sensitive data to a different domain",
-        body: `${location.hostname} is sending what looks like credentials or secrets to a different site. Confirm before submitting.`,
-        items: validated.slice(0, 6),
-        onContinue: () => { try { form.submit(); } catch {} },
-        onTrust: () => sessionTrusted.add(location.hostname),
-      });
-    } catch {}
-  }, true);
+    },
+    true,
+  );
 
   // Drag-and-drop into the page — many editors and chat UIs accept dropped
   // text without firing paste.
-  document.addEventListener("drop", (e) => {
-    if (!STATE.settings?.detection?.pasteInterception) return;
-    try {
-      const txt = e.dataTransfer?.getData("text/plain") || "";
-      if (!txt) return;
-      const findings = scan(txt);
-      const action = decideAction(findings);
-      if (action === "warn" || action === "toast") {
-        showToast({ severity: "safe", title: "Kedayam reviewed dropped content", body: `${findings.length} item${findings.length === 1 ? "" : "s"} scanned locally.` });
-        log({ kind: "drop-scan", host: location.hostname, count: findings.length });
-      }
-    } catch {}
-  }, true);
-
+  document.addEventListener(
+    "drop",
+    (e) => {
+      if (!STATE.settings?.detection?.pasteInterception) return;
+      try {
+        const txt = e.dataTransfer?.getData("text/plain") || "";
+        if (!txt) return;
+        const findings = scan(txt);
+        const action = decideAction(findings);
+        if (action === "warn" || action === "toast") {
+          showToast({
+            severity: "safe",
+            title: "Kedayam reviewed dropped content",
+            body: `${findings.length} item${findings.length === 1 ? "" : "s"} scanned locally.`,
+          });
+          log({ kind: "drop-scan", host: location.hostname, count: findings.length });
+        }
+      } catch {}
+    },
+    true,
+  );
 
   // ---------- File upload scanning ----------
-  document.addEventListener("change", async (e) => {
-    if (!STATE.settings?.detection?.fileScanning) return;
-    const t = e.target;
-    if (!(t instanceof HTMLInputElement) || t.type !== "file" || !t.files?.length) return;
-    const concerns = [];
-    for (const f of Array.from(t.files).slice(0, 3)) {
-      const text = await readFileText(f);
-      if (!text) continue;
-      const findings = scan(text);
-      if (findings.length) concerns.push({ name: f.name, size: f.size, findings });
-    }
-    if (!concerns.length) return;
-    const flat = concerns.flatMap((c) => c.findings);
-    const sev = topSev(flat);
+  document.addEventListener(
+    "change",
+    async (e) => {
+      if (!STATE.settings?.detection?.fileScanning) return;
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement) || t.type !== "file" || !t.files?.length) return;
+      const concerns = [];
+      for (const f of Array.from(t.files).slice(0, 3)) {
+        const text = await readFileText(f);
+        if (!text) continue;
+        const findings = scan(text);
+        if (findings.length) concerns.push({ name: f.name, size: f.size, findings });
+      }
+      if (!concerns.length) return;
+      const flat = concerns.flatMap((c) => c.findings);
+      const sev = topSev(flat);
       if (sev === "low") {
-        showToast({ severity: "safe", title: "Upload reviewed locally", body: "Only low-risk patterns were found." });
+        showToast({
+          severity: "safe",
+          title: "Upload reviewed locally",
+          body: "Only low-risk patterns were found.",
+        });
         log({ kind: "file-scan", host: location.hostname, files: concerns.map((c) => c.name) });
         return;
       }
-    await showWarningModal({
-      severity: sev === "critical" || sev === "high" ? "high" : "medium",
-      title: "This file may contain sensitive information",
-      body: `Kedayam scanned ${concerns.length} file${concerns.length === 1 ? "" : "s"} locally and found patterns that look sensitive. Confirm you intend to share this with ${location.hostname}.`,
-      items: flat.slice(0, 6),
-    });
-    log({ kind: "file-scan", host: location.hostname, files: concerns.map((c) => c.name) });
-  }, true);
+      await showWarningModal({
+        severity: sev === "critical" || sev === "high" ? "high" : "medium",
+        title: "This file may contain sensitive information",
+        body: `Kedayam scanned ${concerns.length} file${concerns.length === 1 ? "" : "s"} locally and found patterns that look sensitive. Confirm you intend to share this with ${location.hostname}.`,
+        items: flat.slice(0, 6),
+      });
+      log({ kind: "file-scan", host: location.hostname, files: concerns.map((c) => c.name) });
+    },
+    true,
+  );
 
   function readFileText(file) {
     const TEXTUAL = /^(text\/|application\/(json|xml|x-yaml|x-sh|javascript|typescript))/i;
     if (file.size > 2 * 1024 * 1024) return Promise.resolve("");
-    if (!TEXTUAL.test(file.type) && !/\.(txt|csv|json|env|md|log|yml|yaml|sh|js|ts|py|key|pem|pub)$/i.test(file.name)) {
+    if (
+      !TEXTUAL.test(file.type) &&
+      !/\.(txt|csv|json|env|md|log|yml|yaml|sh|js|ts|py|key|pem|pub)$/i.test(file.name)
+    ) {
       return Promise.resolve("");
     }
     return new Promise((resolve) => {
@@ -456,6 +706,172 @@
     maybeWarnPermission(e.detail || {});
   });
 
+  // ---------- ClickFix / FakeCaptcha clipboard-injection guard ----------
+  // Inline mirror of lib/clipboardGuard.js (content scripts are not modules).
+  // Detects the dominant 2024-2025 malware lure: a page silently copies an OS
+  // command to the clipboard and instructs the victim to paste+run it.
+  const CLIP_CMD = [
+    { id: "powershell", re: /\b(powershell|pwsh)\b/i, label: "PowerShell" },
+    {
+      id: "ps-encoded",
+      re: /-e(nc|ncodedcommand)?\b\s+[A-Za-z0-9+/=]{12,}/i,
+      label: "encoded PowerShell command",
+    },
+    {
+      id: "ps-iex",
+      re: /\b(iex|invoke-expression|invoke-webrequest|iwr|downloadstring|frombase64string|start-bitstransfer)\b/i,
+      label: "PowerShell download-and-run",
+    },
+    {
+      id: "ps-hidden",
+      re: /-(w(indowstyle)?\s+hidden|nop|noprofile|noni|ep\s+bypass|executionpolicy\s+bypass)\b/i,
+      label: "hidden PowerShell flags",
+    },
+    { id: "cmd", re: /\bcmd(\.exe)?\s*\/(c|k)\b/i, label: "Windows command shell" },
+    { id: "mshta", re: /\bmshta(\.exe)?\b|hta:application/i, label: "mshta script runner" },
+    {
+      id: "lolbin",
+      re: /\b(certutil|bitsadmin|regsvr32|rundll32|wscript|cscript|msiexec|forfiles|installutil)\b/i,
+      label: "Windows LOLBin",
+    },
+    {
+      id: "curl-pipe",
+      re: /\b(curl|wget)\b[^\n|]{0,200}\|\s*(ba)?sh\b/i,
+      label: "curl/wget piped to a shell",
+    },
+    {
+      id: "curl-iex",
+      re: /\b(curl|wget|iwr)\b[^\n|]{0,200}\|\s*iex\b/i,
+      label: "download piped to PowerShell",
+    },
+    {
+      id: "base64-sh",
+      re: /base64\s+(-d|--decode)\b[^\n|]{0,120}\|\s*(ba)?sh\b/i,
+      label: "base64-decoded shell command",
+    },
+    { id: "osascript", re: /\bosascript\b|\bdo shell script\b/i, label: "macOS osascript" },
+  ];
+  const CLIP_STRONG = new Set([
+    "ps-encoded",
+    "ps-iex",
+    "ps-hidden",
+    "mshta",
+    "curl-pipe",
+    "curl-iex",
+    "base64-sh",
+    "lolbin",
+  ]);
+  const RUN_DIALOG = [
+    /\bwin(dows)?\s*\+\s*r\b/i,
+    /\bpress\s+(the\s+)?(windows|win)\b[^]{0,40}\br\b/i,
+    /\b(open|launch)\s+(the\s+)?(run\s+dialog|powershell|terminal|command\s+prompt|cmd)\b/i,
+    /\bpaste\b[^]{0,40}\b(press|hit)\s+(enter|return)\b/i,
+  ];
+  const FAKE_VERIFY = [
+    /\bverify\s+(you('| a)?re|that you are)\s+(a\s+)?human\b/i,
+    /\bi('| a)?m not a robot\b/i,
+    /\bcaptcha\b/i,
+    /\bverification\s+(steps|failed|required)\b/i,
+  ];
+
+  function classifyClip(text) {
+    if (typeof text !== "string" || text.length < 6) return null;
+    const s = text.slice(0, 8000);
+    const hits = CLIP_CMD.filter((c) => c.re.test(s));
+    if (!hits.length) return null;
+    const strong = hits.some((h) => CLIP_STRONG.has(h.id));
+    const conf = strong
+      ? Math.min(0.98, 0.8 + (hits.length - 1) * 0.05)
+      : Math.min(0.8, 0.5 + (hits.length - 1) * 0.1);
+    const preview = s.replace(/\s+/g, " ").trim().slice(0, 45) + (s.length > 45 ? "…" : "");
+    return { confidence: conf, label: hits[0].label, preview };
+  }
+  function pageHasClickFixText() {
+    let t = "";
+    try {
+      t = (document.body?.innerText || "").slice(0, 20000);
+    } catch {}
+    const run = RUN_DIALOG.some((re) => re.test(t));
+    const fake = FAKE_VERIFY.some((re) => re.test(t));
+    return { run, fake };
+  }
+
+  let clickFixWarned = false;
+  window.addEventListener("kedayam:clip", (e) => {
+    if (STATE.settings?.detection?.clickFixGuard === false) return;
+    if (clickFixWarned) return;
+    const verdict = classifyClip(e.detail?.text || "");
+    if (!verdict) return;
+    clickFixWarned = true;
+    const ctx = pageHasClickFixText();
+    const corroborated = ctx.run || ctx.fake;
+    log({ kind: "clickfix-blocked", host: location.hostname, severity: "critical" });
+    showWarningModal({
+      severity: "critical",
+      title: "Do not paste — this page copied a system command",
+      body: `${location.hostname} just placed a ${verdict.label} command on your clipboard${corroborated ? " and is telling you to run it" : ""}. This is the "ClickFix" malware trick. Never paste it into PowerShell, the Run dialog (Win+R), or a terminal.`,
+      items: [{ label: "Copied command", value: verdict.preview }],
+      onTrust: () => sessionTrusted.add(location.hostname),
+    });
+  });
+
+  // ---------- Malicious-download guard ----------
+  // Warns before a dangerous executable download on a low-trust page. Gated to
+  // keep false positives near zero: only fires for executable extensions AND
+  // when the current page is rated suspicious/dangerous (or no verdict yet on
+  // a cross-origin executable).
+  const DANGEROUS_EXT =
+    /\.(exe|scr|msi|bat|cmd|com|hta|vbs|vbe|js|jse|wsf|ps1|jar|apk|dmg|pkg|iso|img|lnk|reg|gadget|cpl)(\?|#|$)/i;
+  const downloadBypass = new Set();
+  document.addEventListener(
+    "click",
+    (e) => {
+      if (STATE.settings?.detection?.downloadGuard === false) return;
+      const a = e.target instanceof Element ? e.target.closest("a[href]") : null;
+      if (!a) return;
+      const href = a.getAttribute("href") || "";
+      const hasDownloadAttr = a.hasAttribute("download");
+      const looksDangerous =
+        DANGEROUS_EXT.test(href) ||
+        (hasDownloadAttr && DANGEROUS_EXT.test(a.getAttribute("download") || ""));
+      if (!looksDangerous) return;
+      if (downloadBypass.has(href)) return;
+      const status = STATE.lastResult?.status;
+      const lowTrust = status === "suspicious" || status === "dangerous";
+      let crossOrigin = false;
+      try {
+        crossOrigin = new URL(href, location.href).origin !== location.origin;
+      } catch {}
+      if (!lowTrust && !crossOrigin) return; // trusted same-origin app download — allow
+      e.preventDefault();
+      e.stopPropagation();
+      let ext = (href.match(DANGEROUS_EXT) || [])[1] || "executable";
+      log({
+        kind: "download-warn",
+        host: location.hostname,
+        severity: lowTrust ? "high" : "medium",
+      });
+      showWarningModal({
+        severity: lowTrust ? "high" : "medium",
+        title: "This download could run code on your device",
+        body: `${location.hostname} is offering a .${ext} file${lowTrust ? `, and Kedayam rated this page ${status}` : ""}. Executable downloads are a common malware-delivery method. Only continue if you fully trust this source.`,
+        items: [{ label: "File type", value: "." + ext }],
+        onContinue: () => {
+          downloadBypass.add(href);
+          try {
+            a.click();
+          } catch {
+            try {
+              window.location.href = new URL(href, location.href).href;
+            } catch {}
+          }
+        },
+        onTrust: () => sessionTrusted.add(location.hostname),
+      });
+    },
+    true,
+  );
+
   function injectMainWorldShim() {
     try {
       // CSP-safe: load an external file via chrome.runtime.getURL — no inline code.
@@ -464,9 +880,14 @@
       s.src = url;
       s.async = false;
       s.onload = () => s.remove();
-      s.onerror = () => { debug("shim load failed"); s.remove(); };
+      s.onerror = () => {
+        debug("shim load failed");
+        s.remove();
+      };
       (document.head || document.documentElement).appendChild(s);
-    } catch (e) { debug("shim inject failed", e); }
+    } catch (e) {
+      debug("shim inject failed", e);
+    }
   }
 
   // ---------- Page-context collection (clone detection) ----------
@@ -487,20 +908,28 @@
         const hasPassword = inputs.some((i) => (i.type || "").toLowerCase() === "password");
         const hasEmailLike = inputs.some((i) => {
           const t = (i.type || "").toLowerCase();
-          const n = ((i.name || "") + " " + (i.id || "") + " " +
-            (i.autocomplete || "")).toLowerCase();
+          const n = (
+            (i.name || "") +
+            " " +
+            (i.id || "") +
+            " " +
+            (i.autocomplete || "")
+          ).toLowerCase();
           return t === "email" || /email|user(name)?|login|account/.test(n);
         });
         const hasOtp = inputs.some((i) => {
-          const n = ((i.name || "") + " " + (i.id || "") +
-            (i.autocomplete || "")).toLowerCase();
-          return /otp|one[-_ ]?time|2fa|mfa|verification[-_ ]?code/.test(n) ||
-                 i.inputMode === "numeric" && (i.maxLength >= 4 && i.maxLength <= 8);
+          const n = ((i.name || "") + " " + (i.id || "") + (i.autocomplete || "")).toLowerCase();
+          return (
+            /otp|one[-_ ]?time|2fa|mfa|verification[-_ ]?code/.test(n) ||
+            (i.inputMode === "numeric" && i.maxLength >= 4 && i.maxLength <= 8)
+          );
         });
         return {
           action: f.getAttribute("action") || "",
           method: f.getAttribute("method") || "post",
-          hasPassword, hasEmailLike, hasOtp,
+          hasPassword,
+          hasEmailLike,
+          hasOtp,
           hiddenCount: inputs.filter((i) => (i.type || "").toLowerCase() === "hidden").length,
           fieldsCount: inputs.length,
           insideIframe: window.top !== window.self,
@@ -516,26 +945,35 @@
       // would muddy the user-facing reasons we surface. Only collect text
       // a real user would plausibly see on the page.
       const titleText = (document.title || "").trim();
-      const textNodes = Array.from(document.querySelectorAll(
-        "h1, h2, h3, button, a, label, p, span"
-      )).slice(0, 400);
-      const visibleText = (titleText + " " + textNodes
-        .filter(isUserVisible)
-        .map((n) => (n.textContent || "").trim())
-        .filter(Boolean)
-        .join(" ")).slice(0, 4000);
+      const textNodes = Array.from(
+        document.querySelectorAll("h1, h2, h3, button, a, label, p, span"),
+      ).slice(0, 400);
+      const visibleText = (
+        titleText +
+        " " +
+        textNodes
+          .filter(isUserVisible)
+          .map((n) => (n.textContent || "").trim())
+          .filter(Boolean)
+          .join(" ")
+      ).slice(0, 4000);
       // OAuth-style buttons by visible text.
       const oauthRe = /sign in with (google|microsoft|apple|facebook|github|twitter|x|linkedin)/i;
-      const oauthButtons = Array.from(new Set(
-        Array.from(document.querySelectorAll("button, a, [role=button]"))
-          .map((el) => (el.textContent || "").trim())
-          .map((t) => t.match(oauthRe)?.[1]?.toLowerCase())
-          .filter(Boolean)
-      ));
+      const oauthButtons = Array.from(
+        new Set(
+          Array.from(document.querySelectorAll("button, a, [role=button]"))
+            .map((el) => (el.textContent || "").trim())
+            .map((t) => t.match(oauthRe)?.[1]?.toLowerCase())
+            .filter(Boolean),
+        ),
+      );
       // Issue NEW-02 — populate an authFlow snapshot the trust engine can
       // arbitrate over. Computed locally; never includes secret values.
       const authFlow = buildAuthFlowSnapshot({
-        pageOrigin: origin, forms, hasPasswordField, oauthButtons,
+        pageOrigin: origin,
+        forms,
+        hasPasswordField,
+        oauthButtons,
         inIframe: window.top !== window.self,
         referrerOrigin: safeOrigin(document.referrer),
       });
@@ -543,16 +981,22 @@
         pageOrigin: origin,
         title: document.title || "",
         visibleText,
-        forms, hasPasswordField, oauthButtons,
+        forms,
+        hasPasswordField,
+        oauthButtons,
         topLevelIframe: window.top !== window.self,
         scripts: pick("script[src]", "src"),
         styles: pick("link[rel='stylesheet'][href]", "href"),
         images: pick("img[src]", "src"),
-        favicon:
-          document.querySelector("link[rel~='icon']")?.getAttribute("href") || null,
+        favicon: document.querySelector("link[rel~='icon']")?.getAttribute("href") || null,
         authFlow,
       };
-      try { chrome.runtime.sendMessage({ type: "pageContext", context: ctx }, () => void chrome.runtime.lastError); } catch {}
+      try {
+        chrome.runtime.sendMessage(
+          { type: "pageContext", context: ctx },
+          () => void chrome.runtime.lastError,
+        );
+      } catch {}
     } catch {}
   }
 
@@ -565,16 +1009,15 @@
     try {
       if (!el || !(el instanceof Element)) return false;
       const tag = el.tagName;
-      if (tag === "SCRIPT" || tag === "STYLE" || tag === "TEMPLATE" ||
-          tag === "NOSCRIPT") return false;
+      if (tag === "SCRIPT" || tag === "STYLE" || tag === "TEMPLATE" || tag === "NOSCRIPT")
+        return false;
       // aria-hidden anywhere up the tree means assistive tech ignores it —
       // so should we.
       if (el.closest('[aria-hidden="true"]')) return false;
-      const cs = (typeof getComputedStyle === "function")
-        ? getComputedStyle(el) : null;
+      const cs = typeof getComputedStyle === "function" ? getComputedStyle(el) : null;
       if (cs) {
-        if (cs.display === "none" || cs.visibility === "hidden" ||
-            cs.visibility === "collapse") return false;
+        if (cs.display === "none" || cs.visibility === "hidden" || cs.visibility === "collapse")
+          return false;
         const op = parseFloat(cs.opacity);
         if (!Number.isNaN(op) && op === 0) return false;
       }
@@ -593,7 +1036,11 @@
 
   function safeOrigin(u) {
     if (!u) return "";
-    try { return new URL(u).origin; } catch { return ""; }
+    try {
+      return new URL(u).origin;
+    } catch {
+      return "";
+    }
   }
   // Build the behavioral auth-flow snapshot from already-collected DOM
   // facts. Pure: no secret values, no DOM scraping of input values, no
@@ -604,40 +1051,72 @@
     const steps = [];
     const anomalies = [];
     const pageOrigin = info.pageOrigin || "";
-    steps.push({ id: "s1", kind: "entry", origin: pageOrigin,
-      inIframe: !!info.inIframe, t: Date.now() });
+    steps.push({
+      id: "s1",
+      kind: "entry",
+      origin: pageOrigin,
+      inIframe: !!info.inIframe,
+      t: Date.now(),
+    });
 
     // Iframe-origin-swap: this frame holds a password field but is embedded
     // under a different parent origin (we can only observe via referrer).
-    if (info.hasPasswordField && info.inIframe && info.referrerOrigin &&
-        info.referrerOrigin !== pageOrigin) {
-      steps.push({ id: "s2", kind: "credential", origin: pageOrigin,
-        inIframe: true, t: Date.now() });
-      anomalies.push({ id: "iframe-origin-swap", severity: "medium",
-        explain: `Credential entry happens inside an iframe on ${pageOrigin}, embedded under ${info.referrerOrigin}.` });
+    if (
+      info.hasPasswordField &&
+      info.inIframe &&
+      info.referrerOrigin &&
+      info.referrerOrigin !== pageOrigin
+    ) {
+      steps.push({
+        id: "s2",
+        kind: "credential",
+        origin: pageOrigin,
+        inIframe: true,
+        t: Date.now(),
+      });
+      anomalies.push({
+        id: "iframe-origin-swap",
+        severity: "medium",
+        explain: `Credential entry happens inside an iframe on ${pageOrigin}, embedded under ${info.referrerOrigin}.`,
+      });
     }
     // Credential-relay: any password-bearing form whose action points to an
     // origin we have not "visited" (= page origin). Behavioral, brand-agnostic.
     for (const f of info.forms || []) {
       if (!f.hasPassword) continue;
       const post = (() => {
-        try { return new URL(f.action || "", location.href).origin; }
-        catch { return ""; }
+        try {
+          return new URL(f.action || "", location.href).origin;
+        } catch {
+          return "";
+        }
       })();
       if (post && post !== pageOrigin) {
-        steps.push({ id: `s${steps.length + 1}`, kind: "credential",
-          origin: pageOrigin, postOrigin: post, t: Date.now() });
-        anomalies.push({ id: "credential-relay", severity: "high",
-          explain: `Credential step targets ${post}, which is not part of the visited auth flow.` });
+        steps.push({
+          id: `s${steps.length + 1}`,
+          kind: "credential",
+          origin: pageOrigin,
+          postOrigin: post,
+          t: Date.now(),
+        });
+        anomalies.push({
+          id: "credential-relay",
+          severity: "high",
+          explain: `Credential step targets ${post}, which is not part of the visited auth flow.`,
+        });
       }
     }
     // OAuth surface — we record an oauth step when a recognised OAuth button
     // exists, so the background can correlate with redirect-chain origins to
     // detect oauth-token-drift downstream.
     if ((info.oauthButtons || []).length) {
-      steps.push({ id: `s${steps.length + 1}`, kind: "oauth",
-        origin: pageOrigin, t: Date.now(),
-        tags: info.oauthButtons.slice(0, 4) });
+      steps.push({
+        id: `s${steps.length + 1}`,
+        kind: "oauth",
+        origin: pageOrigin,
+        t: Date.now(),
+        tags: info.oauthButtons.slice(0, 4),
+      });
     }
     return { steps, anomalies };
   }
@@ -661,9 +1140,11 @@
   const mutationBudget = { max: 12, windowMs: 1000, hits: [] };
   function mutationAllowed() {
     const cutoff = Date.now() - mutationBudget.windowMs;
-    while (mutationBudget.hits.length && mutationBudget.hits[0] < cutoff) mutationBudget.hits.shift();
+    while (mutationBudget.hits.length && mutationBudget.hits[0] < cutoff)
+      mutationBudget.hits.shift();
     if (mutationBudget.hits.length >= mutationBudget.max) return false;
-    mutationBudget.hits.push(Date.now()); return true;
+    mutationBudget.hits.push(Date.now());
+    return true;
   }
   let recollected = false;
   let mo = null;
@@ -677,8 +1158,13 @@
         if (recollected) return;
         if (document.querySelector("input[type=password]")) {
           recollected = true;
-          try { mo && mo.disconnect(); } catch {}
-          if (moTimeout) { clearTimeout(moTimeout); moTimeout = null; }
+          try {
+            mo && mo.disconnect();
+          } catch {}
+          if (moTimeout) {
+            clearTimeout(moTimeout);
+            moTimeout = null;
+          }
           setTimeout(collectPageContext, 250);
         }
       };
@@ -686,22 +1172,43 @@
       else setTimeout(run, 0);
     });
     mo.observe(document.documentElement, { childList: true, subtree: true });
-    moTimeout = setTimeout(() => { try { mo && mo.disconnect(); } catch {} mo = null; }, 15000);
+    moTimeout = setTimeout(() => {
+      try {
+        mo && mo.disconnect();
+      } catch {}
+      mo = null;
+    }, 15000);
   } catch {}
   // Defensive listener cleanup on page hide — prevents listener leaks across
   // bfcache restores and long-lived SPAs.
-  window.addEventListener("pagehide", () => {
-    try { mo && mo.disconnect(); } catch {}
-    if (moTimeout) { clearTimeout(moTimeout); moTimeout = null; }
-    sessionTrusted.clear();
-  }, { once: true });
-
+  window.addEventListener(
+    "pagehide",
+    () => {
+      try {
+        mo && mo.disconnect();
+      } catch {}
+      if (moTimeout) {
+        clearTimeout(moTimeout);
+        moTimeout = null;
+      }
+      sessionTrusted.clear();
+    },
+    { once: true },
+  );
 
   function maybeWarnPermission(req) {
     if (!STATE.settings?.detection?.permissionMonitoring) return;
     const status = STATE.lastResult?.status;
     if (status !== "suspicious" && status !== "dangerous") return;
-    const rawWhat = req?.what || (req?.video ? "camera" : req?.audio ? "microphone" : req?.geolocation ? "location" : "device");
+    const rawWhat =
+      req?.what ||
+      (req?.video
+        ? "camera"
+        : req?.audio
+          ? "microphone"
+          : req?.geolocation
+            ? "location"
+            : "device");
     // Allowlist: the legitimate MAIN-world shim only ever emits these values.
     // Any page-dispatched event with a different `what` is normalized to
     // "device" so untrusted strings can never reach innerHTML.
@@ -723,7 +1230,9 @@
   }
 
   function log(entry) {
-    try { chrome.runtime.sendMessage({ type: "logEvent", entry }, () => void chrome.runtime.lastError); } catch {}
+    try {
+      chrome.runtime.sendMessage({ type: "logEvent", entry }, () => void chrome.runtime.lastError);
+    } catch {}
   }
 
   // ---------- Bootstrap ----------
@@ -744,8 +1253,12 @@
     if (msg?.type !== "kedayam:trust") return;
     STATE.lastResult = msg.result;
     const susp = msg.result.suspicion || {
-      level: msg.result.status === "dangerous" ? "dangerous"
-           : msg.result.status === "suspicious" ? "suspicious" : "informational",
+      level:
+        msg.result.status === "dangerous"
+          ? "dangerous"
+          : msg.result.status === "suspicious"
+            ? "suspicious"
+            : "informational",
       modal: msg.result.status === "dangerous" ? "hard" : "none",
       popupBanner: msg.result.status !== "safe",
       blockingUx: msg.result.status === "dangerous",
@@ -763,7 +1276,10 @@
         severity: "critical",
         title: "This page shows strong signs of being unsafe",
         body: `Kedayam evaluated ${msg.result.host} and gave it a trust score of ${msg.result.score}/100. Avoid entering credentials or personal information.`,
-        items: msg.result.signals.filter((s) => s.severity !== "info").slice(0, 5).map((s) => ({ label: s.title, value: s.severity })),
+        items: msg.result.signals
+          .filter((s) => s.severity !== "info")
+          .slice(0, 5)
+          .map((s) => ({ label: s.title, value: s.severity })),
         onTrust: () => sessionTrusted.add(location.hostname),
       });
     } else if (susp.modal === "soft" && !sessionTrusted.has(location.hostname)) {
@@ -771,7 +1287,10 @@
         severity: "medium",
         title: "Review this page before signing in",
         body: `Kedayam flagged behavioral signals on ${msg.result.host} (score ${msg.result.score}/100). You can continue, but verify the address and avoid entering MFA codes if you didn't initiate this flow.`,
-        items: msg.result.signals.filter((s) => s.severity !== "info").slice(0, 4).map((s) => ({ label: s.title, value: s.severity })),
+        items: msg.result.signals
+          .filter((s) => s.severity !== "info")
+          .slice(0, 4)
+          .map((s) => ({ label: s.title, value: s.severity })),
         onContinue: () => sessionTrusted.add(location.hostname),
         onTrust: () => sessionTrusted.add(location.hostname),
       });

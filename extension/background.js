@@ -1,12 +1,21 @@
 // Kedayam — Background Service Worker (MV3, ES module)
 import { evaluateUrl } from "./lib/trustEngine.js";
 import {
-  getSettings, saveSettings, getCache, setCache,
-  appendActivity, getActivity, clearAllCaches,
-  getSessionOverride, setSessionOverride,
-  getSafeDomainStats, bumpSafeDomain, sweepExpiredActivity,
+  getSettings,
+  saveSettings,
+  getCache,
+  setCache,
+  appendActivity,
+  getActivity,
+  clearAllCaches,
+  getSessionOverride,
+  setSessionOverride,
+  getSafeDomainStats,
+  bumpSafeDomain,
+  sweepExpiredActivity,
 } from "./lib/storage.js";
 import { rootDomain } from "./lib/lookalike.js";
+import { loadStoredBlocklist, refreshThreatFeed } from "./lib/threatFeed.js";
 import { InjectionRegistry, ensureInjected, isInjectableUrl } from "./lib/injection.js";
 import { Logger } from "./lib/logger.js";
 import { HealthMonitor } from "./lib/health.js";
@@ -15,9 +24,13 @@ import { validateMessage, isTrustedSender } from "./lib/messageSchemas.js";
 
 const inflight = new Map();
 const redirectChains = new Map(); // tabId -> string[]
-const lastScanned = new Map();    // tabId -> url (dedupe onCommitted vs onUpdated)
-const pageContexts = new Map();   // tabId -> latest pageContext from content
+const lastScanned = new Map(); // tabId -> url (dedupe onCommitted vs onUpdated)
+const pageContexts = new Map(); // tabId -> latest pageContext from content
 const registry = new InjectionRegistry();
+// In-memory cache of the opt-in threat-feed entries (empty unless the user
+// enables feed refresh). The bundled seed lives inside the engine itself, so
+// reputation works even when this Set is empty.
+let blocklistExtra = new Set();
 const log = new Logger({ scope: "kedayam.bg", level: "info" });
 const health = new HealthMonitor();
 const nonces = new NonceCache(512);
@@ -25,6 +38,8 @@ const nonces = new NonceCache(512);
 chrome.runtime.onInstalled.addListener(async () => {
   await getSettings(); // ensure defaults
   log.info("installed", { version: chrome.runtime.getManifest().version });
+  void loadBlocklistCache();
+  void maybeRefreshThreatFeed();
   // Re-inject into already-open tabs (declarative script only fires on
   // *future* navigations).
   try {
@@ -32,25 +47,73 @@ chrome.runtime.onInstalled.addListener(async () => {
     for (const t of tabs) {
       if (t.id && t.url) await ensureInjected(t.id, t.url, registry);
     }
-  } catch (e) { health.recordError(e, "install:reinject"); }
+  } catch (e) {
+    health.recordError(e, "install:reinject");
+  }
 });
 
 // Service-worker heartbeat — keeps caches fresh and prunes stale tab state.
 chrome.runtime.onStartup?.addListener(() => {
   log.info("startup");
-  try { chrome.alarms.create("kedayam:heartbeat", { periodInMinutes: 1 }); } catch {}
+  try {
+    chrome.alarms.create("kedayam:heartbeat", { periodInMinutes: 1 });
+  } catch {}
+  void loadBlocklistCache();
 });
-try { chrome.alarms?.create?.("kedayam:heartbeat", { periodInMinutes: 1 }); } catch {}
+try {
+  chrome.alarms?.create?.("kedayam:heartbeat", { periodInMinutes: 1 });
+} catch {}
+// Opt-in threat-feed refresh — every 6h, only acts when the user enabled it.
+try {
+  chrome.alarms?.create?.("kedayam:feedRefresh", { periodInMinutes: 360 });
+} catch {}
+
+// Load the opt-in feed cache from storage into memory (no network).
+async function loadBlocklistCache() {
+  try {
+    blocklistExtra = await loadStoredBlocklist((k) => chrome.storage.local.get(k));
+  } catch {
+    blocklistExtra = new Set();
+  }
+}
+
+// Refresh the opt-in feed from FREE public sources — ONLY when the user has
+// enabled it in Options. Default install never makes this network call.
+async function maybeRefreshThreatFeed(force = false) {
+  try {
+    const settings = await getSettings();
+    if (!force && !settings?.detection?.threatFeedAutoUpdate) return;
+    const count = await refreshThreatFeed(
+      (url) => fetch(url, { credentials: "omit", cache: "no-store" }),
+      (obj) => chrome.storage.local.set(obj),
+      { now: Date.now() },
+    );
+    await loadBlocklistCache();
+    log.info("threat feed refreshed", { entries: count });
+    return count;
+  } catch (e) {
+    health.recordError(e, "feedRefresh");
+    return 0;
+  }
+}
+
 chrome.alarms?.onAlarm.addListener((a) => {
+  if (a.name === "kedayam:feedRefresh") {
+    void maybeRefreshThreatFeed();
+    return;
+  }
   if (a.name !== "kedayam:heartbeat") return;
   registry.prune();
   // Drop pageContexts for tabs that no longer exist.
-  chrome.tabs.query({}).then((tabs) => {
-    const live = new Set(tabs.map((t) => t.id));
-    for (const id of pageContexts.keys()) if (!live.has(id)) pageContexts.delete(id);
-    for (const id of redirectChains.keys()) if (!live.has(id)) redirectChains.delete(id);
-    for (const id of lastScanned.keys()) if (!live.has(id)) lastScanned.delete(id);
-  }).catch(() => {});
+  chrome.tabs
+    .query({})
+    .then((tabs) => {
+      const live = new Set(tabs.map((t) => t.id));
+      for (const id of pageContexts.keys()) if (!live.has(id)) pageContexts.delete(id);
+      for (const id of redirectChains.keys()) if (!live.has(id)) redirectChains.delete(id);
+      for (const id of lastScanned.keys()) if (!live.has(id)) lastScanned.delete(id);
+    })
+    .catch(() => {});
   // M-05 — sweep expired activity log entries on every heartbeat.
   sweepExpiredActivity().catch(() => {});
 });
@@ -71,7 +134,7 @@ chrome.webRequest.onBeforeRedirect.addListener(
     if (list.length > 25) list.shift();
     redirectChains.set(d.tabId, list);
   },
-  { urls: ["<all_urls>"] }
+  { urls: ["<all_urls>"] },
 );
 
 chrome.webNavigation.onCommitted.addListener((details) => {
@@ -86,8 +149,12 @@ chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
     // Best-effort programmatic injection for tabs the declarative script missed.
     void ensureInjected(tabId, tab.url, registry);
   }
-  if (change.status === "complete" && tab.url && isInjectableUrl(tab.url) &&
-      lastScanned.get(tabId) !== tab.url) {
+  if (
+    change.status === "complete" &&
+    tab.url &&
+    isInjectableUrl(tab.url) &&
+    lastScanned.get(tabId) !== tab.url
+  ) {
     lastScanned.set(tabId, tab.url);
     void scan(tab.url, tabId, false);
   }
@@ -110,7 +177,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const runtimeId = chrome.runtime.id;
       if (!isTrustedSender(sender, runtimeId, msg?.type)) {
         log.warn("rejected untrusted sender", {
-          type: msg?.type, sid: sender?.id, origin: sender?.origin });
+          type: msg?.type,
+          sid: sender?.id,
+          origin: sender?.origin,
+        });
         sendResponse({ ok: false, error: "untrusted-sender" });
         return;
       }
@@ -130,7 +200,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const data = v.value;
       switch (v.type) {
         case "scan":
-          sendResponse(await scan(data.url, sender.tab?.id ?? data.tabId ?? null, false, data.force));
+          sendResponse(
+            await scan(data.url, sender.tab?.id ?? data.tabId ?? null, false, data.force),
+          );
           break;
         case "pageContext": {
           const tabId = sender.tab?.id;
@@ -147,18 +219,30 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break;
         }
         case "getSettings":
-          sendResponse(await getSettings()); break;
+          sendResponse(await getSettings());
+          break;
         case "saveSettings":
-          sendResponse(await saveSettings(data.patch)); break;
+          sendResponse(await saveSettings(data.patch));
+          break;
         case "getActivity":
-          sendResponse(await getActivity()); break;
+          sendResponse(await getActivity());
+          break;
         case "getHealth":
-          sendResponse({ ok: true, health: health.snapshot(),
-            registry: registry.size(), recentLogs: log.recent(40) }); break;
+          sendResponse({
+            ok: true,
+            health: health.snapshot(),
+            registry: registry.size(),
+            recentLogs: log.recent(40),
+          });
+          break;
         case "clearCaches":
-          await clearAllCaches(); sendResponse({ ok: true }); break;
+          await clearAllCaches();
+          sendResponse({ ok: true });
+          break;
         case "logEvent":
-          await appendActivity(data.entry); sendResponse({ ok: true }); break;
+          await appendActivity(data.entry);
+          sendResponse({ ok: true });
+          break;
         case "trustForSession":
           await setSessionOverride(data.domain, { reason: data.reason });
           // Learn from repeated trust. Provenance already validated above;
@@ -168,11 +252,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             const r = rootDomain(String(data.domain).replace(/^www\./, ""));
             if (r) await bumpSafeDomain(r);
           } catch {}
-          sendResponse({ ok: true }); break;
+          sendResponse({ ok: true });
+          break;
         case "getOverride":
-          sendResponse(await getSessionOverride(data.domain)); break;
+          sendResponse(await getSessionOverride(data.domain));
+          break;
         case "openOptions":
-          chrome.runtime.openOptionsPage(); sendResponse({ ok: true }); break;
+          chrome.runtime.openOptionsPage();
+          sendResponse({ ok: true });
+          break;
+        case "refreshThreatFeed": {
+          const count = await maybeRefreshThreatFeed(true);
+          sendResponse({ ok: true, count });
+          break;
+        }
         default:
           sendResponse({ ok: false, error: "unknown message" });
       }
@@ -194,7 +287,9 @@ try {
     return false;
   });
   chrome.runtime.onConnectExternal?.addListener((port) => {
-    try { port.disconnect(); } catch {}
+    try {
+      port.disconnect();
+    } catch {}
   });
 } catch {}
 
@@ -226,11 +321,15 @@ async function scan(url, tabId, notify, force = false) {
       safeDomainStats,
       pageContext: pageCtx,
       authFlow: pageCtx?.authFlow || null,
+      blocklistExtra,
     });
     await setCache(cacheKey, result, hasPageContext ? 15 * 60 * 1000 : 2 * 60 * 1000);
     if (result.status !== "safe") {
       await appendActivity({
-        kind: "trust", host: result.host, score: result.score, status: result.status,
+        kind: "trust",
+        host: result.host,
+        score: result.score,
+        status: result.status,
       });
     }
     maybeBadge(tabId, result);
@@ -247,22 +346,29 @@ async function scan(url, tabId, notify, force = false) {
     }
     if (tabId != null) {
       try {
-        chrome.tabs.sendMessage(tabId, { type: "kedayam:trust", result }, () => void chrome.runtime.lastError);
+        chrome.tabs.sendMessage(
+          tabId,
+          { type: "kedayam:trust", result },
+          () => void chrome.runtime.lastError,
+        );
       } catch {}
     }
     return result;
-  })().catch((err) => {
-    // FIND-01 / fail-safe scan pipeline — a rejected scan MUST NOT kill
-    // future scans for this tab. We log a redacted diagnostics entry,
-    // mark the tab badge as degraded, and let the next navigation /
-    // pageContext push trigger a fresh attempt normally.
-    health.recordError(err, `scan:${tabId ?? "n/a"}`);
-    log.warn("scan failed — entering degraded mode for tab", {
-      tabId, error: String(err?.message || err).slice(0, 200),
-    });
-    markBadgeDegraded(tabId);
-    return null;
-  }).finally(() => inflight.delete(cacheKey));
+  })()
+    .catch((err) => {
+      // FIND-01 / fail-safe scan pipeline — a rejected scan MUST NOT kill
+      // future scans for this tab. We log a redacted diagnostics entry,
+      // mark the tab badge as degraded, and let the next navigation /
+      // pageContext push trigger a fresh attempt normally.
+      health.recordError(err, `scan:${tabId ?? "n/a"}`);
+      log.warn("scan failed — entering degraded mode for tab", {
+        tabId,
+        error: String(err?.message || err).slice(0, 200),
+      });
+      markBadgeDegraded(tabId);
+      return null;
+    })
+    .finally(() => inflight.delete(cacheKey));
 
   inflight.set(cacheKey, promise);
   return promise;
@@ -271,8 +377,7 @@ async function scan(url, tabId, notify, force = false) {
 function maybeBadge(tabId, result) {
   if (tabId == null) return;
   const color =
-    result.status === "safe" ? "#10b981" :
-    result.status === "suspicious" ? "#f59e0b" : "#ef4444";
+    result.status === "safe" ? "#10b981" : result.status === "suspicious" ? "#f59e0b" : "#ef4444";
   try {
     chrome.action.setBadgeBackgroundColor({ color, tabId });
     chrome.action.setBadgeText({ text: String(result.score), tabId });

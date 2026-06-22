@@ -20,16 +20,37 @@ auditable; see `scripts/generate-security-report.mjs` for an automated check.
 
 - User settings (sensitivity, allowlist, theme preference)
 - A bounded cache of trust verdicts keyed by hostname (TTL-bound)
-- An activity log of *your own* recent verdicts (never page content)
+- An activity log of _your own_ recent verdicts (never page content)
 - Per-domain trust counters used to learn safe sites
 
 This data never leaves your browser. You can clear it any time from the
 extension Options page.
 
+## Clipboard-write (ClickFix) scanning
+
+To stop "ClickFix" malware, Kedayam inspects text that a **web page writes to
+your clipboard** (and the visible on-page instructions) to detect smuggled
+system commands. This check is **purely in-memory and local**:
+
+- The page already possesses anything it copied — nothing is exfiltrated.
+- The clipboard text is classified and discarded; it is **never stored,
+  logged, or transmitted**. Only a short, redacted preview is shown in the
+  warning modal.
+
+## Optional threat-feed refresh (off by default)
+
+You can enable an **opt-in** refresh of the local blocklist from FREE public
+feeds (URLhaus, Phishing Army, OpenPhish). When enabled:
+
+- Kedayam downloads the public feed _files_ only; the request contains no
+  information about you or the pages you visit.
+- Matching of your actual URL still happens **locally** against the cached
+  list. Disable any time in Options. Default install never makes this call.
+
 ## Optional third-party lookups
 
 The extension can call **Google Safe Browsing** or **VirusTotal** if and
-only if *you* paste an API key into the Options page. In that case:
+only if _you_ paste an API key into the Options page. In that case:
 
 - Only the URL hash or URL is sent, scoped to the lookup request.
 - The third party's privacy policy then applies to that request.

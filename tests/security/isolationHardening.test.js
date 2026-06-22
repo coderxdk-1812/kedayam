@@ -16,12 +16,21 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const manifest = JSON.parse(
-  readFileSync(resolve(__dirname, "../../extension/manifest.json"), "utf8")
+  readFileSync(resolve(__dirname, "../../extension/manifest.json"), "utf8"),
 );
 
 const RUNTIME_ID = "kedayam-test-extension-id";
-const okTabSender = { id: RUNTIME_ID, tab: { id: 7 }, url: "https://example.com/", origin: "https://example.com" };
-const okUiSender  = { id: RUNTIME_ID, url: `chrome-extension://${RUNTIME_ID}/popup/popup.html`, origin: `chrome-extension://${RUNTIME_ID}` };
+const okTabSender = {
+  id: RUNTIME_ID,
+  tab: { id: 7 },
+  url: "https://example.com/",
+  origin: "https://example.com",
+};
+const okUiSender = {
+  id: RUNTIME_ID,
+  url: `chrome-extension://${RUNTIME_ID}/popup/popup.html`,
+  origin: `chrome-extension://${RUNTIME_ID}`,
+};
 
 describe("F1 — externally reachable surface", () => {
   it("externally_connectable is absent (MV3 hardening — see manifest pass v5)", () => {
@@ -55,8 +64,16 @@ describe("F1 — externally reachable surface", () => {
   });
 
   it("does NOT request scripting / management / debugger / cookies", () => {
-    const denied = ["scripting", "management", "debugger", "cookies", "history",
-      "browsingData", "downloads", "<all_urls>"];
+    const denied = [
+      "scripting",
+      "management",
+      "debugger",
+      "cookies",
+      "history",
+      "browsingData",
+      "downloads",
+      "<all_urls>",
+    ];
     for (const p of denied) expect(manifest.permissions).not.toContain(p);
   });
 });
@@ -69,10 +86,13 @@ describe("H-06 — sender provenance validation", () => {
     expect(isTrustedSender({ id: "evil-ext-id", tab: { id: 1 } }, RUNTIME_ID, "scan")).toBe(false);
   });
   it("rejects messages with a web-page origin", () => {
-    expect(isTrustedSender(
-      { id: RUNTIME_ID, origin: "https://attacker.example", tab: null },
-      RUNTIME_ID, "trustForSession"
-    )).toBe(false);
+    expect(
+      isTrustedSender(
+        { id: RUNTIME_ID, origin: "https://attacker.example", tab: null },
+        RUNTIME_ID,
+        "trustForSession",
+      ),
+    ).toBe(false);
   });
   it("accepts messages from this extension's content script (tab)", () => {
     expect(isTrustedSender(okTabSender, RUNTIME_ID, "scan")).toBe(true);
@@ -84,17 +104,18 @@ describe("H-06 — sender provenance validation", () => {
     // bare runtime sender (no tab, no extension url) — must be rejected.
     expect(isTrustedSender({ id: RUNTIME_ID }, RUNTIME_ID, "trustForSession")).toBe(false);
     expect(isTrustedSender(okTabSender, RUNTIME_ID, "trustForSession")).toBe(true);
-    expect(isTrustedSender(okUiSender,  RUNTIME_ID, "trustForSession")).toBe(true);
+    expect(isTrustedSender(okUiSender, RUNTIME_ID, "trustForSession")).toBe(true);
   });
   it("trust mutation set is complete and frozen", () => {
     expect(TRUST_MUTATION_TYPES.has("trustForSession")).toBe(true);
     expect(TRUST_MUTATION_TYPES.has("saveSettings")).toBe(true);
     expect(TRUST_MUTATION_TYPES.has("clearCaches")).toBe(true);
     expect(TRUST_MUTATION_TYPES.has("logEvent")).toBe(true);
+    expect(TRUST_MUTATION_TYPES.has("refreshThreatFeed")).toBe(true);
     // Set itself is mutable, but the export reference is frozen via
     // Object.freeze and the TRUST_MUTATION_TYPES binding is const. The
     // important contract is that the membership matches.
-    expect(TRUST_MUTATION_TYPES.size).toBe(4);
+    expect(TRUST_MUTATION_TYPES.size).toBe(5);
   });
 });
 
@@ -124,9 +145,12 @@ describe("F3 — message schema hardening", () => {
     expect(validateMessage({ type: "saveSettings", patch: big }).ok).toBe(false);
   });
   it("rejects invalid enum values", () => {
-    expect(validateMessage({
-      type: "saveSettings", patch: { detection: { sensitivity: "paranoid" } },
-    }).ok).toBe(false);
+    expect(
+      validateMessage({
+        type: "saveSettings",
+        patch: { detection: { sensitivity: "paranoid" } },
+      }).ok,
+    ).toBe(false);
   });
   it("rejects malformed domain values for trust mutations", () => {
     expect(validateMessage({ type: "trustForSession", domain: "" }).ok).toBe(false);
@@ -139,9 +163,24 @@ describe("F3 — message schema hardening", () => {
   });
   it("validators never throw on hostile inputs", () => {
     const hostiles = [
-      undefined, null, 0, false, [], "", { type: 1 }, { type: "scan", url: null },
-      { type: "saveSettings", patch: null }, { type: "logEvent" },
-      { type: "trustForSession", domain: { toString() { throw new Error("boom"); } } },
+      undefined,
+      null,
+      0,
+      false,
+      [],
+      "",
+      { type: 1 },
+      { type: "scan", url: null },
+      { type: "saveSettings", patch: null },
+      { type: "logEvent" },
+      {
+        type: "trustForSession",
+        domain: {
+          toString() {
+            throw new Error("boom");
+          },
+        },
+      },
     ];
     for (const h of hostiles) {
       expect(() => validateMessage(h)).not.toThrow();

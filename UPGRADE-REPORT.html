@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kedayam Browser Shield — World-Class Upgrade Report (v1.1.0)</title>
+<style>
+  :root{
+    --bg:#0a0e17; --panel:#111827; --panel2:#0e1422; --ink:#e8eef7; --muted:#93a1b5;
+    --line:#1d2940; --green:#2ed3a3; --amber:#f5b13d; --red:#f0556a; --blue:#5fa8ff;
+    --violet:#a98bff; --chip:#192335;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#15233b,#0a0e17 60%);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 24px 90px}
+  header.top{display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--line);padding-bottom:24px}
+  .shield{width:58px;height:58px;border-radius:15px;background:radial-gradient(circle at 30% 25%,#34d399,#0f766e);
+    display:flex;align-items:center;justify-content:center;font-size:31px;box-shadow:0 10px 30px rgba(52,211,153,.3)}
+  h1{font-size:25px;margin:0;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px;margin-top:5px}
+  .lead{margin:26px 0;padding:22px 24px;border-radius:16px;border:1px solid var(--line);
+    background:linear-gradient(135deg,#102a22,#111827)}
+  .lead h2{margin:0 0 8px;font-size:20px}
+  .lead p{margin:0;color:var(--c9,#cdd9e8);font-size:14.5px;max-width:880px}
+  .lead b{color:#fff}
+  .pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px}
+  .pill.ok{background:rgba(46,211,163,.14);color:var(--green);border:1px solid rgba(46,211,163,.4)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:22px 0}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .stat b{font-size:23px;display:block;color:#fff}
+  .stat span{font-size:12px;color:var(--muted)}
+  .stat.green b{color:var(--green)} .stat.blue b{color:var(--blue)} .stat.violet b{color:var(--violet)}
+  h3.section{font-size:13px;text-transform:uppercase;letter-spacing:1.6px;color:var(--muted);
+    margin:46px 0 16px;border-bottom:1px solid var(--line);padding-bottom:9px}
+  .new{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px 19px;position:relative}
+  .card.flag::after{content:"NEW";position:absolute;top:14px;right:14px;font-size:10px;font-weight:800;letter-spacing:1px;
+    color:var(--green);background:rgba(46,211,163,.12);border:1px solid rgba(46,211,163,.4);padding:2px 7px;border-radius:6px}
+  .card h4{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:9px;padding-right:44px}
+  .card .why{color:var(--muted);font-size:12.5px;margin:0 0 11px}
+  .card ul{margin:0;padding-left:0;list-style:none}
+  .card li{position:relative;padding:4px 0 4px 22px;font-size:13px;color:#cdd8e6;border-bottom:1px dashed rgba(255,255,255,.05)}
+  .card li:last-child{border-bottom:none}
+  .card li::before{content:"›";position:absolute;left:4px;top:4px;color:var(--blue);font-weight:800}
+  .files{margin-top:10px;font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.6px;background:var(--panel2)}
+  tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700}
+  .t-new{background:rgba(46,211,163,.14);color:var(--green)}
+  .t-keep{background:rgba(95,168,255,.13);color:var(--blue)}
+  .t-imp{background:rgba(169,139,255,.14);color:var(--violet)}
+  .road{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .rcard{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--violet);border-radius:12px;padding:15px 18px}
+  .rcard h4{margin:0 0 8px;font-size:15px}
+  .rcard .impact{font-size:11px;text-transform:uppercase;letter-spacing:.8px;font-weight:700;color:var(--violet)}
+  .rcard p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+  code{background:#070b12;padding:1px 6px;border-radius:5px;color:#8fd0ff;font-size:12px}
+  .verdict{margin-top:28px;padding:18px 22px;border-radius:14px;border:1px solid rgba(46,211,163,.35);
+    background:linear-gradient(135deg,#0f2a22,#111827)}
+  .verdict b{color:#fff}
+  footer{margin-top:54px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 0;font-size:12px;color:var(--muted)}
+  .flowbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 0;font-size:12.5px}
+  .flowbar .step{background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:6px 11px;white-space:nowrap}
+  .flowbar .step.new{border-color:rgba(46,211,163,.5);color:var(--green)}
+  .flowbar .arw{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="shield">🛡️</div>
+    <div>
+      <h1>Kedayam Browser Shield — World-Class Upgrade <span class="pill ok">v1.1.0 · all 601 tests green</span></h1>
+      <div class="sub">Freeware web protection · phishing + ClickFix malware + data-leak defense · no account, no API keys · generated 2026-06-22</div>
+    </div>
+  </header>
+
+  <div class="lead">
+    <h2>What changed this session</h2>
+    <p>The extension was already a strong, well-tested phishing &amp; data-leak shield. This upgrade makes it a <b>world-class, freeware</b> protector for normal users: it now stops the <b>#1 modern malware vector (ClickFix / fake-CAPTCHA clipboard attacks)</b>, ships a <b>key-less threat blocklist</b> so reputation works with zero network and zero API keys, adds <b>URL-reputation intelligence</b> for the brand-in-subdomain spoof, and guards <b>executable downloads</b> — all tuned to keep false positives near zero for everyday browsing. Five new modules, full test coverage, fresh signed package, and a regenerated release certificate.</p>
+    <div class="legend">
+      <span><span class="tag t-new">NEW</span> built this session</span>
+      <span><span class="tag t-keep">EXISTING</span> already in the product</span>
+      <span><span class="tag t-imp">IMPROVED</span> extended this session</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="stat green"><b>5</b><span>new protection modules</span></div>
+    <div class="stat blue"><b>+5</b><span>new detection layers</span></div>
+    <div class="stat"><b>601</b><span>tests passing / 0 failing</span></div>
+    <div class="stat green"><b>$0</b><span>API keys required (freeware)</span></div>
+    <div class="stat violet"><b>1.22ms</b><span>mean detection latency</span></div>
+    <div class="stat"><b>0</b><span>new permissions requested</span></div>
+  </div>
+
+  <!-- WHAT'S NEW -->
+  <h3 class="section">🟢 What's New (built this session)</h3>
+  <div class="new">
+
+    <div class="card flag">
+      <h4>🪤 ClickFix / FakeCaptcha guard</h4>
+      <p class="why">The dominant 2024-2025 malware-delivery trick — and antivirus rarely catches it because the user runs the payload themselves.</p>
+      <ul>
+        <li>Hooks <code>clipboard.writeText</code> &amp; <code>execCommand('copy')</code> in the page's MAIN world</li>
+        <li>Classifies copied text for PowerShell / <code>mshta</code> / LOLBins / <code>curl|bash</code> / encoded commands</li>
+        <li>Reads on-page "press Win+R, paste, verify you're human" lures to corroborate</li>
+        <li>Hard blocking modal with a redacted preview — before the user can paste &amp; run</li>
+      </ul>
+      <div class="files">lib/clipboardGuard.js · content/main-world-shim.js · content/content.js</div>
+    </div>
+
+    <div class="card flag">
+      <h4>📋 Freeware threat blocklist</h4>
+      <p class="why">Reputation protection that needs no Google/VirusTotal key and makes zero network calls by default.</p>
+      <ul>
+        <li>Bundled offline seed of known phishing / malware hosts ships in the signed package</li>
+        <li>Local match on host <em>and</em> eTLD+1 → a blocklist hit forces a <b>dangerous</b> verdict</li>
+        <li>Opt-in refresh from FREE feeds (URLhaus, Phishing Army, OpenPhish) — only feed files fetched</li>
+        <li>6-hour auto-update alarm + "Update now" button; browsing never leaves the device</li>
+      </ul>
+      <div class="files">lib/threatFeed.js · lib/rules/blocklistSeed.js · background.js</div>
+    </div>
+
+    <div class="card flag">
+      <h4>🔗 URL reputation intelligence</h4>
+      <p class="why">Catches modern spear-phishing URL tricks that pure look-alike matching misses.</p>
+      <ul>
+        <li><b>Brand-in-subdomain spoof</b>: <code>paypal.com.account-verify.tk</code> → dangerous when paired with sign-in</li>
+        <li>High-abuse / free TLDs (<code>.tk .ml .ga .zip .xyz .top …</code>) — escalate only with auth</li>
+        <li>URL-shortener awareness + account-lure path tokens (<code>secure-update</code>, <code>verify-account</code>)</li>
+        <li>Conservative weighting: a free-TLD blog stays Safe; a free-TLD login does not</li>
+      </ul>
+      <div class="files">lib/urlReputation.js · lib/trustEngine.js · lib/arbitration.js</div>
+    </div>
+
+    <div class="card flag">
+      <h4>⬇️ Malicious-download guard</h4>
+      <p class="why">Stops drive-by executable delivery from low-trust pages.</p>
+      <ul>
+        <li>Intercepts clicks on <code>.exe/.scr/.msi/.hta/.bat/.apk/.dmg/.ps1…</code> links</li>
+        <li>Gated to near-zero FP: fires on low-trust pages or cross-origin executables only</li>
+        <li>Clear "this could run code on your device" modal with continue / trust options</li>
+      </ul>
+      <div class="files">content/content.js</div>
+    </div>
+
+    <div class="card flag">
+      <h4>⚙️ Freeware-first config &amp; UI</h4>
+      <p class="why">Every new layer is user-controllable and on by default — except network refresh, which stays opt-in.</p>
+      <ul>
+        <li>New Options toggles: blocklist, ClickFix guard, download guard, URL reputation</li>
+        <li>New "Threat feed" settings pane with opt-in auto-update + manual refresh button</li>
+        <li>Defaults wired through <code>storage.js</code>, <code>featureFlags.js</code>, content-script mirror</li>
+        <li>New <code>refreshThreatFeed</code> message type, schema-validated &amp; provenance-gated</li>
+      </ul>
+      <div class="files">options/* · lib/storage.js · lib/featureFlags.js · lib/messageSchemas.js</div>
+    </div>
+
+    <div class="card flag">
+      <h4>🧪 Test &amp; release coverage</h4>
+      <p class="why">Nothing ships without proof and a clean, reproducible artifact.</p>
+      <ul>
+        <li>4 new test files: urlReputation, clipboardGuard, threatFeed, modern-threats redteam</li>
+        <li>End-to-end FP guard tests: github / google / a normal <code>.xyz</code> startup stay Safe</li>
+        <li>Fresh signed <code>kedayam.zip</code> rebuilt; release cert regenerated &amp; matching</li>
+        <li>Validator + ESLint clean; 601/601 tests pass</li>
+      </ul>
+      <div class="files">tests/unit/* · tests/redteam/modernThreats.test.js · public/kedayam.zip</div>
+    </div>
+  </div>
+
+  <!-- NEW DETECTION PIPELINE -->
+  <h3 class="section">🧭 Where the new layers plug into the engine</h3>
+  <div class="card" style="background:var(--panel2)">
+    <div class="flowbar">
+      <span class="step">URL</span><span class="arw">→</span>
+      <span class="step new">Threat blocklist</span><span class="arw">→</span>
+      <span class="step">Lookalike / homoglyph</span><span class="arw">→</span>
+      <span class="step new">URL reputation</span><span class="arw">→</span>
+      <span class="step">Clone / phishing DOM</span><span class="arw">→</span>
+      <span class="step">Auth-flow + arbitration</span><span class="arw">→</span>
+      <span class="step">Verdict 0–100</span>
+    </div>
+    <div class="flowbar" style="margin-top:14px">
+      <span class="step">Page runtime</span><span class="arw">→</span>
+      <span class="step new">Clipboard-write hook (ClickFix)</span><span class="arw">·</span>
+      <span class="step new">Download click guard</span><span class="arw">·</span>
+      <span class="step">Paste / file / permission guards</span>
+    </div>
+    <p class="why" style="margin-top:14px">Blocklist + URL-reputation + brand-subdomain feed the existing deterministic <b>arbitration engine</b> (new Tier-0 rules) and count as <em>behavioral evidence</em>, so they survive the trusted-root floor but never fire on legitimate brands.</p>
+  </div>
+
+  <!-- NEW VS EXISTING TABLE -->
+  <h3 class="section">📊 New vs. Already-There (capability map)</h3>
+  <table>
+    <tr><th>Capability</th><th>Status</th><th>Notes</th></tr>
+    <tr><td>ClickFix / clipboard-command malware defense</td><td><span class="tag t-new">NEW</span></td><td>The headline modern-malware feature; nothing equivalent existed before.</td></tr>
+    <tr><td>Key-less threat blocklist (offline + opt-in feeds)</td><td><span class="tag t-new">NEW</span></td><td>Replaces reliance on paid Safe Browsing / VirusTotal keys.</td></tr>
+    <tr><td>Brand-domain-as-subdomain spoof detection</td><td><span class="tag t-new">NEW</span></td><td><code>paypal.com.evil.tk</code> — a very common, high-FP-risk pattern done safely.</td></tr>
+    <tr><td>Abused-TLD / shortener / phishy-token scoring</td><td><span class="tag t-new">NEW</span></td><td>Conservative; corroboration-gated.</td></tr>
+    <tr><td>Executable-download warning</td><td><span class="tag t-new">NEW</span></td><td>Low-trust-gated to avoid nagging on normal app downloads.</td></tr>
+    <tr><td>Deterministic arbitration engine</td><td><span class="tag t-imp">IMPROVED</span></td><td>New Tier-0 rules for blocklist + brand-subdomain + abused-TLD.</td></tr>
+    <tr><td>Trust engine (0–100 explainable score)</td><td><span class="tag t-imp">IMPROVED</span></td><td>New reputation + URL-reputation signals folded into scoring &amp; result.</td></tr>
+    <tr><td>Look-alike / homoglyph / punycode</td><td><span class="tag t-keep">EXISTING</span></td><td>Strong; unchanged.</td></tr>
+    <tr><td>Clone-site &amp; auth-layout detection</td><td><span class="tag t-keep">EXISTING</span></td><td>Behavioral-corroboration model retained.</td></tr>
+    <tr><td>Sensitive-data paste / file / form guard</td><td><span class="tag t-keep">EXISTING</span></td><td>20+ PII/secret detectors, redacted, local-only.</td></tr>
+    <tr><td>Privacy guarantees (no telemetry / remote code)</td><td><span class="tag t-keep">EXISTING</span></td><td>Preserved; new clipboard scan is in-memory and local.</td></tr>
+  </table>
+
+  <!-- ROADMAP -->
+  <h3 class="section">🚀 What more would make it the ultimate (next)</h3>
+  <div class="road">
+    <div class="rcard"><div class="impact">High impact</div><h4>Ship a real feed pipeline at build time</h4><p>Bake a large, freshly-pulled URLhaus + Phishing Army snapshot into each release so day-one offline coverage is thousands of hosts, not a seed. Add a signed, versioned ruleset with delta updates.</p></div>
+    <div class="rcard"><div class="impact">High impact</div><h4>On-device ML phishing classifier</h4><p>A tiny quantized model (TF.js / ONNX, bundled) scoring page text + DOM structure — catches zero-day kits with no brand keyword. Fully local, no inference calls.</p></div>
+    <div class="rcard"><div class="impact">High impact</div><h4>Neutralize the ClickFix clipboard</h4><p>Beyond warning: offer one-click "clear my clipboard" so the dangerous command can't be pasted even by accident, and detect the deferred (on-click) clipboard write variant.</p></div>
+    <div class="rcard"><div class="impact">Medium</div><h4>Punycode / mixed-script banner</h4><p>Surface a top-of-page address-bar-style banner showing the decoded Unicode host for IDN domains, so users see <code>аpple.com</code> ≠ <code>apple.com</code> instantly.</p></div>
+    <div class="rcard"><div class="impact">Medium</div><h4>Redirect-chain expansion for shorteners</h4><p>Resolve shortener hops server-lessly via the existing webRequest redirect tracking and score the true landing before render.</p></div>
+    <div class="rcard"><div class="impact">Medium</div><h4>Community false-positive loop</h4><p>Local "this was wrong" button that tunes the per-domain trust floor — no server, all on-device — to keep FPs trending toward zero per user.</p></div>
+    <div class="rcard"><div class="impact">Polish</div><h4>Cross-browser builds + store assets</h4><p>Firefox/Edge manifests, screenshots, 440×280 promo tile, and a hosted privacy-policy URL to clear the remaining Web Store submission checklist.</p></div>
+    <div class="rcard"><div class="impact">Polish</div><h4>Localized warnings + a11y pass</h4><p>Translate the calm warning copy (Hindi/EU langs given the PII regions) and re-run the colorblind/reduced-motion audit on the new modals.</p></div>
+  </div>
+
+  <div class="verdict">
+    <b>Bottom line:</b> Kedayam now defends normal users against the threats that actually hit them in 2025 — spear-phishing look-alikes, brand-subdomain spoofs, drive-by executables, and especially ClickFix/fake-CAPTCHA clipboard malware — entirely as <b>freeware</b> with no keys and no telemetry, while keeping false positives low (legitimate banks, big-tech, and ordinary <code>.xyz</code> sites still rate Safe). Engine work is verified by 601 passing tests and a fresh, certificate-matched package. The roadmap above is what turns "world-class" into "the ultimate."
+  </div>
+
+  <footer>
+    Kedayam Browser Shield v1.1.0 · upgrade report · 5 new modules, +5 detection layers, 601/601 tests green · freeware, key-less, local-only<br>
+    Artifact: <span style="font-family:ui-monospace,Menlo,monospace">public/kedayam.zip</span> · sha256 3ebb5543…17d3182 · cert browserStoreReady:true
+  </footer>
+
+</div>
+</body>
+</html>

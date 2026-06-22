@@ -29,9 +29,7 @@ const settings = {
 // assert that `window.__kedayam = …` only appears inside it.
 // ──────────────────────────────────────────────────────────────────────
 describe("C-01 — production builds expose no global detection oracle", () => {
-  const src = readFileSync(
-    resolve(__dirname, "../../extension/content/content.js"),
-    "utf8");
+  const src = readFileSync(resolve(__dirname, "../../extension/content/content.js"), "utf8");
 
   it("window.__kedayam assignment is gated behind a DEV check", () => {
     // Every assignment must be inside an `if (DEV)` block.
@@ -39,8 +37,7 @@ describe("C-01 — production builds expose no global detection oracle", () => {
     expect(matches.length).toBeGreaterThan(0);
     for (const m of matches) {
       const before = src.slice(Math.max(0, m.index - 200), m.index);
-      expect(before, "every __kedayam assignment must be DEV-gated")
-        .toMatch(/if\s*\(\s*DEV\s*\)/);
+      expect(before, "every __kedayam assignment must be DEV-gated").toMatch(/if\s*\(\s*DEV\s*\)/);
     }
   });
 
@@ -63,14 +60,18 @@ describe("C-02 — user allowlist cannot bypass exfiltration", () => {
     title: extras.title || "Sign in",
     visibleText: extras.visibleText || "sign in",
     hasPasswordField: true,
-    forms: [{
-      action: formAction, method: "post",
-      hasPassword: !extras.otpOnly,
-      hasEmailLike: true,
-      hasOtp: !!extras.otpOnly,
-      hiddenCount: 0, fieldsCount: 2,
-      insideIframe: !!extras.iframe,
-    }],
+    forms: [
+      {
+        action: formAction,
+        method: "post",
+        hasPassword: !extras.otpOnly,
+        hasEmailLike: true,
+        hasOtp: !!extras.otpOnly,
+        hiddenCount: 0,
+        fieldsCount: 2,
+        insideIframe: !!extras.iframe,
+      },
+    ],
     oauthButtons: extras.oauthButtons || [],
     topLevelIframe: false,
     ...(extras.ctx || {}),
@@ -79,8 +80,7 @@ describe("C-02 — user allowlist cannot bypass exfiltration", () => {
   it("allowlisted root + external credential POST → dangerous", async () => {
     const r = await evaluateUrl("https://my-portal.tld/login", {
       settings: { ...settings, allowlist: ["my-portal.tld"] },
-      pageContext: baseCtx("https://my-portal.tld",
-        "https://attacker.tld/collect"),
+      pageContext: baseCtx("https://my-portal.tld", "https://attacker.tld/collect"),
     });
     expect(r.status).toBe("dangerous");
     expect(r.score).toBeLessThanOrEqual(30);
@@ -89,11 +89,10 @@ describe("C-02 — user allowlist cannot bypass exfiltration", () => {
   it("allowlisted root + OAuth spoof (off-domain OAuth POST) → dangerous", async () => {
     const r = await evaluateUrl("https://my-portal.tld/oauth", {
       settings: { ...settings, allowlist: ["my-portal.tld"] },
-      pageContext: baseCtx("https://my-portal.tld",
-        "https://attacker.tld/oauth", {
-          oauthButtons: ["google"],
-          visibleText: "sign in with google continue",
-        }),
+      pageContext: baseCtx("https://my-portal.tld", "https://attacker.tld/oauth", {
+        oauthButtons: ["google"],
+        visibleText: "sign in with google continue",
+      }),
     });
     expect(r.status).toBe("dangerous");
   });
@@ -101,8 +100,7 @@ describe("C-02 — user allowlist cannot bypass exfiltration", () => {
   it("allowlisted root + cross-origin credential iframe → dangerous", async () => {
     const r = await evaluateUrl("https://my-portal.tld/login", {
       settings: { ...settings, allowlist: ["my-portal.tld"] },
-      pageContext: baseCtx("https://my-portal.tld", "/login",
-        { iframe: true }),
+      pageContext: baseCtx("https://my-portal.tld", "/login", { iframe: true }),
     });
     // The iframe-credential-form signal must escalate even under allowlist.
     expect(r.status).not.toBe("safe");
@@ -110,12 +108,13 @@ describe("C-02 — user allowlist cannot bypass exfiltration", () => {
 
   it("arbitrate(): allowlist + externalFormPost still emits dangerous rules", () => {
     const arb = arbitrate({
-      allowlistRoot: true, isReputableRoot: false, isTrustedProvider: false,
+      allowlistRoot: true,
+      isReputableRoot: false,
+      isTrustedProvider: false,
       hasAuthWorkflow: true,
       lookalike: { match: null, confidence: 0 },
       clone: { confidence: 0 },
-      phishing: { credentialHarvest: true, externalFormPost: true,
-        forms: [], signals: [] },
+      phishing: { credentialHarvest: true, externalFormPost: true, forms: [], signals: [] },
     });
     expect(arb.forceStatus).toBe("dangerous");
     expect(arb.rules.some((r) => r.id === "external-post")).toBe(true);
@@ -126,8 +125,9 @@ describe("C-02 — user allowlist cannot bypass exfiltration", () => {
     // by the allowlist primitive. Behavioral evidence is what matters.
     const r = await evaluateUrl("https://my-portal.tld/login", {
       settings: { ...settings, allowlist: ["my-portal.tld"] },
-      pageContext: baseCtx("https://my-portal.tld", "/login",
-        { visibleText: "sign in to your microsoft account outlook" }),
+      pageContext: baseCtx("https://my-portal.tld", "/login", {
+        visibleText: "sign in to your microsoft account outlook",
+      }),
     });
     expect(r.score).toBeGreaterThanOrEqual(70);
   });
@@ -141,9 +141,7 @@ describe("C-02 — user allowlist cannot bypass exfiltration", () => {
 // and the variable is cleared in finally).
 // ──────────────────────────────────────────────────────────────────────
 describe("C-03 — clipboard secrets are ephemeral", () => {
-  const src = readFileSync(
-    resolve(__dirname, "../../extension/content/content.js"),
-    "utf8");
+  const src = readFileSync(resolve(__dirname, "../../extension/content/content.js"), "utf8");
 
   it("does NOT capture clipboardData text into a closure before the modal", () => {
     // The old anti-pattern: `const replayText = e.clipboardData?.getData(...)`
@@ -173,7 +171,8 @@ describe("C-03 — clipboard secrets are ephemeral", () => {
     // log() calls in the paste path must only emit counts/host, never
     // the raw payload. We assert the shape of every log() arg in the
     // paste interception block.
-    const region = src.match(/document\.addEventListener\("paste"[\s\S]*?\}, true\);/);
+    // Tolerant of Prettier wrapping the listener args across lines.
+    const region = src.match(/addEventListener\(\s*"paste",[\s\S]*?\},\s*true,?\s*\)/);
     expect(region).toBeTruthy();
     const logCalls = [...region[0].matchAll(/log\(\s*\{([\s\S]*?)\}\s*\)/g)];
     expect(logCalls.length).toBeGreaterThan(0);
@@ -195,11 +194,21 @@ describe("C-04 — generic enterprise AiTM detection", () => {
       pageContext: {
         pageOrigin: "https://login-portal-prod.cc",
         title: "Sign in to continue",
-        visibleText: "sign in to continue your organization requires verify it's you continue to your organization",
+        visibleText:
+          "sign in to continue your organization requires verify it's you continue to your organization",
         hasPasswordField: false,
-        forms: [{ action: "/next", method: "post",
-          hasPassword: false, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+        forms: [
+          {
+            action: "/next",
+            method: "post",
+            hasPassword: false,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
       },
     });
     expect(r.status).not.toBe("safe");
@@ -215,9 +224,18 @@ describe("C-04 — generic enterprise AiTM detection", () => {
         title: "Sign in",
         visibleText: "approve sign-in request device verification continue to your organization",
         hasPasswordField: true,
-        forms: [{ action: "https://relay.attacker.cc/post", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+        forms: [
+          {
+            action: "https://relay.attacker.cc/post",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
       },
     });
     expect(r.status).toBe("dangerous");
@@ -228,9 +246,18 @@ describe("C-04 — generic enterprise AiTM detection", () => {
       pageOrigin: "https://mfa-step.cc",
       title: "Approve sign-in request",
       visibleText: "approve this sign-in request on your trusted device device verification",
-      forms: [{ action: "/approve", method: "post",
-        hasPassword: false, hasEmailLike: false, hasOtp: true,
-        hiddenCount: 0, fieldsCount: 1, insideIframe: false }],
+      forms: [
+        {
+          action: "/approve",
+          method: "post",
+          hasPassword: false,
+          hasEmailLike: false,
+          hasOtp: true,
+          hiddenCount: 0,
+          fieldsCount: 1,
+          insideIframe: false,
+        },
+      ],
     });
     expect(ph.signals.some((s) => s.id === "generic-enterprise-auth")).toBe(true);
     expect(ph.forceStatus).toBe("suspicious");
@@ -242,11 +269,21 @@ describe("C-04 — generic enterprise AiTM detection", () => {
       pageContext: {
         pageOrigin: "https://login.microsoftonline.com",
         title: "Sign in to your account",
-        visibleText: "sign in to continue to your organization use your work or school account approve sign-in request",
+        visibleText:
+          "sign in to continue to your organization use your work or school account approve sign-in request",
         hasPasswordField: true,
-        forms: [{ action: "/common/login", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 4, fieldsCount: 6, insideIframe: false }],
+        forms: [
+          {
+            action: "/common/login",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 4,
+            fieldsCount: 6,
+            insideIframe: false,
+          },
+        ],
       },
     });
     expect(r.status).toBe("safe");
@@ -261,9 +298,18 @@ describe("C-04 — generic enterprise AiTM detection", () => {
         title: "Sign In",
         visibleText: "sign in to continue use your corporate account continue to your organization",
         hasPasswordField: true,
-        forms: [{ action: "/login/do-login", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 2, fieldsCount: 4, insideIframe: false }],
+        forms: [
+          {
+            action: "/login/do-login",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 2,
+            fieldsCount: 4,
+            insideIframe: false,
+          },
+        ],
       },
     });
     expect(r.status).toBe("safe");
@@ -272,7 +318,8 @@ describe("C-04 — generic enterprise AiTM detection", () => {
   it("real-world fixture: generic-enterprise-sso.html is flagged dangerous", async () => {
     const html = readFileSync(
       resolve(__dirname, "../fixtures/phishing/generic-enterprise-sso.html"),
-      "utf8");
+      "utf8",
+    );
     const title = html.match(/<title>([^<]+)<\/title>/i)?.[1] || "";
     const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
     const action = html.match(/<form[^>]+action="([^"]+)"/i)?.[1] || "";
@@ -280,11 +327,21 @@ describe("C-04 — generic enterprise AiTM detection", () => {
       settings,
       pageContext: {
         pageOrigin: "https://generic-enterprise-host.cc",
-        title, visibleText: text,
+        title,
+        visibleText: text,
         hasPasswordField: false,
-        forms: [{ action, method: "post",
-          hasPassword: false, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+        forms: [
+          {
+            action,
+            method: "post",
+            hasPassword: false,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
       },
     });
     // Off-domain credential relay + generic SSO copy → arbitrator dangerous.

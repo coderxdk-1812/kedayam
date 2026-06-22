@@ -8,20 +8,26 @@ export const SCHEMA_VERSION = 3;
 
 export const FEATURE_FLAGS = Object.freeze({
   // detection
-  phishingHeuristics:   true,
-  sensitiveDataEngine:  true,
-  cloneDetection:       true,
+  phishingHeuristics: true,
+  sensitiveDataEngine: true,
+  cloneDetection: true,
   authLayoutFingerprint: true,
+  // freeware protection layers (local, key-less)
+  localBlocklist: true, // bundled offline threat blocklist
+  urlReputation: true, // abused TLD / shortener / brand-subdomain
+  clickFixGuard: true, // ClickFix / FakeCaptcha clipboard defense
+  downloadGuard: true, // executable-download warning on low-trust pages
+  threatFeedAutoUpdate: false, // OPT-IN free public feed refresh (network)
   // UX
-  cooldownEnabled:      true,
-  blockingModal:        true,
-  reducedMotion:        false,   // auto-detected at runtime, can be forced
+  cooldownEnabled: true,
+  blockingModal: true,
+  reducedMotion: false, // auto-detected at runtime, can be forced
   // diagnostics — OFF by default, no network ever
-  debugMode:            false,
-  inMemoryTrace:        false,
+  debugMode: false,
+  inMemoryTrace: false,
   // network
-  remoteSafeBrowsing:   true,    // user-provided API key, else inert
-  remoteVirusTotal:     false,   // off by default; opt-in via key
+  remoteSafeBrowsing: true, // user-provided API key, else inert
+  remoteVirusTotal: false, // off by default; opt-in via key
 });
 
 /**

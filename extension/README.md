@@ -6,9 +6,25 @@ intelligence. Privacy-first by design — sensitive scanning never leaves your d
 
 ## Capabilities
 
-- **Trust Engine** — aggregates HTTPS, lookalike, redirect, domain-shape, and
-  optional Google Safe Browsing + VirusTotal signals into an explainable
-  0–100 trust score (Safe / Suspicious / Dangerous).
+- **Trust Engine** — aggregates HTTPS, lookalike, redirect, domain-shape,
+  freeware threat-blocklist, and (optional) Google Safe Browsing + VirusTotal
+  signals into an explainable 0–100 trust score (Safe / Suspicious / Dangerous).
+- **Freeware threat blocklist** — a bundled, offline list of known phishing /
+  malware hosts ships inside the extension, so reputation protection works with
+  **zero API keys and zero network calls** out of the box. An _opt-in_ refresh
+  can layer thousands more entries from FREE public feeds (URLhaus, Phishing
+  Army, OpenPhish) — only the feed files are fetched; your browsing is never
+  sent anywhere.
+- **ClickFix / FakeCaptcha guard** — stops the dominant 2024-2025 malware lure:
+  pages that silently copy a PowerShell / `mshta` / `curl | bash` command to
+  your clipboard and tell you to paste it into the Run dialog or a terminal.
+  Kedayam inspects what a page writes to your clipboard locally and blocks with
+  a clear warning before you can run it.
+- **Malicious-download guard** — warns before an executable download
+  (`.exe/.scr/.msi/.hta/.bat/.apk/.dmg/…`) on a low-trust page.
+- **URL reputation** — flags high-abuse / free TLDs (`.tk/.ml/.zip/.xyz/…`),
+  URL shorteners, and the "brand-domain-as-subdomain" trick
+  (`paypal.com.account-verify.tk`) that fools users reading left-to-right.
 - **Lookalike & homoglyph detection** — Levenshtein + Unicode mapping against a
   protected-brand list (banks, payments, big-tech, crypto).
 - **Local sensitive-data detection** — emails, phones (IN/US), Aadhaar, PAN,
@@ -33,13 +49,21 @@ intelligence. Privacy-first by design — sensitive scanning never leaves your d
 4. Click **Load unpacked** and select the unzipped `extension/` folder.
 5. Pin Kedayam to the toolbar.
 
-## Optional: external intelligence
+## Freeware by design — no keys required
 
-Open the extension's options page to plug in API keys:
-- **Google Safe Browsing** — [Get a key](https://developers.google.com/safe-browsing/v4/get-started)
-- **VirusTotal** — [Get a key](https://www.virustotal.com/gui/my-apikey)
+Kedayam is **freeware**. Every protection layer works without any paid service
+or API key: the trust engine, lookalike/clone detection, sensitive-data guard,
+ClickFix guard, download guard, URL reputation, and the **bundled offline
+threat blocklist** all run locally.
 
-Without keys, Kedayam still operates fully on local heuristics.
+### Optional extras
+
+- **Free threat feeds (opt-in)** — enable "Auto-update threat feed" in Options
+  to refresh the local blocklist from free public sources (URLhaus, Phishing
+  Army, OpenPhish). No account or key needed; only the feed files are fetched.
+- **Google Safe Browsing / VirusTotal (optional)** — if you happen to have a
+  key you can paste it in Options for extra corroboration, but it is **not
+  required** and disabled by default.
 
 ## Privacy
 

@@ -74,16 +74,17 @@ export function arbitrate(ctx) {
   const isUnknown = !ctx.isReputableRoot && !ctx.isTrustedProvider;
   const sigs = ctx.phishing?.signals || [];
   const hasSig = (id) => sigs.some((s) => s.id === id);
-  const crossOriginCreds = hasSig("iframe-credential-form") ||
-    hasSig("iframe-login");
-  const oauthSpoof = !!ctx.phishing?.oauthSpoof ||
-    (hasSig("oauth-impersonation") && externalFormPost);
+  const crossOriginCreds = hasSig("iframe-credential-form") || hasSig("iframe-login");
+  const oauthSpoof =
+    !!ctx.phishing?.oauthSpoof || (hasSig("oauth-impersonation") && externalFormPost);
   const hiddenOverlay = !!ctx.hiddenLoginOverlay;
-  const mfaOnly = !!ctx.mfaOnly ||
-    !!(ctx.phishing?.forms || []).some((f) => f.hasOtp && !f.hasPassword);
-  const emailFirst = !!ctx.emailFirstFlow ||
-    !!(ctx.phishing?.forms || []).some((f) =>
-      f.hasEmailLike && !f.hasPassword && (f.fieldsCount || 0) <= 4);
+  const mfaOnly =
+    !!ctx.mfaOnly || !!(ctx.phishing?.forms || []).some((f) => f.hasOtp && !f.hasPassword);
+  const emailFirst =
+    !!ctx.emailFirstFlow ||
+    !!(ctx.phishing?.forms || []).some(
+      (f) => f.hasEmailLike && !f.hasPassword && (f.fieldsCount || 0) <= 4,
+    );
   const layoutCloneConf = ctx.authLayout?.confidence || 0;
   const layoutClone = !!ctx.authLayout?.isLayoutClone;
 
@@ -93,8 +94,8 @@ export function arbitrate(ctx) {
   // It does NOT bypass active behavioral evidence of credential theft —
   // external POST, cross-origin credential iframes, OAuth spoofing,
   // or threat-intel hits. Allowlists must never silence exfiltration.
-  const malicious = externalFormPost || crossOriginCreds || oauthSpoof ||
-    !!ctx.gsbMalicious || !!ctx.vtMalicious;
+  const malicious =
+    externalFormPost || crossOriginCreds || oauthSpoof || !!ctx.gsbMalicious || !!ctx.vtMalicious;
   if (ctx.allowlistRoot && !malicious) return out;
 
   function apply(rule) {
@@ -111,127 +112,250 @@ export function arbitrate(ctx) {
   // Behavioral corroboration — these are the *real* attack signals.
   // Clone / layout similarity alone NEVER produces a dangerous verdict
   // on a reputable or trusted root. It must be paired with one of these.
-  const behavioralEvidence = externalFormPost || crossOriginCreds ||
-    oauthSpoof || ctx.idnSpoof || mfaOnly || brandImpersonation ||
-    !!ctx.gsbMalicious || !!ctx.vtMalicious;
+  const behavioralEvidence =
+    externalFormPost ||
+    crossOriginCreds ||
+    oauthSpoof ||
+    ctx.idnSpoof ||
+    mfaOnly ||
+    brandImpersonation ||
+    !!ctx.gsbMalicious ||
+    !!ctx.vtMalicious ||
+    !!ctx.blocklistHit ||
+    !!ctx.urlBrandSpoof;
   const trustedRoot = ctx.isReputableRoot || ctx.isTrustedProvider;
+
+  // ---- Tier 0: threat-intelligence + URL-identity overrides ----
+  // A blocklist hit is direct evidence the host is known-malicious — it
+  // overrides everything, including the allowlist short-circuit above (which
+  // already excludes `malicious`). Brand-domain-as-subdomain is a deliberate
+  // deception with no legitimate use, so it forces dangerous on its own.
+  if (ctx.blocklistHit) {
+    apply({
+      id: "threat-blocklist",
+      force: "dangerous",
+      cap: 12,
+      reason: "Host appears on a known phishing / malware blocklist.",
+    });
+  }
+  if (ctx.urlBrandSpoof && (ctx.hasAuthWorkflow || credentialHarvest)) {
+    apply({
+      id: "brand-subdomain-creds",
+      force: "dangerous",
+      cap: 18,
+      reason: "A real brand domain is hidden in the subdomain and the page collects sign-in.",
+    });
+  } else if (ctx.urlBrandSpoof) {
+    apply({
+      id: "brand-subdomain",
+      force: "suspicious",
+      cap: 40,
+      reason: "A real brand domain is hidden in the subdomain to impersonate it.",
+    });
+  }
 
   // ---- Tier 1: hard "dangerous" overrides (high-confidence phishing) ----
 
   if (externalFormPost && (brandImpersonation || brandImageMismatch || cloneConf >= 0.6)) {
-    apply({ id: "external-post-clone", force: "dangerous", cap: 15,
-      reason: "Credentials would be POSTed off-domain on a clone/impersonation page." });
+    apply({
+      id: "external-post-clone",
+      force: "dangerous",
+      cap: 15,
+      reason: "Credentials would be POSTed off-domain on a clone/impersonation page.",
+    });
   }
   if (externalFormPost) {
-    apply({ id: "external-post", force: "dangerous", cap: 20,
-      reason: "Login form submits to an unrelated domain." });
+    apply({
+      id: "external-post",
+      force: "dangerous",
+      cap: 20,
+      reason: "Login form submits to an unrelated domain.",
+    });
   }
   if (lookalikeConf > 0.9 && credentialHarvest && isUnknown) {
-    apply({ id: "lookalike-creds", force: "dangerous", cap: 25,
-      reason: "Hostname mimics a known brand and is collecting credentials." });
+    apply({
+      id: "lookalike-creds",
+      force: "dangerous",
+      cap: 25,
+      reason: "Hostname mimics a known brand and is collecting credentials.",
+    });
   }
   if (brandImpersonation && credentialHarvest && isUnknown) {
-    apply({ id: "brand-creds", force: "dangerous", cap: 25,
-      reason: "Page impersonates a known brand and is collecting credentials." });
+    apply({
+      id: "brand-creds",
+      force: "dangerous",
+      cap: 25,
+      reason: "Page impersonates a known brand and is collecting credentials.",
+    });
   }
   // High-confidence clone with credential workflow — ONLY when paired with
   // independent behavioral evidence. Visual similarity alone (favicon CDN,
   // logo reuse, asset hosts) is expected on legitimate brand pages and
   // must not escalate on its own.
-  if (cloneConf >= 0.8 && (credentialHarvest || ctx.hasAuthWorkflow) &&
-      isUnknown && behavioralEvidence) {
-    apply({ id: "clone-auth", force: "dangerous", cap: 25,
-      reason: "High-confidence visual clone of a known brand login combined with malicious behavior." });
+  if (
+    cloneConf >= 0.8 &&
+    (credentialHarvest || ctx.hasAuthWorkflow) &&
+    isUnknown &&
+    behavioralEvidence
+  ) {
+    apply({
+      id: "clone-auth",
+      force: "dangerous",
+      cap: 25,
+      reason:
+        "High-confidence visual clone of a known brand login combined with malicious behavior.",
+    });
   }
   if (ctx.idnSpoof && credentialHarvest) {
-    apply({ id: "idn-creds", force: "dangerous", cap: C.CAP_IDN_CREDS,
-      reason: "Punycode hostname is collecting credentials." });
+    apply({
+      id: "idn-creds",
+      force: "dangerous",
+      cap: C.CAP_IDN_CREDS,
+      reason: "Punycode hostname is collecting credentials.",
+    });
   }
   if (crossOriginCreds && isUnknown) {
-    apply({ id: "cross-origin-credentials", force: "dangerous",
+    apply({
+      id: "cross-origin-credentials",
+      force: "dangerous",
       cap: C.CAP_CROSS_ORIGIN_CREDS,
-      reason: "Password field inside a cross-origin iframe." });
+      reason: "Password field inside a cross-origin iframe.",
+    });
   }
   if (oauthSpoof && isUnknown) {
-    apply({ id: "oauth-spoof", force: "dangerous", cap: C.CAP_OAUTH_SPOOF,
-      reason: "OAuth button posts credentials to an unrelated origin." });
+    apply({
+      id: "oauth-spoof",
+      force: "dangerous",
+      cap: C.CAP_OAUTH_SPOOF,
+      reason: "OAuth button posts credentials to an unrelated origin.",
+    });
   }
   if (mfaOnly && isUnknown) {
-    apply({ id: "mfa-harvest", force: "dangerous",
+    apply({
+      id: "mfa-harvest",
+      force: "dangerous",
       cap: C.CAP_MFA_HARVEST_UNKNOWN,
-      reason: "Unknown domain is requesting only an MFA / OTP code." });
+      reason: "Unknown domain is requesting only an MFA / OTP code.",
+    });
   }
   if (layoutClone && isUnknown && behavioralEvidence) {
-    apply({ id: "auth-layout-clone", force: "dangerous",
+    apply({
+      id: "auth-layout-clone",
+      force: "dangerous",
       cap: C.CAP_LAYOUT_CLONE,
-      reason: "Sign-in layout matches a known provider on an unrelated domain with malicious behavior." });
+      reason:
+        "Sign-in layout matches a known provider on an unrelated domain with malicious behavior.",
+    });
   }
 
   // ---- Tier 2: "suspicious" caps (need corroboration to escalate) ----
 
   if (lookalikeConf > 0.85 && isUnknown) {
-    apply({ id: "lookalike-strong", force: "suspicious", cap: 35,
-      reason: "Hostname strongly resembles a protected brand." });
+    apply({
+      id: "lookalike-strong",
+      force: "suspicious",
+      cap: 35,
+      reason: "Hostname strongly resembles a protected brand.",
+    });
   }
   if (ctx.idnSpoof && ctx.hasAuthWorkflow) {
-    apply({ id: "idn-auth", force: "suspicious", cap: 30,
-      reason: "Punycode hostname combined with authentication workflow." });
+    apply({
+      id: "idn-auth",
+      force: "suspicious",
+      cap: 30,
+      reason: "Punycode hostname combined with authentication workflow.",
+    });
   }
   if (ctx.idnSpoof) {
-    apply({ id: "idn", force: "suspicious", cap: 45,
-      reason: "Punycode / Unicode hostname." });
+    apply({ id: "idn", force: "suspicious", cap: 45, reason: "Punycode / Unicode hostname." });
   }
   // Layout-only match on an unknown root, no behavioral evidence: surface
   // as suspicious but do not escalate to dangerous.
   if (layoutClone && isUnknown && !behavioralEvidence) {
-    apply({ id: "auth-layout-soft-unknown", force: "suspicious",
+    apply({
+      id: "auth-layout-soft-unknown",
+      force: "suspicious",
       cap: C.CAP_LAYOUT_CLONE + 10,
-      reason: "Sign-in layout matches a known provider on an unrelated domain." });
+      reason: "Sign-in layout matches a known provider on an unrelated domain.",
+    });
   }
   // Clone signals only escalate when on unknown roots OR with behavioral
   // evidence. On trusted/reputable roots, visual similarity is informational.
   if (cloneConf >= 0.6 && isUnknown) {
-    apply({ id: "clone-medium", force: "suspicious", cap: 35,
-      reason: "Page resembles a cloned brand site." });
+    apply({
+      id: "clone-medium",
+      force: "suspicious",
+      cap: 35,
+      reason: "Page resembles a cloned brand site.",
+    });
   } else if (cloneConf >= 0.4 && isUnknown) {
-    apply({ id: "clone-soft", cap: 55,
-      reason: "Some structural signs of brand cloning." });
+    apply({ id: "clone-soft", cap: 55, reason: "Some structural signs of brand cloning." });
   }
   if (brandImpersonation && !ctx.isReputableRoot) {
-    apply({ id: "brand-text", force: "suspicious", cap: 45,
-      reason: "Page mentions a major brand it does not belong to." });
+    apply({
+      id: "brand-text",
+      force: "suspicious",
+      cap: 45,
+      reason: "Page mentions a major brand it does not belong to.",
+    });
   }
   if (credentialHarvest && isUnknown) {
-    apply({ id: "unknown-login", cap: 60,
-      reason: "Credential form on an unverified domain." });
+    apply({ id: "unknown-login", cap: 60, reason: "Credential form on an unverified domain." });
     if (phishConf >= 0.5) out.forceStatus = out.forceStatus || "suspicious";
   }
   if (ctx.hasAuthWorkflow && !credentialHarvest && isUnknown) {
-    apply({ id: "unknown-auth", cap: C.CAP_UNKNOWN_AUTH,
-      reason: "Authentication workflow on an unverified domain." });
+    apply({
+      id: "unknown-auth",
+      cap: C.CAP_UNKNOWN_AUTH,
+      reason: "Authentication workflow on an unverified domain.",
+    });
+  }
+  // Abused / free TLD that is ALSO presenting an auth workflow on an unknown
+  // root — classic cheap-domain phishing. Soft cap only; never dangerous on
+  // its own (a free-TLD blog must stay safe).
+  if (ctx.abusedTld && ctx.hasAuthWorkflow && isUnknown) {
+    apply({
+      id: "abused-tld-auth",
+      force: "suspicious",
+      cap: 55,
+      reason: `Sign-in workflow on a high-abuse .${ctx.abusedTld} domain.`,
+    });
   }
   if (hiddenOverlay && isUnknown) {
-    apply({ id: "hidden-overlay", force: "suspicious",
+    apply({
+      id: "hidden-overlay",
+      force: "suspicious",
       cap: C.CAP_HIDDEN_LOGIN,
-      reason: "Login UI was hidden initially and revealed dynamically." });
+      reason: "Login UI was hidden initially and revealed dynamically.",
+    });
   }
   if (emailFirst && isUnknown && !credentialHarvest) {
-    apply({ id: "email-first", force: "suspicious", cap: C.CAP_EMAIL_FIRST,
-      reason: "Email-first capture flow on an unverified domain." });
+    apply({
+      id: "email-first",
+      force: "suspicious",
+      cap: C.CAP_EMAIL_FIRST,
+      reason: "Email-first capture flow on an unverified domain.",
+    });
   }
   if (!layoutClone && layoutCloneConf >= 0.5 && isUnknown) {
-    apply({ id: "auth-layout-soft", cap: C.CAP_CLONE_SOFT,
-      reason: `Sign-in layout partially matches ${ctx.authLayout?.matchedTemplate || "a known provider"}.` });
+    apply({
+      id: "auth-layout-soft",
+      cap: C.CAP_CLONE_SOFT,
+      reason: `Sign-in layout partially matches ${ctx.authLayout?.matchedTemplate || "a known provider"}.`,
+    });
   }
 
   // ---- Tier 3: trusted-provider corroboration ----
   // We only escalate a trusted root to "suspicious" when real behavioral
   // evidence agrees. Visual similarity alone is expected on legitimate
   // brand pages and must never trigger a warning.
-  if (ctx.isTrustedProvider && behavioralEvidence &&
-      (lookalikeConf > 0.85 || cloneConf >= 0.6)) {
-    apply({ id: "trusted-but-suspicious", force: "suspicious", cap: 55,
-      reason: "Trusted provider root, but page shows behavioral attack signals." });
+  if (ctx.isTrustedProvider && behavioralEvidence && (lookalikeConf > 0.85 || cloneConf >= 0.6)) {
+    apply({
+      id: "trusted-but-suspicious",
+      force: "suspicious",
+      cap: 55,
+      reason: "Trusted provider root, but page shows behavioral attack signals.",
+    });
   }
 
   // ---- Tier 4: shadow arbitration on trusted roots ----

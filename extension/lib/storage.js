@@ -13,6 +13,12 @@ export const DEFAULT_SETTINGS = {
     permissionMonitoring: true,
     redirectAnalysis: true,
     cloneDetection: true,
+    // Freeware protection layers (all local, key-less).
+    localBlocklist: true, // bundled offline threat blocklist
+    clickFixGuard: true, // ClickFix / FakeCaptcha clipboard defense
+    downloadGuard: true, // warn on executable downloads from low-trust pages
+    urlReputation: true, // abused TLD / shortener / brand-subdomain
+    threatFeedAutoUpdate: false, // OPT-IN: refresh free public feeds (network)
   },
   privacy: {
     telemetryOptIn: false,
@@ -84,7 +90,13 @@ export const ACTIVITY_MAX = 200;
 // persistence so a future caller can never silently leak sensitive data
 // into the local activity log.
 const ACTIVITY_ALLOWED_FIELDS = new Set([
-  "kind", "host", "score", "status", "ruleId", "reason", "severity",
+  "kind",
+  "host",
+  "score",
+  "status",
+  "ruleId",
+  "reason",
+  "severity",
 ]);
 
 function sanitizeActivityEntry(entry) {
@@ -124,7 +136,9 @@ export async function getActivity() {
   // Opportunistically persist the pruned form so cleanup is deterministic
   // even for read-only callers.
   if (pruned.length !== list.length) {
-    try { await chrome.storage.local.set({ [key]: pruned }); } catch {}
+    try {
+      await chrome.storage.local.set({ [key]: pruned });
+    } catch {}
   }
   return pruned;
 }
@@ -139,7 +153,6 @@ export async function sweepExpiredActivity() {
   }
   return { kept: pruned.length, removed: list.length - pruned.length };
 }
-
 
 export async function clearAllCaches() {
   const all = await chrome.storage.local.get(null);

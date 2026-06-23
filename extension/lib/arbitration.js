@@ -122,7 +122,8 @@ export function arbitrate(ctx) {
     !!ctx.gsbMalicious ||
     !!ctx.vtMalicious ||
     !!ctx.blocklistHit ||
-    !!ctx.urlBrandSpoof;
+    !!ctx.urlBrandSpoof ||
+    !!ctx.tldSwap;
   const trustedRoot = ctx.isReputableRoot || ctx.isTrustedProvider;
 
   // ---- Tier 0: threat-intelligence + URL-identity overrides ----
@@ -145,7 +146,22 @@ export function arbitrate(ctx) {
       cap: 18,
       reason: "A real brand domain is hidden in the subdomain and the page collects sign-in.",
     });
-  } else if (ctx.urlBrandSpoof) {
+  } else if (ctx.tldSwap && (ctx.hasAuthWorkflow || credentialHarvest) && isUnknown) {
+    apply({
+      id: "tld-swap-creds",
+      force: "dangerous",
+      cap: 22,
+      reason: "Domain reuses a brand name on the wrong TLD and is collecting sign-in.",
+    });
+  } else if (ctx.tldSwap) {
+    apply({
+      id: "tld-swap",
+      force: "suspicious",
+      cap: 45,
+      reason: "Domain reuses a protected brand's name on a different TLD.",
+    });
+  }
+  if (ctx.urlBrandSpoof && !ctx.blocklistHit) {
     apply({
       id: "brand-subdomain",
       force: "suspicious",

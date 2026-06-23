@@ -17,6 +17,7 @@ export const FEATURE_FLAGS = Object.freeze({
   urlReputation: true, // abused TLD / shortener / brand-subdomain
   clickFixGuard: true, // ClickFix / FakeCaptcha clipboard defense
   downloadGuard: true, // executable-download warning on low-trust pages
+  scarewareGuard: true, // tech-support-scam / scareware page warning
   threatFeedAutoUpdate: false, // OPT-IN free public feed refresh (network)
   // UX
   cooldownEnabled: true,

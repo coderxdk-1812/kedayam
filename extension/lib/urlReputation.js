@@ -216,6 +216,7 @@ export function analyzeUrlReputation(url, opts = {}) {
     abusedTld: null,
     shortener: false,
     brandSubdomain: null,
+    tldSwap: null,
     phishyToken: null,
     cap: null,
   };
@@ -253,6 +254,33 @@ export function analyzeUrlReputation(url, opts = {}) {
       });
       out.cap = out.cap == null ? 25 : Math.min(out.cap, 25);
       break;
+    }
+  }
+
+  // --- 1b. TLD swap (right brand name, wrong TLD) ------------------------
+  // e.g. paypal.co / paypal.org / apple.cm — the second-level label exactly
+  // matches a protected brand's, but the registrable domain is not the brand.
+  // High-signal and low-FP because the SLD is an *exact* match, not a substring.
+  if (!out.brandSubdomain && !isTrusted) {
+    const sld = root.includes(".") ? root.slice(0, root.indexOf(".")) : root;
+    for (const brand of PROTECTED_BRAND_DOMAINS) {
+      if (root === brand) break; // genuine brand — safe.
+      const brandSld = brand.slice(0, brand.indexOf("."));
+      // Require a distinctive (≥4-char) brand label to avoid ambiguous words.
+      if (brandSld.length >= 4 && sld === brandSld && root !== brand) {
+        out.tldSwap = { brand, host, root };
+        out.signals.push({
+          id: "tld-swap",
+          category: "identity",
+          severity: "high",
+          title: `Looks like ${brand} on the wrong domain`,
+          detail: `${root} reuses the "${brandSld}" name of ${brand} but is a different registered domain.`,
+          weight: 30,
+          confidence: 0.8,
+        });
+        out.cap = out.cap == null ? 45 : Math.min(out.cap, 45);
+        break;
+      }
     }
   }
 

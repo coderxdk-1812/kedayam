@@ -24,6 +24,7 @@
       clickFixGuard: true,
       downloadGuard: true,
       urlReputation: true,
+      scarewareGuard: true,
       threatFeedAutoUpdate: false,
     },
   };
@@ -805,15 +806,83 @@
     clickFixWarned = true;
     const ctx = pageHasClickFixText();
     const corroborated = ctx.run || ctx.fake;
+    // Neutralize: best-effort overwrite of the planted command so it can't be
+    // pasted even by accident. May be a no-op without focus/gesture — the
+    // warning is the primary defence regardless.
+    let cleared = false;
+    try {
+      navigator.clipboard
+        ?.writeText("[removed by Kedayam — this was a malicious command]")
+        .then(() => {})
+        .catch(() => {});
+      cleared = true;
+    } catch {}
     log({ kind: "clickfix-blocked", host: location.hostname, severity: "critical" });
     showWarningModal({
       severity: "critical",
       title: "Do not paste — this page copied a system command",
-      body: `${location.hostname} just placed a ${verdict.label} command on your clipboard${corroborated ? " and is telling you to run it" : ""}. This is the "ClickFix" malware trick. Never paste it into PowerShell, the Run dialog (Win+R), or a terminal.`,
+      body: `${location.hostname} just placed a ${verdict.label} command on your clipboard${corroborated ? " and is telling you to run it" : ""}. This is the "ClickFix" malware trick. Never paste it into PowerShell, the Run dialog (Win+R), or a terminal.${cleared ? " Kedayam tried to clear your clipboard." : ""}`,
       items: [{ label: "Copied command", value: verdict.preview }],
       onTrust: () => sessionTrusted.add(location.hostname),
     });
   });
+
+  // ---------- Tech-support scam / scareware guard ----------
+  // Inline mirror of lib/scarewareGuard.js. Detects "your PC is infected — call
+  // this number" pages that lock the screen / spam dialogs. Conservative:
+  // alarmist text must pair with a call-to-action or a UI-lock cue.
+  const SCARE_THREAT = [
+    /\byour\s+(computer|pc|system|device|windows)\s+(is|has been|may be)\s+(infected|locked|blocked|compromised|at risk)\b/i,
+    /\b(virus(es)?|trojan|spyware|malware)\s+(detected|found|alert)\b/i,
+    /\b(security|system)\s+(alert|warning|breach)\b/i,
+    /\byour\s+(data|files|identity|information)\s+(is|are|may be)\s+(at risk|stolen|compromised|encrypted)\b/i,
+  ];
+  const SCARE_CTA = [
+    /\bcall\s+(us|now|immediately|microsoft|apple|windows|support|toll[- ]?free)\b/i,
+    /\b(toll[- ]?free|helpline|support\s+(line|number|team))\b/i,
+    /\bdo\s+not\s+(close|restart|shut\s*down|turn\s*off|ignore)\b/i,
+    /\bcall\s*[:.]?\s*(\+?\d[\d\s().-]{7,}\d)\b/i,
+  ];
+  const SCARE_VENDOR =
+    /\b(windows\s+defender|microsoft\s+(security|support)|apple\s+support|norton|mcafee)\b/i;
+  let scarewareWarned = false;
+  function checkScareware() {
+    if (STATE.settings?.detection?.scarewareGuard === false) return;
+    if (scarewareWarned) return;
+    let text = "";
+    try {
+      text = (document.body?.innerText || "").slice(0, 20000);
+    } catch {}
+    if (!text) return;
+    const threat = SCARE_THREAT.filter((re) => re.test(text)).length;
+    const cta = SCARE_CTA.filter((re) => re.test(text)).length;
+    const vendor = SCARE_VENDOR.test(text);
+    let hasTel = false;
+    try {
+      hasTel = !!document.querySelector('a[href^="tel:"]');
+    } catch {}
+    const fullscreen = !!document.fullscreenElement;
+    const structural = [hasTel, fullscreen].filter(Boolean).length;
+    let score =
+      Math.min(threat, 2) * 0.28 + Math.min(cta, 2) * 0.3 + (vendor ? 0.18 : 0) + structural * 0.2;
+    const corroborated =
+      (threat >= 1 && (cta >= 1 || structural >= 1)) || (cta >= 1 && structural >= 1);
+    if (!corroborated || score < 0.6) return;
+    scarewareWarned = true;
+    log({ kind: "scareware-warn", host: location.hostname, severity: "high" });
+    showWarningModal({
+      severity: "high",
+      title: "This looks like a tech-support scam",
+      body: `${location.hostname} is showing alarming "virus/locked" warnings and urging you to call a number or not close the page. Real security software never does this. Do not call any number shown, and do not grant remote access. Close this tab.`,
+      items: [
+        {
+          label: "Why flagged",
+          value: vendor ? "fake security-vendor alert" : "scareware pattern",
+        },
+      ],
+      onTrust: () => sessionTrusted.add(location.hostname),
+    });
+  }
 
   // ---------- Malicious-download guard ----------
   // Warns before a dangerous executable download on a low-trust page. Gated to
@@ -1127,11 +1196,16 @@
       } else {
         setTimeout(collectPageContext, 800);
       }
+      // Scareware text is usually present at load; re-check shortly after in
+      // case the lock screen is injected dynamically.
+      setTimeout(checkScareware, 1200);
     };
     if (document.readyState === "complete" || document.readyState === "interactive") run();
     else document.addEventListener("DOMContentLoaded", run, { once: true });
   }
   schedulePageContext();
+  // Catch a fullscreen-lock scam that engages after a user gesture.
+  document.addEventListener("fullscreenchange", () => setTimeout(checkScareware, 300));
 
   // Re-collect if a password field appears post-load (SPA / lazy auth modal).
   // Throttled via a token-bucket Budget so a mutation storm cannot dominate

@@ -92,12 +92,17 @@
   </div>
 
   <div class="grid">
-    <div class="stat green"><b>5</b><span>new protection modules</span></div>
-    <div class="stat blue"><b>+5</b><span>new detection layers</span></div>
-    <div class="stat"><b>601</b><span>tests passing / 0 failing</span></div>
+    <div class="stat green"><b>9</b><span>new protection modules</span></div>
+    <div class="stat blue"><b>+9</b><span>new detection layers</span></div>
+    <div class="stat"><b>632</b><span>tests passing / 0 failing</span></div>
     <div class="stat green"><b>$0</b><span>API keys required (freeware)</span></div>
-    <div class="stat violet"><b>1.22ms</b><span>mean detection latency</span></div>
+    <div class="stat violet"><b>~1.2ms</b><span>mean detection latency</span></div>
     <div class="stat"><b>0</b><span>new permissions requested</span></div>
+  </div>
+
+  <div class="lead" style="background:linear-gradient(135deg,#101d2e,#111827)">
+    <h2>Round 2 — additional gaps closed <span class="pill ok">+4 modules · 632 tests</span></h2>
+    <p>After the v1.1.0 freeware upgrade, four more real-world attack vectors were closed and tested: <b>IDN mixed-script hostnames</b> (Latin+Cyrillic spoofs like <code>аpple.com</code>), <b>open-redirect laundering</b> (<code>trusted.com/out?url=evil.tld</code>), <b>TLD-swap squatting</b> (<code>paypal.co</code>), and <b>tech-support / scareware pages</b> ("your PC is infected — call this number"). Plus best-effort <b>clipboard neutralization</b> on ClickFix. All local, key-less, with false-positive guards (github/google/wikipedia/normal-<code>.xyz</code> stay Safe).</p>
   </div>
 
   <!-- WHAT'S NEW -->

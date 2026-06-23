@@ -21,6 +21,8 @@ import { checkGoogleSafeBrowsing, checkVirusTotal } from "./safeBrowsing.js";
 import { analyzeClone } from "./cloneDetection.js";
 import { analyzePhishing } from "./phishingHeuristics.js";
 import { analyzeUrlReputation } from "./urlReputation.js";
+import { analyzeConfusable } from "./idnConfusable.js";
+import { analyzeOpenRedirect } from "./openRedirect.js";
 import { matchBlocklist } from "./threatFeed.js";
 import { arbitrate } from "./arbitration.js";
 import { trustDecay } from "./trustDecay.js";
@@ -540,6 +542,28 @@ export async function evaluateUrl(url, ctx = {}) {
     });
   }
 
+  // --- IDN mixed-script / confusable hostname ---
+  // Canonical, near-zero-FP IDN spoof signal: a label mixing Latin with
+  // Cyrillic/Greek/Armenian glyphs to fake a Latin brand (e.g. "аpple.com").
+  const confusable = analyzeConfusable(host);
+  for (const sig of confusable.signals) fire(sig);
+  if (confusable.mixedScript) {
+    capScore(confusable.confidence >= 0.9 ? 35 : 50, {
+      id: "mixed-script-cap",
+      category: "identity",
+      severity: "high",
+      title: "Trust capped — hostname mixes alphabets",
+      detail: `Label "${confusable.label}" combines ${confusable.scripts.join(" + ")} scripts.`,
+    });
+  }
+
+  // --- open-redirect / URL-parameter laundering ---
+  // A trusted-looking host carrying a ?url=/redirect= parameter that bounces to
+  // a different site. Soft by default (OAuth/SSO use these); escalates when the
+  // destination is encoded/an IP/embeds credentials.
+  const openRedirect = analyzeOpenRedirect(url);
+  for (const sig of openRedirect.signals) fire(sig);
+
   const BASELINE = 50;
   if (parsed.protocol === "https:") {
     addTrust({ id: "https-trust", title: "Encrypted connection (HTTPS)", points: 10 });
@@ -714,13 +738,14 @@ export async function evaluateUrl(url, ctx = {}) {
     isTrustedProvider,
     hasAuthWorkflow,
     lookalike: lookalikeForArb,
-    idnSpoof,
+    idnSpoof: idnSpoof || confusable.mixedScript,
     clone: cloneForArb,
     phishing: phishingForArb,
     gsbMalicious: !!(sb && sb.malicious),
     vtMalicious: !!(vt && vt.malicious),
     blocklistHit: !!blocklistHit.match,
     urlBrandSpoof: !!urlRep.brandSubdomain,
+    tldSwap: !!urlRep.tldSwap,
     abusedTld: urlRep.abusedTld,
   });
   // Apply arbitration caps unconditionally. The allowlist primitive raises
@@ -744,7 +769,9 @@ export async function evaluateUrl(url, ctx = {}) {
     (sb && sb.malicious) ||
     (vt && vt.malicious) ||
     blocklistHit.match ||
-    urlRep.brandSubdomain
+    urlRep.brandSubdomain ||
+    urlRep.tldSwap ||
+    confusable.mixedScript
   );
   if (!allowlistRoot || maliciousBehavior) {
     if (phishing?.cap != null) score = Math.min(score, phishing.cap);
@@ -764,6 +791,8 @@ export async function evaluateUrl(url, ctx = {}) {
     (vt && vt.malicious) ||
     blocklistHit.match ||
     urlRep.brandSubdomain ||
+    urlRep.tldSwap ||
+    confusable.mixedScript ||
     _authHas("credential-relay") ||
     _authHas("oauth-token-drift") ||
     _authHas("iframe-origin-swap")
@@ -852,6 +881,8 @@ export async function evaluateUrl(url, ctx = {}) {
     clone,
     phishing,
     urlReputation: urlRep,
+    confusable,
+    openRedirect,
     threatBlocklist: blocklistHit,
     safeBrowsing: { google: sb, virusTotal: vt },
     evaluatedAt: Date.now(),

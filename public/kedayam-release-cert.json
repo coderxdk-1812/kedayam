@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-22T11:44:23.835Z",
+  "generatedAt": "2026-06-23T16:59:29.213Z",
   "version": "1.1.0",
   "releaseCandidate": true,
   "privacyVerified": true,
@@ -25,14 +25,14 @@
   "memoryLeakDetected": false,
   "docsComplete": true,
   "tests": {
-    "passed": 601,
+    "passed": 632,
     "failed": 0,
-    "files": 199
+    "files": 212
   },
   "artifact": {
     "path": "public/kedayam.zip",
-    "bytes": 148977,
-    "sha256": "3ebb554366a7beadf4c9467b66c85be05dd4c07de98c3f217da4d979917d3182"
+    "bytes": 157311,
+    "sha256": "918eae135e3bdaf88c8c5de05b77e633b941ac0a2ac2654cb950d8a544ab56bc"
   },
   "browserStoreReady": true
 }

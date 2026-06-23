@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS = {
     clickFixGuard: true, // ClickFix / FakeCaptcha clipboard defense
     downloadGuard: true, // warn on executable downloads from low-trust pages
     urlReputation: true, // abused TLD / shortener / brand-subdomain
+    scarewareGuard: true, // tech-support-scam / scareware page warning
     threatFeedAutoUpdate: false, // OPT-IN: refresh free public feeds (network)
   },
   privacy: {

@@ -106,8 +106,16 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
-        {children}
+      <body className="flex min-h-screen flex-col">
+        <div className="flex-1">{children}</div>
+        <footer className="border-t border-border bg-background px-6 py-4 text-center text-xs text-muted-foreground">
+          <Link
+            to="/privacy"
+            className="transition-colors hover:text-foreground"
+          >
+            Privacy
+          </Link>
+        </footer>
         <Scripts />
       </body>
     </html>

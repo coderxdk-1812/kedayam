@@ -108,10 +108,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body className="flex min-h-screen flex-col">
         <div className="flex-1">{children}</div>
-        <footer className="border-t border-border bg-background px-6 py-4 text-center text-xs text-muted-foreground">
+        <footer className="border-t border-border bg-background px-6 py-4 text-center">
           <Link
             to="/privacy"
-            className="transition-colors hover:text-foreground"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Privacy
           </Link>

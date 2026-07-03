@@ -1,0 +1,51 @@
+name: release-verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Unit + redteam + compatibility tests
+        run: bun run test
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: E2E smoke test
+        run: bun run test:e2e
+
+      - name: Build + package + checksum the extension from current source
+        run: node scripts/release-build.mjs
+
+      - name: Re-certify against the freshly built zip
+        run: node scripts/release-certify.mjs
+
+      # This is the step that makes "stale package" impossible to merge:
+      # it rebuilds the zip + cert from scratch and fails the build if what's
+      # committed in public/ doesn't match what source actually produces.
+      - name: Fail if the committed artifact has drifted from source
+        run: |
+          if ! git diff --exit-code -- public/kedayam.zip public/kedayam.zip.sha256 public/kedayam-release-cert.json; then
+            echo ""
+            echo "::error::public/kedayam.zip, its checksum, or the release cert no longer match" \
+                       "a fresh build from current source. Run:" \
+                       "  node scripts/release-build.mjs && node scripts/release-certify.mjs" \
+                       "and commit the regenerated files."
+            exit 1
+          fi

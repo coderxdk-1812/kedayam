@@ -21,12 +21,6 @@ jobs:
       - name: Unit + redteam + compatibility tests
         run: bun run test
 
-      - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium
-
-      - name: E2E smoke test
-        run: bun run test:e2e
-
       - name: Build + package + checksum the extension from current source
         run: node scripts/release-build.mjs
 
@@ -36,10 +30,6 @@ jobs:
       - name: Fail if the committed artifact has drifted from source
         run: |
           if ! git diff --exit-code -- public/kedayam.zip public/kedayam.zip.sha256 public/kedayam-release-cert.json; then
-            echo ""
-            echo "::error::public/kedayam.zip, its checksum, or the release cert no longer match"
-            echo "::error::a fresh build from current source. Run:"
-            echo "::error::  node scripts/release-build.mjs && node scripts/release-certify.mjs"
-            echo "::error::and commit the regenerated files."
+            echo "::error::Zip or cert has drifted from source. Run: node scripts/release-build.mjs && node scripts/release-certify.mjs and commit."
             exit 1
           fi

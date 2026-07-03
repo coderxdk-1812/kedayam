@@ -31,7 +31,8 @@ const registry = new InjectionRegistry();
 // enables feed refresh). The bundled seed lives inside the engine itself, so
 // reputation works even when this Set is empty.
 let blocklistExtra = new Set();
-const log = new Logger({ scope: "kedayam.bg", level: "info" });
+const DEV = !chrome.runtime.getManifest()?.update_url;
+const log = new Logger({ scope: "kedayam.bg", level: DEV ? "info" : "warn" });
 const health = new HealthMonitor();
 const nonces = new NonceCache(512);
 

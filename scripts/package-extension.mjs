@@ -13,9 +13,11 @@ for (const cmd of [
 }
 
 rmSync(zipPath, { force: true });
-const zipper = spawnSync('bash', ['-lc', `nix run nixpkgs#zip -- -qr /dev-server/${zipPath} . -x "*.DS_Store"`], {
-  cwd: 'extension',
-  stdio: 'inherit',
-});
+const zipper = spawnSync(
+  'zip',
+  ['-qr', `../${zipPath}`, '.', '-x', '*.DS_Store'],
+  { cwd: 'extension', stdio: 'inherit' },
+);
+
 if (zipper.status !== 0) process.exit(zipper.status ?? 1);
 console.log(`Packaged ${zipPath}`);

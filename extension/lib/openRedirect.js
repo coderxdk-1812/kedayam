@@ -20,7 +20,6 @@ import { rootDomain } from "./lookalike.js";
 const REDIRECT_PARAMS = new Set([
   "url",
   "redirect",
-  "redirect_uri",
   "redirecturl",
   "redirect_url",
   "next",

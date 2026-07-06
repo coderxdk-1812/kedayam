@@ -79,8 +79,8 @@ export function classifyScareware(ctx = {}) {
 
   // A genuine scam almost always pairs "you're infected" with "call/don't close"
   // or a lock. Text alone (e.g. a security article) must not fire.
-  const corroborated =
-    (threatHits >= 1 && (ctaHits >= 1 || structural >= 1)) || (ctaHits >= 1 && structural >= 1);
+const corroborated =
+  structural >= 1 && (threatHits >= 1 || ctaHits >= 1);
 
   if (corroborated && score >= 0.6) {
     out.scam = true;

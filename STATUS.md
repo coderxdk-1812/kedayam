@@ -50,7 +50,9 @@ malware + data-leak protection. Shippable artifact: `public/kedayam.zip`.
 
 - Broad `host_permissions` (`http/https://*/*`) + `webRequest` + `tabs` → Web Store
   extended review; needs a tight single-purpose justification.
-- Zip determinism verified macOS-local; cross-platform relies on Info-ZIP `zip`
-  behaving identically on Linux CI (`-X` strips platform extra fields).
+- The committed zip is a checked-in binary built on macOS; the `zip` CLI is not
+  byte-identical across OSes, so CI verifies the zip's *contents* match source
+  (`scripts/verify-artifact.mjs`) rather than a byte-for-byte rebuild. The release
+  cert stays byte-reproducible (pure function of source). CI is green.
 - E2E covers load/runtime smoke + popup render; engine scoring stays in unit tests
   (dynamic `import()` is disallowed inside a running service worker).

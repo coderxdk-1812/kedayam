@@ -15,6 +15,7 @@ export const FEATURE_FLAGS = Object.freeze({
   // freeware protection layers (local, key-less)
   localBlocklist: true, // bundled offline threat blocklist
   urlReputation: true, // abused TLD / shortener / brand-subdomain
+  mlPhishingClassifier: true, // on-device logistic model over URL/DOM structure
   clickFixGuard: true, // ClickFix / FakeCaptcha clipboard defense
   downloadGuard: true, // executable-download warning on low-trust pages
   scarewareGuard: true, // tech-support-scam / scareware page warning

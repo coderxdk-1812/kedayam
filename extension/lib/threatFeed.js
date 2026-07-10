@@ -16,6 +16,7 @@
 
 import { rootDomain } from "./lookalike.js";
 import { BLOCKLIST_SEED } from "./rules/blocklistSeed.js";
+import { BLOCKLIST_SNAPSHOT } from "./rules/blocklistSnapshot.js";
 
 // Free, no-key, public blocklists. Plain-text host/URL lists. Used ONLY when
 // the user explicitly enables feed refresh in Options.
@@ -116,7 +117,10 @@ export function matchBlocklist(host, extra = null) {
   return miss;
 }
 
-const SEED_SET = new Set(BLOCKLIST_SEED);
+// The bundled reputation set = the hand seed + the build-time feed snapshot
+// (thousands of hosts baked in for day-one offline coverage). Both are matched
+// against the host and its eTLD+1; the opt-in runtime refresh layers more on top.
+const SEED_SET = new Set([...BLOCKLIST_SEED, ...BLOCKLIST_SNAPSHOT]);
 
 // ---------------------------------------------------------------------------
 // Opt-in refresh + storage (background only). Dependency-injected so tests can

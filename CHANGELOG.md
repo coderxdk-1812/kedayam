@@ -1,5 +1,36 @@
 # Changelog
 
+## [Unreleased] — 2026-07-10 — Roadmap features (classifier, feed snapshot, cross-browser)
+
+New detection depth + reach, all local and key-less. 657 tests pass (+25).
+
+### Added
+- **On-device phishing classifier** (`lib/phishingClassifier.js`): a bundled
+  logistic model over URL + DOM structure (punycode, abused TLD, deep subdomains,
+  digit-heavy host, off-origin login form, obfuscated payloads, credential-lure
+  tokens, brand-in-subdomain). Scores page *structure*, so it flags zero-day kits
+  with no known brand keyword. Pure/local/no-inference-calls, explainable
+  (top feature contributions), and FP-safe by construction (trusted roots
+  short-circuit; escalates as behavioral evidence only). Wired into the trust
+  engine + `mlPhishingClassifier` feature flag. 16 tests incl. FP guards.
+- **Build-time threat-feed snapshot** (`scripts/fetch-threat-feeds.mjs` →
+  `lib/rules/blocklistSnapshot.js`): bakes ~12k deduplicated known-bad hosts from
+  the FREE feeds (URLhaus, Phishing Army) into the signed bundle for day-one
+  offline coverage — the hand seed was a placeholder. Safelist-filtered so a
+  legitimate root (e.g. github.com, which the raw feed listed) is never shipped
+  as blocked. Deliberate, committed step (`bun run feeds:snapshot`), not per-build.
+- **Cross-browser packaging** (`scripts/build-crossbrowser.mjs`,
+  `scripts/lib/firefoxManifest.mjs`, `bun run build:crossbrowser`): emits
+  deterministic Chrome / Edge / Firefox zips. Edge is byte-identical to Chrome;
+  Firefox gets a pure, unit-tested Gecko manifest transform (event-page
+  background, `browser_specific_settings`, Chrome-only keys stripped). Firefox zip
+  still needs a `web-ext` runtime pass before submission (see STATUS known gaps).
+
+### Notes
+- Exported `KNOWN_REPUTABLE_ROOTS` + `TRUSTED_LOGIN_PROVIDERS` from the trust
+  engine so the feed generator filters against the same trust sets the engine uses.
+- Chrome artifact grew ~94KB (the baked snapshot); still <250KB.
+
 ## [Unreleased] — 2026-07-10 — Reproducible builds + CI hardening
 
 Infrastructure only — no detection-logic or behavior changes; 632 tests still pass.

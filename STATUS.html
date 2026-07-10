@@ -38,8 +38,11 @@
       <h2><span class="dot g"></span>Shipped</h2>
       <ul>
         <li>Detection engine v1.1.0: blocklist, lookalike/homoglyph, IDN mixed-script, URL reputation, open-redirect, clone/phishing DOM, auth-flow arbitration, explainable 0–100 verdict.</li>
+        <li><strong>On-device phishing classifier</strong>: bundled logistic model over URL/DOM structure — catches zero-day kits with no brand keyword; local, explainable, FP-safe.</li>
+        <li><strong>Build-time threat-feed snapshot</strong>: ~12k known-bad hosts baked in (URLhaus + Phishing Army), safelist-filtered.</li>
+        <li><strong>Cross-browser packaging</strong>: deterministic Chrome / Edge / Firefox zips; Edge byte-identical to Chrome, Firefox via a unit-tested Gecko manifest transform.</li>
         <li>Page-runtime guards: paste/file/permission, ClickFix clipboard, download, scareware.</li>
-        <li><strong>632 tests green</strong>; ESLint/prettier clean; validator clean.</li>
+        <li><strong>657 tests green</strong>; ESLint/prettier clean; validator clean.</li>
         <li><strong>Byte-reproducible build</strong>: committed-source icons; deterministic zip (fixed mtimes + sorted + <code>-X</code>); cert is a pure function of source.</li>
         <li><strong>CI</strong> (<code>release-verify.yml</code>): lint → validate:extension → tests → e2e → build → certify → drift gate.</li>
         <li><strong>E2E</strong> loads MV3 extension via <code>channel:"chromium"</code>; 2/2 green, wired into CI.</li>
@@ -53,9 +56,9 @@
       <h2><span class="dot a"></span>Pending / Backlog</h2>
       <ul>
         <li>Store logistics: hosted Privacy Policy URL (page exists, must deploy), 1280×800 screenshot + 440×280 promo tile (none yet), dev account ($5 + ID), data-handling disclosures, broad-permission justification.</li>
-        <li>Build-time threat-feed snapshot (thousands of hosts vs. current seed).</li>
-        <li>On-device ML phishing classifier (TF.js/ONNX, local).</li>
-        <li>Cross-browser (Firefox/Edge) manifests + i18n of warning copy.</li>
+        <li>Firefox runtime validation (<code>web-ext lint</code> + load the generated Firefox zip).</li>
+        <li>i18n of warning copy (<code>_locales/</code>) — not started.</li>
+        <li>Community false-positive loop, redirect-chain expansion, punycode banner — not started.</li>
       </ul>
 
       <h2>Known gaps &amp; caveats</h2>

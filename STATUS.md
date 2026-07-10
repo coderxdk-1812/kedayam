@@ -10,8 +10,16 @@ malware + data-leak protection. Shippable artifact: `public/kedayam.zip`.
 - Detection engine v1.1.0: threat blocklist, lookalike/homoglyph, IDN mixed-script,
   URL reputation (abused TLD / shortener / brand-subdomain / TLD-swap), open-redirect,
   clone/phishing DOM, auth-flow arbitration, explainable 0–100 verdict.
+- **On-device phishing classifier** (`lib/phishingClassifier.js`): bundled logistic
+  model over URL/DOM structure — catches zero-day kits with no brand keyword. Local,
+  explainable, FP-safe (trusted roots short-circuit).
+- **Build-time threat-feed snapshot**: ~12k known-bad hosts baked in from URLhaus +
+  Phishing Army (`bun run feeds:snapshot`), safelist-filtered.
+- **Cross-browser packaging**: deterministic Chrome / Edge / Firefox zips
+  (`bun run build:crossbrowser`); Edge byte-identical to Chrome, Firefox via a
+  unit-tested Gecko manifest transform.
 - Page-runtime guards: paste/file/permission, ClickFix clipboard, download, scareware.
-- **632 unit/redteam/compat tests green**; ESLint/prettier clean; validator clean.
+- **657 unit/redteam/compat tests green**; ESLint/prettier clean; validator clean.
 - **Byte-reproducible build**: icons are committed source; zip is deterministic
   (fixed mtimes + sorted + `-X`); release cert is a pure function of source.
 - **CI** (`release-verify.yml`): lint → validate:extension → tests → e2e → build →
@@ -29,9 +37,14 @@ malware + data-leak protection. Shippable artifact: `public/kedayam.zip`.
 - Store logistics: hosted Privacy Policy URL (page exists, must deploy),
   1280×800 screenshot + 440×280 promo tile (none yet), dev account ($5 + ID),
   data-handling disclosures, broad-permission justification.
-- Build-time threat-feed snapshot (thousands of hosts vs. current seed).
-- On-device ML phishing classifier (TF.js/ONNX, local).
-- Cross-browser (Firefox/Edge) manifests + i18n of warning copy.
+- **Firefox runtime validation**: `web-ext lint` + load the generated
+  `kedayam-firefox.zip` (background-ESM support varies by FF version).
+- **i18n** of warning copy (`_locales/`, Hindi/EU langs) — not started.
+- **Community false-positive loop** (local "mark safe" → per-domain trust floor)
+  — engine has `trustFloor`/learned-safe hooks; UI + storage wiring not started.
+- **Redirect-chain expansion** for shorteners (score the true landing via the
+  existing webRequest redirect tracking) — not started.
+- Punycode/IDN decoded-host banner (data exists in `confusable`; UI not started).
 
 ## Known gaps & caveats
 

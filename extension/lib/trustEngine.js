@@ -22,6 +22,7 @@ import { analyzeClone } from "./cloneDetection.js";
 import { analyzePhishing } from "./phishingHeuristics.js";
 import { analyzeUrlReputation } from "./urlReputation.js";
 import { analyzeConfusable } from "./idnConfusable.js";
+import { classifyPhishing } from "./phishingClassifier.js";
 import { analyzeOpenRedirect } from "./openRedirect.js";
 import { matchBlocklist } from "./threatFeed.js";
 import { arbitrate } from "./arbitration.js";
@@ -35,7 +36,7 @@ import {
 } from "./securityContext.js";
 
 const NEW_DOMAIN_DAYS = 60;
-const KNOWN_REPUTABLE_ROOTS = new Set([
+export const KNOWN_REPUTABLE_ROOTS = new Set([
   "example.com",
   "wikipedia.org",
   "github.com",
@@ -63,7 +64,7 @@ const KNOWN_REPUTABLE_ROOTS = new Set([
 // for a credential form, but does NOT by itself imply the page is safe.
 // Corroborating signals (no lookalike, no clone, no off-domain POST) are
 // still required by the arbitration engine.
-const TRUSTED_LOGIN_PROVIDERS = new Set([
+export const TRUSTED_LOGIN_PROVIDERS = new Set([
   "google.com",
   "microsoft.com",
   "microsoftonline.com",
@@ -564,6 +565,16 @@ export async function evaluateUrl(url, ctx = {}) {
   const openRedirect = analyzeOpenRedirect(url);
   for (const sig of openRedirect.signals) fire(sig);
 
+  // --- on-device phishing classifier (bundled logistic model) ---
+  // Scores page/URL *structure* so a zero-day kit with no known brand keyword
+  // still registers. Behavioral evidence; trusted roots short-circuit to benign
+  // inside the classifier, so it never fires on the sites people log into daily.
+  const classifier = classifyPhishing(url, {
+    pageContext,
+    isTrustedRoot: isReputableRoot || isTrustedProvider,
+  });
+  for (const sig of classifier.signals) fire(sig);
+
   const BASELINE = 50;
   if (parsed.protocol === "https:") {
     addTrust({ id: "https-trust", title: "Encrypted connection (HTTPS)", points: 10 });
@@ -882,6 +893,11 @@ export async function evaluateUrl(url, ctx = {}) {
     phishing,
     urlReputation: urlRep,
     confusable,
+    phishingClassifier: {
+      probability: classifier.probability,
+      label: classifier.label,
+      topContributors: classifier.topContributors,
+    },
     openRedirect,
     threatBlocklist: blocklistHit,
     safeBrowsing: { google: sb, virusTotal: vt },

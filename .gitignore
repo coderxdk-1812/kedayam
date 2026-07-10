@@ -39,3 +39,9 @@ playwright-report/
 # artifact and not served by the site — only public/kedayam.zip is downloaded).
 public/kedayam-profile.json
 public/kedayam-security-report.json
+
+# Per-store cross-browser packages — reproducible build outputs, generated on
+# demand via `bun run build:crossbrowser` at release time.
+public/kedayam-chrome.zip
+public/kedayam-edge.zip
+public/kedayam-firefox.zip

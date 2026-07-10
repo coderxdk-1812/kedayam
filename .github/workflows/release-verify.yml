@@ -18,8 +18,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install zip
-        run: sudo apt-get install -y zip
+      - name: Install zip + unzip
+        run: sudo apt-get install -y zip unzip
 
       - name: Lint (eslint + prettier)
         run: bun run lint
@@ -36,15 +36,18 @@ jobs:
       - name: End-to-end extension tests
         run: bun run test:e2e
 
-      - name: Build + package + checksum the extension from current source
-        run: node scripts/release-build.mjs
+      # The committed zip is a checked-in binary; the `zip` CLI is not
+      # byte-identical across macOS/Linux, so we verify its CONTENTS match source
+      # (platform-independent) rather than requiring a byte-for-byte rebuild.
+      - name: Verify committed artifact matches source (not stale)
+        run: node scripts/verify-artifact.mjs
 
-      - name: Re-certify against the freshly built zip
-        run: node scripts/release-certify.mjs
-
-      - name: Fail if the committed artifact has drifted from source
+      # The release cert IS a pure function of source (no timestamps / live perf),
+      # so it must reproduce exactly. Certify reads the committed zip for its hash.
+      - name: Re-certify and fail on cert drift
         run: |
-          if ! git diff --exit-code -- public/kedayam.zip public/kedayam.zip.sha256 public/kedayam-release-cert.json; then
-            echo "::error::Zip or cert has drifted from source. Run: node scripts/release-build.mjs && node scripts/release-certify.mjs and commit."
+          node scripts/release-certify.mjs
+          if ! git diff --exit-code -- public/kedayam-release-cert.json; then
+            echo "::error::Release cert drifted. Run: node scripts/release-certify.mjs and commit."
             exit 1
           fi

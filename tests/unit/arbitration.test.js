@@ -94,7 +94,9 @@ describe("trust calibration (earn-trust model)", () => {
   const settings = { detection: { sensitivity: "balanced" }, apiKeys: {}, allowlist: [] };
 
   it("unknown HTTPS site lands in informational band, not 100", async () => {
-    const r = await evaluateUrl("https://random-blog-12345.tld/", { settings });
+    // A plain, clean unknown host (no digit-heavy / hyphenated phishy shape, which
+    // the measured classifier legitimately penalizes) — checks the earn-trust band.
+    const r = await evaluateUrl("https://myunknownblog.tld/", { settings });
     expect(r.score).toBeGreaterThanOrEqual(50);
     expect(r.score).toBeLessThan(75);
   });

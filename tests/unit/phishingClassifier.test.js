@@ -16,10 +16,13 @@ describe("phishingClassifier — false-positive guards (must stay benign)", () =
     "https://startup.xyz/", // a free-TLD blog with nothing else phishy
   ];
   for (const url of BENIGN) {
-    it(`rates ${url} benign`, () => {
+    it(`rates ${url} benign (no signal fired)`, () => {
       const r = classifyPhishing(url);
+      // The contract is behavioral: benign label → no corroborating signal.
+      // (A bare abused-TLD host may score up to the 0.80 warn threshold but must
+      // stay below it, per the measured high-precision operating point.)
       expect(r.label).toBe("benign");
-      expect(r.probability).toBeLessThan(0.55);
+      expect(r.probability).toBeLessThan(0.8);
       expect(r.signals).toHaveLength(0);
     });
   }

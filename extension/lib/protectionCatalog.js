@@ -56,7 +56,7 @@ export const PROTECTION_CATALOG = Object.freeze([
     settingsPath: null, // runs in the engine; no per-toggle yet
     defaultOn: true,
     limit:
-      "Hand-tuned heuristic — its real-world recall is NOT yet independently measured; treat as corroboration, not proof.",
+      "Measured on a labeled corpus: ~98% precision, ~62% recall, ~1.4% false positives (host-shape, no live DOM). A corroborating signal — it misses kits that look benign by hostname alone.",
   },
   {
     id: "url-reputation",
@@ -125,7 +125,7 @@ export const PROTECTION_CATALOG = Object.freeze([
 export const PROTECTION_LIMITS = Object.freeze([
   "This is a defense-in-depth SECOND layer — it complements, and does not replace, Chrome's built-in Safe Browsing.",
   "No cloud reputation by default: brand-new global campaigns may be seen by cloud tools before the local blocklist.",
-  "The phishing classifier is a heuristic; its recall is not yet measured on a real labeled corpus.",
+  "The phishing classifier is now measured on a labeled corpus (~98% precision, ~62% recall, ~1.4% FP on host-shape); it catches structural phishing but misses kits that look benign by hostname.",
   "Strongest value: ClickFix/clipboard attacks, accidental data leaks, and visual (homoglyph/IDN) spoofs.",
 ]);
 

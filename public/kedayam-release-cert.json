@@ -18,20 +18,56 @@
     "http://*/*",
     "https://*/*"
   ],
-  "phishingRecall": 0.95,
+  "phishingRecall": 0.6178,
+  "classifier": {
+    "corpus": {
+      "phishing": 6000,
+      "benign": 6000,
+      "level": "host-url-shape",
+      "split": "80/20"
+    },
+    "warn": {
+      "threshold": 0.8,
+      "precision": 0.9798,
+      "recall": 0.6178,
+      "f1": 0.7578,
+      "falsePositiveRate": 0.014,
+      "accuracy": 0.7933,
+      "confusion": {
+        "tp": 776,
+        "fp": 16,
+        "tn": 1128,
+        "fn": 480
+      }
+    },
+    "block": {
+      "threshold": 0.92,
+      "precision": 0.9909,
+      "recall": 0.5183,
+      "f1": 0.6806,
+      "falsePositiveRate": 0.0052,
+      "accuracy": 0.7454,
+      "confusion": {
+        "tp": 651,
+        "fp": 6,
+        "tn": 1138,
+        "fn": 605
+      }
+    }
+  },
   "falsePositiveRate": 0.008,
   "meanDetectionMs": 1.2,
   "memoryLeakDetected": false,
   "docsComplete": true,
   "tests": {
-    "passed": 665,
+    "passed": 669,
     "failed": 0,
-    "files": 225
+    "files": 227
   },
   "artifact": {
     "path": "public/kedayam.zip",
-    "bytes": 254693,
-    "sha256": "64a47e7d8ced51c85e8af0aba45c63e4cbafe2975859a0bf8a26ed0502108d43"
+    "bytes": 255699,
+    "sha256": "7797a9c6adea6be920a3a4a6ca73f71db413bb91a28b96860e05eba7bb2473cc"
   },
   "browserStoreReady": true
 }

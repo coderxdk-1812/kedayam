@@ -87,14 +87,15 @@ try {
   totals.files = j.numTotalTestSuites || 0;
 } catch {}
 
-// --- 5. Phishing recall from replay harness (heuristic: fixtures count) ---
-const fixturesDir = "tests/fixtures/phishing";
-let phishingRecall = null;
-try {
-  const fs = readJSON(`${fixturesDir}/.recall.json`);
-  if (fs && typeof fs.recall === "number") phishingRecall = fs.recall;
-} catch {}
-if (phishingRecall == null && totals.failed === 0) phishingRecall = 0.95;
+// --- 5. MEASURED phishing-classifier metrics (real labeled-corpus benchmark) ---
+// Sourced from public/kedayam-classifier-eval.json (produced by
+// `bun run train:classifier`). This replaces the old hard-coded 0.95 placeholder:
+// phishingRecall is now the MEASURED recall at the warn operating point.
+const classifierEval = readJSON("public/kedayam-classifier-eval.json");
+const classifier = classifierEval
+  ? { corpus: classifierEval.corpus, warn: classifierEval.warn, block: classifierEval.block }
+  : null;
+const phishingRecall = classifierEval?.warn?.recall ?? null;
 
 // --- 6. Required docs present ---
 const docs = ["SECURITY.md", "PRIVACY.md", "THREAT_MODEL.md", "ARCHITECTURE.md", "PERMISSIONS.md"];
@@ -121,7 +122,8 @@ const cert = {
   permissionsMinimal,
   permissionsRequested: manifest.permissions || [],
   hostPermissions: manifest.host_permissions || [],
-  phishingRecall,
+  phishingRecall, // MEASURED classifier recall @warn (host-URL-shape benchmark)
+  classifier, // full measured precision/recall/FP @warn & @block + corpus
   falsePositiveRate: 0.008, // measured by tests/compatibility/*
   meanDetectionMs,
   memoryLeakDetected: false,

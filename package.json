@@ -12,6 +12,7 @@
     "build:crossbrowser": "node scripts/build-crossbrowser.mjs",
     "icons": "bun scripts/generate-icons.mjs",
     "feeds:snapshot": "node scripts/fetch-threat-feeds.mjs",
+    "train:classifier": "node scripts/train-classifier.mjs",
     "validate:extension": "bun scripts/validate-extension.mjs extension",
     "test": "vitest run",
     "test:watch": "vitest",

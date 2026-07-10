@@ -1,0 +1,37 @@
+{
+  "corpus": {
+    "phishing": 6000,
+    "benign": 6000,
+    "level": "host-url-shape",
+    "split": "80/20"
+  },
+  "note": "Host-URL-shape benchmark (no live DOM). Fitted features: punycode, abusedTld, manySubdomains, hostDigitsRatio, hostHyphens, lureTokens, brandInSubdomain. Fixed runtime priors: notHttps, hasPasswordField, crossOriginForm, manyExternalScripts, obfuscation.",
+  "warn": {
+    "threshold": 0.8,
+    "precision": 0.9798,
+    "recall": 0.6178,
+    "f1": 0.7578,
+    "falsePositiveRate": 0.014,
+    "accuracy": 0.7933,
+    "confusion": {
+      "tp": 776,
+      "fp": 16,
+      "tn": 1128,
+      "fn": 480
+    }
+  },
+  "block": {
+    "threshold": 0.92,
+    "precision": 0.9909,
+    "recall": 0.5183,
+    "f1": 0.6806,
+    "falsePositiveRate": 0.0052,
+    "accuracy": 0.7454,
+    "confusion": {
+      "tp": 651,
+      "fp": 6,
+      "tn": 1138,
+      "fn": 605
+    }
+  }
+}

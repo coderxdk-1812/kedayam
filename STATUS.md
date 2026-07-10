@@ -21,17 +21,19 @@ replacement.
 - **Medium uplift:** homoglyph/IDN visual spoofs, brand-in-subdomain, abused-TLD,
   open-redirect.
 - **Weaker than incumbents:** blocklist scale (12k vs. millions), no default cloud
-  intelligence, and the classifier is a **hand-tuned heuristic whose recall is not
-  yet measured** (the cert's 0.95 is a placeholder).
+  intelligence, and the classifier — now **measured** (P 0.98 / R 0.62 / FP 1.4%
+  @warn on host-shape) — catches structural phishing but **misses ~40% of kits that
+  look benign by hostname** (that's why it's a corroborating layer, not standalone).
 - **Best for:** ClickFix-targeted users, anyone handling secrets/PII (devs,
   finance, support), and privacy-conscious users who won't run cloud AV tools.
 
 ## What next (prioritized — see STATUS.html for detail)
 
-1. **Tier 1 (most ROI):** train + measure the classifier on a real labeled corpus
-   and publish precision/recall; harden ClickFix (deferred clipboard + one-click
-   clear); bigger signed, delta-updated blocklist with privacy-preserving
-   (hash-prefix / k-anonymity) refresh default-on; redirect-chain resolution.
+1. **Tier 1 (most ROI):** ~~train + measure the classifier~~ ✅ **done** (measured:
+   P 0.98 / R 0.62 / FP 1.4% @warn); next: harden ClickFix (deferred clipboard +
+   one-click clear); bigger signed, delta-updated blocklist with privacy-preserving
+   (hash-prefix / k-anonymity) refresh default-on; redirect-chain resolution;
+   improve classifier recall (full-page DOM corpus + more features).
 2. **Tier 2:** optional privacy-preserving cloud reputation; AiTM/reverse-proxy
    phishing detection; punycode banner; community FP loop; i18n; Firefox runtime
    validation; a11y pass.
@@ -47,9 +49,12 @@ replacement.
   "Protection" tab): shows every layer with a plain-English description, an honest
   HIGH/MED/LOW uplift rating, live on/off state, and its honest limit — plus the
   product-wide limits. Same candid assessment users see and devs do. e2e-verified.
-- **On-device phishing classifier** (`lib/phishingClassifier.js`): bundled logistic
-  model over URL/DOM structure — catches zero-day kits with no brand keyword. Local,
-  explainable, FP-safe (trusted roots short-circuit).
+- **On-device phishing classifier** (`lib/phishingClassifier.js`), **weights fitted
+  & MEASURED** on a 12k labeled corpus (`bun run train:classifier`): host-shape
+  weights learned (non-negative/monotonic), runtime features keep expert priors.
+  Measured @warn: **precision 0.98, recall 0.62, FP 1.4%**; @block: P 0.99, R 0.52,
+  FP 0.5%. Replaced the old placeholder recall in the cert. Local, explainable,
+  FP-safe (trusted roots short-circuit; high-precision operating points).
 - **Build-time threat-feed snapshot**: ~12k known-bad hosts baked in from URLhaus +
   Phishing Army (`bun run feeds:snapshot`), safelist-filtered.
 - **Cross-browser packaging**: deterministic Chrome / Edge / Firefox zips

@@ -18,6 +18,10 @@
 // "bundled, local, no-inference-calls" classifier from the roadmap.
 
 import { rootDomain, toUnicodeHost } from "./lookalike.js";
+// Bias + weights are FITTED on a labeled corpus and MEASURED — regenerate with
+// `bun run train:classifier`. Host-shape weights are learned (non-negative /
+// monotonic); runtime-only features keep expert priors. Metrics: CLASSIFIER_META.
+import { BIAS, WEIGHTS, CLASSIFIER_META } from "./rules/classifierWeights.js";
 
 // Free / high-abuse TLDs (registrable suffix or last label). Kept in sync in
 // spirit with urlReputation.js; duplicated small so this module stays standalone.
@@ -67,24 +71,7 @@ function sigmoid(z) {
   return 1 / (1 + Math.exp(-z));
 }
 
-// Feature weights + bias. Hand-calibrated (see phishingClassifier.test.js) to
-// keep benign, reputable, and ordinary long-tail sites well below the firing
-// threshold while still surfacing structurally phishy pages.
-const BIAS = -3.2;
-const WEIGHTS = Object.freeze({
-  notHttps: 1.1,
-  punycode: 1.4,
-  abusedTld: 1.3,
-  manySubdomains: 0.9, // >= 3 labels before the eTLD+1
-  hostDigitsRatio: 1.6, // scaled 0..1
-  hostHyphens: 0.5, // per hyphen, capped
-  hasPasswordField: 1.0,
-  crossOriginForm: 1.7, // a login form posting off-origin
-  manyExternalScripts: 0.7,
-  obfuscation: 1.2, // long base64/hex blobs in page text
-  lureTokens: 0.8, // per distinct lure token in host/path, capped
-  brandInSubdomain: 1.5, // real-looking brand token buried in a subdomain
-});
+// (BIAS + WEIGHTS are imported above from the generated, fitted weights file.)
 
 /**
  * Derive a numeric feature vector from a URL and optional page context.
@@ -210,7 +197,11 @@ export function classifyPhishing(url, opts = {}) {
     if (contribution > 0) contributions.push({ feature: k, contribution: round2(contribution) });
   }
   const probability = round2(sigmoid(z));
-  const label = probability >= 0.8 ? "phishing" : probability >= 0.55 ? "suspicious" : "benign";
+  // High-precision operating points (measured — see classifierWeights CLASSIFIER_META):
+  // block/phishing at 0.92 (P≈0.99, FP≈0.5%), warn/suspicious at 0.80 (P≈0.98,
+  // FP≈1.4%). Chosen so a bare abused-TLD host (e.g. abc.xyz) stays benign and the
+  // always-on false-positive rate stays low; the signal only corroborates.
+  const label = probability >= 0.92 ? "phishing" : probability >= 0.8 ? "suspicious" : "benign";
   const topContributors = contributions.sort((a, b) => b.contribution - a.contribution).slice(0, 4);
 
   const signals = [];

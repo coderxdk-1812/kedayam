@@ -100,10 +100,12 @@ describe("H-05 — WAR shim exposure (intentionally retained, mitigation locked)
     expect(shimSrc).not.toMatch(/navigator\.sendBeacon/);
   });
 
-  it("shim remains small and auditable (< 4 KB)", () => {
-    // A small upper bound catches accidental bloat and discourages
-    // adding logic that belongs in the isolated-world content script.
-    expect(shimSrc.length).toBeLessThan(4096);
+  it("shim remains small and auditable (< 6 KB)", () => {
+    // A small upper bound catches accidental bloat and discourages adding logic
+    // that belongs in the isolated-world content script. Raised from 4 KB when
+    // the ClickFix hardening added the deferred-write hooks (clipboard.write /
+    // DataTransfer.setData) — which MUST live in the main world to hook page APIs.
+    expect(shimSrc.length).toBeLessThan(6144);
   });
 
   it("shim self-guards against double-injection", () => {

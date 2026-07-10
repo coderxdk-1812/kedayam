@@ -416,7 +416,15 @@
     setTimeout(() => toast?.remove(), result.status === "safe" ? 2200 : 5200);
   }
 
-  function showWarningModal({ title, body, severity, items, onContinue, onTrust }) {
+  function showWarningModal({
+    title,
+    body,
+    severity,
+    items,
+    onContinue,
+    onTrust,
+    onClearClipboard,
+  }) {
     return new Promise((resolve) => {
       const r = root();
       const old = r.querySelector(".ked-backdrop");
@@ -441,6 +449,7 @@
           }
           <div class="ked-actions">
             <button class="ked-btn-secondary" data-act="cancel">Go back</button>
+            ${onClearClipboard ? `<button class="ked-btn-primary" data-act="clearclip">Clear my clipboard</button>` : ""}
             ${onTrust ? `<button class="ked-btn-secondary" data-act="trust">Trust this site for the session</button>` : ""}
             <button class="ked-btn-${severity === "critical" || severity === "high" ? "danger" : "primary"}" data-act="continue">Continue anyway</button>
           </div>
@@ -460,6 +469,14 @@
       backdrop.addEventListener("click", (e) => {
         const act = e.target?.dataset?.act;
         if (!act) return;
+        // Clearing the clipboard needs the user gesture this click provides, so it
+        // reliably overwrites the planted command. Keep the modal open + confirm.
+        if (act === "clearclip") {
+          if (onClearClipboard) onClearClipboard();
+          e.target.textContent = "Clipboard cleared ✓";
+          e.target.disabled = true;
+          return;
+        }
         if (act === "trust" && onTrust) onTrust();
         if (act === "continue" && onContinue) onContinue();
         close(act);
@@ -720,7 +737,7 @@
     },
     {
       id: "ps-iex",
-      re: /\b(iex|invoke-expression|invoke-webrequest|iwr|downloadstring|frombase64string|start-bitstransfer)\b/i,
+      re: /\b(iex|invoke-expression|invoke-webrequest|invoke-restmethod|iwr|irm|downloadstring|downloadfile|frombase64string|start-bitstransfer|net\.webclient)\b/i,
       label: "PowerShell download-and-run",
     },
     {
@@ -728,12 +745,22 @@
       re: /-(w(indowstyle)?\s+hidden|nop|noprofile|noni|ep\s+bypass|executionpolicy\s+bypass)\b/i,
       label: "hidden PowerShell flags",
     },
+    {
+      id: "defender-evade",
+      re: /\b(add-mppreference|set-mppreference|-exclusionpath|amsiutils|amsiinitfailed)\b/i,
+      label: "antivirus-evasion command",
+    },
     { id: "cmd", re: /\bcmd(\.exe)?\s*\/(c|k)\b/i, label: "Windows command shell" },
-    { id: "mshta", re: /\bmshta(\.exe)?\b|hta:application/i, label: "mshta script runner" },
+    { id: "mshta", re: /\bmshta(\.exe)?\b|hta:application|\.hta\b/i, label: "mshta script runner" },
     {
       id: "lolbin",
-      re: /\b(certutil|bitsadmin|regsvr32|rundll32|wscript|cscript|msiexec|forfiles|installutil)\b/i,
+      re: /\b(certutil|bitsadmin|regsvr32|rundll32|wscript|cscript|msiexec|forfiles|installutil|schtasks|conhost|wmic|hh\.exe)\b/i,
       label: "Windows LOLBin",
+    },
+    {
+      id: "nix-oneliner",
+      re: /\b(python3?|node|perl|ruby)\s+-(c|e)\b[^\n]{0,200}(http|socket|urllib|requests|child_process|exec)/i,
+      label: "scripting-language download-and-run",
     },
     {
       id: "curl-pipe",
@@ -756,23 +783,31 @@
     "ps-encoded",
     "ps-iex",
     "ps-hidden",
+    "defender-evade",
     "mshta",
     "curl-pipe",
     "curl-iex",
     "base64-sh",
     "lolbin",
+    "nix-oneliner",
   ]);
   const RUN_DIALOG = [
     /\bwin(dows)?\s*\+\s*r\b/i,
     /\bpress\s+(the\s+)?(windows|win)\b[^]{0,40}\br\b/i,
-    /\b(open|launch)\s+(the\s+)?(run\s+dialog|powershell|terminal|command\s+prompt|cmd)\b/i,
+    /\b(hold|press)\b[^]{0,40}\bwindows\s*key\b[^]{0,40}\br\b/i,
+    /⊞/,
+    /\b(open|launch)\s+(the\s+)?(run\s+dialog|run\s+(box|window)|powershell|terminal|command\s+prompt|cmd)\b/i,
     /\bpaste\b[^]{0,40}\b(press|hit)\s+(enter|return)\b/i,
+    /\bpaste\s+(this|the\s+(code|command|script)|it)\b/i,
   ];
   const FAKE_VERIFY = [
     /\bverify\s+(you('| a)?re|that you are)\s+(a\s+)?human\b/i,
     /\bi('| a)?m not a robot\b/i,
+    /\b(human|robot)\s+verification\b/i,
     /\bcaptcha\b/i,
-    /\bverification\s+(steps|failed|required)\b/i,
+    /\bchecking\s+(if\s+)?your\s+browser\b/i,
+    /\bray\s*id\b/i,
+    /\bverification\s+(steps|failed|required|id)\b/i,
   ];
 
   function classifyClip(text) {
@@ -806,23 +841,28 @@
     clickFixWarned = true;
     const ctx = pageHasClickFixText();
     const corroborated = ctx.run || ctx.fake;
-    // Neutralize: best-effort overwrite of the planted command so it can't be
-    // pasted even by accident. May be a no-op without focus/gesture — the
-    // warning is the primary defence regardless.
+    // Mirror of lib/clipboardGuard.js SAFE_CLIPBOARD_TEXT.
+    const SAFE_CLIP = "[cleared by Kedayam — a malicious command was removed]";
+    const clearClipboard = () => {
+      try {
+        navigator.clipboard?.writeText(SAFE_CLIP)?.catch(() => {});
+      } catch {}
+    };
+    // Best-effort automatic neutralize now (may be a no-op without focus/gesture);
+    // the modal's "Clear my clipboard" button re-does it under the user's click,
+    // which reliably overwrites the planted command.
     let cleared = false;
     try {
-      navigator.clipboard
-        ?.writeText("[removed by Kedayam — this was a malicious command]")
-        .then(() => {})
-        .catch(() => {});
+      clearClipboard();
       cleared = true;
     } catch {}
     log({ kind: "clickfix-blocked", host: location.hostname, severity: "critical" });
     showWarningModal({
       severity: "critical",
       title: "Do not paste — this page copied a system command",
-      body: `${location.hostname} just placed a ${verdict.label} command on your clipboard${corroborated ? " and is telling you to run it" : ""}. This is the "ClickFix" malware trick. Never paste it into PowerShell, the Run dialog (Win+R), or a terminal.${cleared ? " Kedayam tried to clear your clipboard." : ""}`,
+      body: `${location.hostname} just placed a ${verdict.label} command on your clipboard${corroborated ? " and is telling you to run it" : ""}. This is the "ClickFix" malware trick. Never paste it into PowerShell, the Run dialog (Win+R), or a terminal.${cleared ? " Kedayam tried to clear your clipboard — use “Clear my clipboard” to be sure." : ""}`,
       items: [{ label: "Copied command", value: verdict.preview }],
+      onClearClipboard: clearClipboard,
       onTrust: () => sessionTrusted.add(location.hostname),
     });
   });

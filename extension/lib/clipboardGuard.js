@@ -27,7 +27,7 @@ const CMD_SIGNATURES = [
   },
   {
     id: "ps-iex",
-    re: /\b(iex|invoke-expression|invoke-webrequest|iwr|downloadstring|frombase64string|start-bitstransfer)\b/i,
+    re: /\b(iex|invoke-expression|invoke-webrequest|invoke-restmethod|iwr|irm|downloadstring|downloadfile|frombase64string|start-bitstransfer|net\.webclient)\b/i,
     label: "PowerShell download-and-run",
   },
   {
@@ -35,12 +35,22 @@ const CMD_SIGNATURES = [
     re: /-(w(indowstyle)?\s+hidden|nop|noprofile|noni|ep\s+bypass|executionpolicy\s+bypass)\b/i,
     label: "hidden PowerShell flags",
   },
+  {
+    id: "defender-evade",
+    re: /\b(add-mppreference|set-mppreference|-exclusionpath|amsiutils|amsiinitfailed)\b/i,
+    label: "antivirus-evasion command",
+  },
   { id: "cmd", re: /\bcmd(\.exe)?\s*\/(c|k)\b/i, label: "Windows command shell" },
-  { id: "mshta", re: /\bmshta(\.exe)?\b|hta:application/i, label: "mshta script runner" },
+  { id: "mshta", re: /\bmshta(\.exe)?\b|hta:application|\.hta\b/i, label: "mshta script runner" },
   {
     id: "lolbin",
-    re: /\b(certutil|bitsadmin|regsvr32|rundll32|wscript|cscript|msiexec|forfiles|installutil)\b/i,
+    re: /\b(certutil|bitsadmin|regsvr32|rundll32|wscript|cscript|msiexec|forfiles|installutil|schtasks|conhost|wmic|hh\.exe)\b/i,
     label: "Windows LOLBin",
+  },
+  {
+    id: "nix-oneliner",
+    re: /\b(python3?|node|perl|ruby)\s+-(c|e)\b[^\n]{0,200}(http|socket|urllib|requests|child_process|exec)/i,
+    label: "scripting-language download-and-run",
   },
   {
     id: "curl-pipe",
@@ -64,9 +74,12 @@ const CMD_SIGNATURES = [
 const RUN_DIALOG_PHRASES = [
   /\bwin(dows)?\s*\+\s*r\b/i,
   /\bpress\s+(the\s+)?(windows|win)\b.*\br\b/i,
-  /\b(open|launch)\s+(the\s+)?(run\s+dialog|powershell|terminal|command\s+prompt|cmd)\b/i,
+  /\b(hold|press)\b.*\bwindows\s*key\b.*\br\b/i,
+  /⊞/, // the Windows-key glyph, common in ClickFix step graphics
+  /\b(open|launch)\s+(the\s+)?(run\s+dialog|run\s+(box|window)|powershell|terminal|command\s+prompt|cmd)\b/i,
   /\bctrl\s*\+\s*v\b.*\b(enter|run)\b/i,
   /\bpaste\b.*\b(and\s+)?(press|hit)\s+(enter|return)\b/i,
+  /\bpaste\s+(this|the\s+(code|command|script)|it)\b/i,
   /\b(open|launch|press)\s+(spotlight|terminal|finder)\b/i,
   /\b(command|⌘)\s*(\+|key\s+and)\s*(space|spacebar)\b/i,
   /\btype\s+(in\s+)?terminal\b/i,
@@ -74,10 +87,18 @@ const RUN_DIALOG_PHRASES = [
 const FAKE_VERIFY_PHRASES = [
   /\bverify\s+(you('| a)?re|that you are)\s+(a\s+)?human\b/i,
   /\bi('| a)?m not a robot\b/i,
-  /\bverification\s+(steps|failed|required)\b/i,
+  /\b(human|robot)\s+verification\b/i,
+  /\bverification\s+(steps|failed|required|id)\b/i,
   /\bto (continue|proceed),?\s+(please\s+)?(complete|perform|follow)\b/i,
+  /\bchecking\s+(if\s+)?your\s+browser\b/i,
+  /\bray\s*id\b/i, // fake Cloudflare "Ray ID" chrome
   /\bcaptcha\b/i,
 ];
+
+// Safe value written over the clipboard when neutralizing a ClickFix command, so
+// the planted command cannot be pasted-and-run even by accident. Exported so the
+// content script and its tests share one definition.
+export const SAFE_CLIPBOARD_TEXT = "[cleared by Kedayam — a malicious command was removed]";
 
 function redactCommand(s) {
   const t = String(s || "")
@@ -113,11 +134,13 @@ export function classifyClipboardWrite(text) {
       "ps-encoded",
       "ps-iex",
       "ps-hidden",
+      "defender-evade",
       "mshta",
       "curl-pipe",
       "curl-iex",
       "base64-sh",
       "lolbin",
+      "nix-oneliner",
     ].includes(h.id),
   );
   const conf = strong

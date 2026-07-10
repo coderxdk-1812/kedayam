@@ -400,10 +400,16 @@
       <ul>
         <li>
           <strong>✅ Measure &amp; train the classifier — DONE.</strong> Fitted on a 12k labeled corpus
-          (<code>bun run train:classifier</code>) with a monotonic, non-negative model; measured
-          <strong>P 0.98 / R 0.62 / FP 1.4%</strong> @warn and published to the cert +
-          <code>public/kedayam-classifier-eval.json</code>. <em>Next:</em> lift recall with a full-page
-          DOM corpus and richer features (the current benchmark is host-URL shape only).
+          (<code>bun run train:classifier</code>), monotonic non-negative model; measured
+          <strong>P 0.98 / R 0.62 / FP 1.4%</strong> @warn, published to the cert.
+          <strong>DOM-corpus recall lift attempted</strong> (<code>bun run train:classifier:dom</code>):
+          infra built with a login-page guard, but the live crawl was too thin (72 phishing + 3 login
+          pages) so the expert priors were kept — no regression. Next: a curated saved-HTML corpus.
+        </li>
+        <li>
+          <strong>✅ ClickFix hardening — DONE.</strong> Hooks the deferred/on-click write paths
+          (<code>clipboard.write</code> / <code>DataTransfer.setData</code>), adds a one-click
+          "Clear my clipboard", and broadens command/lure signatures.
         </li>
         <li>
           <strong>Harden ClickFix (the crown jewel).</strong> Catch the deferred/on-click clipboard-write

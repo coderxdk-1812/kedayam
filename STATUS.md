@@ -29,11 +29,13 @@ replacement.
 
 ## What next (prioritized — see STATUS.html for detail)
 
-1. **Tier 1 (most ROI):** ~~train + measure the classifier~~ ✅ **done** (measured:
-   P 0.98 / R 0.62 / FP 1.4% @warn); next: harden ClickFix (deferred clipboard +
-   one-click clear); bigger signed, delta-updated blocklist with privacy-preserving
-   (hash-prefix / k-anonymity) refresh default-on; redirect-chain resolution;
-   improve classifier recall (full-page DOM corpus + more features).
+1. **Tier 1 (most ROI):** ~~train + measure the classifier~~ ✅ (P 0.98 / R 0.62 /
+   FP 1.4% @warn); ~~harden ClickFix~~ ✅ (deferred-write hooks + one-click clear +
+   broader signatures); **DOM-corpus recall lift attempted** ⚠️ — infra built with a
+   login-page guard, but the live crawl was too thin (72 phishing + 3 login pages)
+   so priors were kept (no regression). **Next:** a curated saved-HTML phishing
+   corpus for the DOM fit; bigger signed delta-updated blocklist with
+   privacy-preserving (hash-prefix / k-anonymity) refresh; redirect-chain resolution.
 2. **Tier 2:** optional privacy-preserving cloud reputation; AiTM/reverse-proxy
    phishing detection; punycode banner; community FP loop; i18n; Firefox runtime
    validation; a11y pass.
@@ -60,7 +62,9 @@ replacement.
 - **Cross-browser packaging**: deterministic Chrome / Edge / Firefox zips
   (`bun run build:crossbrowser`); Edge byte-identical to Chrome, Firefox via a
   unit-tested Gecko manifest transform.
-- Page-runtime guards: paste/file/permission, ClickFix clipboard, download, scareware.
+- Page-runtime guards: paste/file/permission, **hardened ClickFix clipboard**
+  (deferred `clipboard.write`/`setData` hooks + one-click "clear clipboard" +
+  broader command/lure signatures), download, scareware.
 - **657 unit/redteam/compat tests green**; ESLint/prettier clean; validator clean.
 - **Byte-reproducible build**: icons are committed source; zip is deterministic
   (fixed mtimes + sorted + `-X`); release cert is a pure function of source.

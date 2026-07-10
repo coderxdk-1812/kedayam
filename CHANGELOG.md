@@ -1,5 +1,31 @@
 # Changelog
 
+## [Unreleased] — 2026-07-10 — ClickFix hardening + DOM-corpus attempt
+
+### Added — ClickFix hardening (Tier-1)
+- **Deferred / on-click clipboard writes** are now caught: the main-world shim
+  hooks `navigator.clipboard.write()` (ClipboardItem) and
+  `DataTransfer.prototype.setData` (the copy-event / button-click variant), not
+  just `writeText`/`execCommand`.
+- **One-click "Clear my clipboard"** action in the ClickFix modal — overwrites the
+  planted command under the user's click (a real gesture, so it reliably works),
+  with an inline "Clipboard cleared ✓" confirmation. Shared `SAFE_CLIPBOARD_TEXT`.
+- **Broader signatures**: `irm`/Invoke-RestMethod, `schtasks`, `wmic`, `conhost`,
+  AV-evasion (`Add-MpPreference`/`-ExclusionPath`/AMSI), `.hta`, python/node/perl
+  download-and-run one-liners; more lure phrasings (⊞ glyph, "paste this code",
+  "checking your browser", fake Cloudflare "Ray ID"). +6 clipboard tests.
+
+### Explored — DOM-feature corpus to lift classifier recall (honest negative result)
+- New `scripts/train-classifier-dom.mjs` (`bun run train:classifier:dom`): crawls
+  live pages, extracts real DOM features, and fits ALL weights — with a
+  **methodological guard** (benign LOGIN pages in the corpus + adopt-only-if it
+  beats the current model without regressing on login-page false positives).
+- Live crawl yielded only **72 usable phishing pages + 3 benign login pages**
+  (most phishing hosts dead; login pages bot-walled). Too thin to fit DOM weights
+  safely, so the trainer **kept the expert priors** — the guard working as
+  designed (fitting on that would overfit "password field = phishing"). Classifier
+  recall unchanged at the measured 0.62; infra is ready for a curated corpus.
+
 ## [Unreleased] — 2026-07-10 — Roadmap features (classifier, feed snapshot, cross-browser)
 
 New detection depth + reach, all local and key-less. 657 tests pass (+25).

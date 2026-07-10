@@ -70,6 +70,30 @@
       };
     }
   } catch {}
+  // Modern navigator.clipboard.write(ClipboardItem[]) path — extract text/plain.
+  try {
+    if (navigator.clipboard?.write) {
+      const orig = navigator.clipboard.write.bind(navigator.clipboard);
+      navigator.clipboard.write = (items) => {
+        try {
+          (items || []).forEach((item) => {
+            if (
+              item &&
+              typeof item.getType === "function" &&
+              item.types?.includes?.("text/plain")
+            ) {
+              item
+                .getType("text/plain")
+                .then((blob) => blob.text())
+                .then(postClip)
+                .catch(() => {});
+            }
+          });
+        } catch {}
+        return orig(items);
+      };
+    }
+  } catch {}
   // Legacy execCommand('copy') path — capture the current selection's text.
   try {
     const origExec = document.execCommand.bind(document);
@@ -82,5 +106,20 @@
       } catch {}
       return origExec(cmd, ...rest);
     };
+  } catch {}
+  // DataTransfer.setData — catches the DEFERRED / on-click ClickFix variant where
+  // the page sets the clipboard from a 'copy' event handler or a button click
+  // (e.clipboardData.setData('text/plain', cmd)) instead of writeText().
+  try {
+    const dt = window.DataTransfer && window.DataTransfer.prototype;
+    if (dt && typeof dt.setData === "function") {
+      const origSet = dt.setData;
+      dt.setData = function (type, data) {
+        try {
+          if (typeof type === "string" && /^text(\/plain)?$/i.test(type)) postClip(data);
+        } catch {}
+        return origSet.call(this, type, data);
+      };
+    }
   } catch {}
 })();

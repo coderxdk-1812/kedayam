@@ -28,7 +28,9 @@ export class WarningCooldown {
     /** @type {Map<string, number>} insertion-ordered for LRU eviction */
     this.map = new Map();
   }
-  _key(host, kind) { return host + "|" + kind; }
+  _key(host, kind) {
+    return host + "|" + kind;
+  }
   _evict() {
     while (this.map.size > this.policy.COOLDOWN_MAX_ENTRIES) {
       const first = this.map.keys().next().value;
@@ -50,8 +52,12 @@ export class WarningCooldown {
     this._evict();
   }
   /** Clear all cooldowns (e.g. on session end). */
-  clear() { this.map.clear(); }
-  size() { return this.map.size; }
+  clear() {
+    this.map.clear();
+  }
+  size() {
+    return this.map.size;
+  }
 }
 
 /**

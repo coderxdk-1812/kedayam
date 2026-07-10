@@ -16,37 +16,52 @@ describe("arbitration v2 — new dangerous rules", () => {
   });
 
   it("cross-origin-credentials fires when password sits in cross-origin iframe", () => {
-    const r = arbitrate({ ...base, hasAuthWorkflow: true,
-      phishing: { ...base.phishing, credentialHarvest: true,
-        signals: [{ id: "iframe-credential-form" }] } });
+    const r = arbitrate({
+      ...base,
+      hasAuthWorkflow: true,
+      phishing: {
+        ...base.phishing,
+        credentialHarvest: true,
+        signals: [{ id: "iframe-credential-form" }],
+      },
+    });
     expect(r.rules.some((x) => x.id === "cross-origin-credentials")).toBe(true);
     expect(r.cap).toBeLessThanOrEqual(ARB_CONST.CAP_CROSS_ORIGIN_CREDS);
   });
 
   it("oauth-spoof fires on external POST + OAuth button", () => {
-    const r = arbitrate({ ...base, hasAuthWorkflow: true,
-      phishing: { ...base.phishing, credentialHarvest: true,
+    const r = arbitrate({
+      ...base,
+      hasAuthWorkflow: true,
+      phishing: {
+        ...base.phishing,
+        credentialHarvest: true,
         externalFormPost: true,
-        signals: [{ id: "oauth-impersonation" }] } });
+        signals: [{ id: "oauth-impersonation" }],
+      },
+    });
     expect(r.rules.some((x) => x.id === "oauth-spoof")).toBe(true);
     expect(r.forceStatus).toBe("dangerous");
   });
 
   it("auth-layout-clone is suspicious-only without behavioral evidence", () => {
-    const r = arbitrate({ ...base, hasAuthWorkflow: true,
-      authLayout: { isLayoutClone: true, confidence: 0.85,
-        matchedTemplate: "microsoft" } });
+    const r = arbitrate({
+      ...base,
+      hasAuthWorkflow: true,
+      authLayout: { isLayoutClone: true, confidence: 0.85, matchedTemplate: "microsoft" },
+    });
     // Layout similarity alone never escalates to dangerous (G4 sanity).
     expect(r.forceStatus).not.toBe("dangerous");
     expect(r.rules.some((x) => x.id === "auth-layout-soft-unknown")).toBe(true);
   });
 
   it("auth-layout-clone DOES fire dangerous when paired with external POST", () => {
-    const r = arbitrate({ ...base, hasAuthWorkflow: true,
-      authLayout: { isLayoutClone: true, confidence: 0.85,
-        matchedTemplate: "microsoft" },
-      phishing: { ...base.phishing, credentialHarvest: true,
-        externalFormPost: true } });
+    const r = arbitrate({
+      ...base,
+      hasAuthWorkflow: true,
+      authLayout: { isLayoutClone: true, confidence: 0.85, matchedTemplate: "microsoft" },
+      phishing: { ...base.phishing, credentialHarvest: true, externalFormPost: true },
+    });
     expect(r.rules.some((x) => x.id === "auth-layout-clone")).toBe(true);
     expect(r.forceStatus).toBe("dangerous");
   });
@@ -63,8 +78,7 @@ describe("arbitration v2 — new dangerous rules", () => {
   });
 
   it("allowlist still short-circuits even when new rules would fire", () => {
-    const r = arbitrate({ ...base, allowlistRoot: true,
-      mfaOnly: true, hiddenLoginOverlay: true });
+    const r = arbitrate({ ...base, allowlistRoot: true, mfaOnly: true, hiddenLoginOverlay: true });
     expect(r.cap).toBeNull();
   });
 });

@@ -17,8 +17,7 @@ const NATIVE = (() => {
   const E = Element.prototype;
   const N = Node.prototype;
   const HTMLEl = HTMLElement.prototype;
-  const HTMLInput = typeof HTMLInputElement !== "undefined"
-    ? HTMLInputElement.prototype : null;
+  const HTMLInput = typeof HTMLInputElement !== "undefined" ? HTMLInputElement.prototype : null;
 
   return Object.freeze({
     documentQuerySelector: D.querySelector,
@@ -31,10 +30,10 @@ const NATIVE = (() => {
     appendChild: N.appendChild,
     removeChild: N.removeChild,
     contains: N.contains,
-    addEventListener: typeof EventTarget !== "undefined"
-      ? EventTarget.prototype.addEventListener : null,
-    removeEventListener: typeof EventTarget !== "undefined"
-      ? EventTarget.prototype.removeEventListener : null,
+    addEventListener:
+      typeof EventTarget !== "undefined" ? EventTarget.prototype.addEventListener : null,
+    removeEventListener:
+      typeof EventTarget !== "undefined" ? EventTarget.prototype.removeEventListener : null,
     getRootNode: N.getRootNode,
     // descriptors used for shadow-root traversal
     shadowRootDesc: Object.getOwnPropertyDescriptor(E, "shadowRoot"),
@@ -51,32 +50,60 @@ const RA = Reflect.apply;
 export function qs(root, sel) {
   if (!root || !sel) return null;
   const fn = root === document ? NATIVE.documentQuerySelector : NATIVE.elementQuerySelector;
-  try { return RA(fn, root, [sel]); } catch { return null; }
+  try {
+    return RA(fn, root, [sel]);
+  } catch {
+    return null;
+  }
 }
 export function qsa(root, sel) {
   if (!root || !sel) return [];
   const fn = root === document ? NATIVE.documentQuerySelectorAll : NATIVE.elementQuerySelectorAll;
-  try { return Array.from(RA(fn, root, [sel])); } catch { return []; }
+  try {
+    return Array.from(RA(fn, root, [sel]));
+  } catch {
+    return [];
+  }
 }
 export function attr(el, name) {
   if (!el || !name) return null;
-  try { return RA(NATIVE.getAttribute, el, [name]); } catch { return null; }
+  try {
+    return RA(NATIVE.getAttribute, el, [name]);
+  } catch {
+    return null;
+  }
 }
 export function textOf(el) {
   if (!el || !NATIVE.textContentDesc?.get) return "";
-  try { return RA(NATIVE.textContentDesc.get, el, []) || ""; } catch { return ""; }
+  try {
+    return RA(NATIVE.textContentDesc.get, el, []) || "";
+  } catch {
+    return "";
+  }
 }
 export function inputType(el) {
   if (!el || !NATIVE.inputTypeDesc?.get) return "";
-  try { return (RA(NATIVE.inputTypeDesc.get, el, []) || "").toLowerCase(); } catch { return ""; }
+  try {
+    return (RA(NATIVE.inputTypeDesc.get, el, []) || "").toLowerCase();
+  } catch {
+    return "";
+  }
 }
 export function inputName(el) {
   if (!el || !NATIVE.inputNameDesc?.get) return "";
-  try { return RA(NATIVE.inputNameDesc.get, el, []) || ""; } catch { return ""; }
+  try {
+    return RA(NATIVE.inputNameDesc.get, el, []) || "";
+  } catch {
+    return "";
+  }
 }
 export function getShadowRoot(el) {
   if (!el || !NATIVE.shadowRootDesc?.get) return null;
-  try { return RA(NATIVE.shadowRootDesc.get, el, []); } catch { return null; }
+  try {
+    return RA(NATIVE.shadowRootDesc.get, el, []);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -90,7 +117,9 @@ export function walkShadowRoots(start, visit, { maxNodes = 5_000, maxDepth = 8 }
   while (queue.length) {
     const [node, depth] = queue.shift();
     if (++count > maxNodes || depth > maxDepth) return;
-    try { visit(node, depth); } catch {}
+    try {
+      visit(node, depth);
+    } catch {}
     const all = qsa(node, "*");
     for (const el of all) {
       const sr = getShadowRoot(el);
@@ -108,16 +137,22 @@ export function createListenerScope() {
   return {
     on(target, type, handler, options) {
       if (!target || !NATIVE.addEventListener) return;
-      try { RA(NATIVE.addEventListener, target, [type, handler, options]); items.push([target, type, handler, options]); }
-      catch {}
+      try {
+        RA(NATIVE.addEventListener, target, [type, handler, options]);
+        items.push([target, type, handler, options]);
+      } catch {}
     },
     dispose() {
       for (const [t, ty, h, o] of items) {
-        try { RA(NATIVE.removeEventListener, t, [ty, h, o]); } catch {}
+        try {
+          RA(NATIVE.removeEventListener, t, [ty, h, o]);
+        } catch {}
       }
       items.length = 0;
     },
-    size() { return items.length; },
+    size() {
+      return items.length;
+    },
   };
 }
 

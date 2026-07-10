@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isInjectableUrl, reasonForSkip, InjectionRegistry, ensureInjected } from "../../extension/lib/injection.js";
+import {
+  isInjectableUrl,
+  reasonForSkip,
+  InjectionRegistry,
+  ensureInjected,
+} from "../../extension/lib/injection.js";
 
 describe("isInjectableUrl", () => {
   it("allows http and https", () => {
@@ -53,7 +58,11 @@ describe("InjectionRegistry", () => {
 describe("ensureInjected", () => {
   it("skips non-injectable urls without calling chrome.scripting", async () => {
     let called = false;
-    const scripting = { executeScript: async () => { called = true; } };
+    const scripting = {
+      executeScript: async () => {
+        called = true;
+      },
+    };
     const r = new InjectionRegistry();
     const out = await ensureInjected(1, "chrome://settings/", r, scripting);
     expect(out.injected).toBe(false);
@@ -61,7 +70,11 @@ describe("ensureInjected", () => {
   });
   it("injects once per tab+url", async () => {
     let calls = 0;
-    const scripting = { executeScript: async () => { calls++; } };
+    const scripting = {
+      executeScript: async () => {
+        calls++;
+      },
+    };
     const r = new InjectionRegistry();
     await ensureInjected(1, "https://a/", r, scripting);
     await ensureInjected(1, "https://a/", r, scripting);
@@ -69,14 +82,22 @@ describe("ensureInjected", () => {
   });
   it("re-injects when url changes for the same tab", async () => {
     let calls = 0;
-    const scripting = { executeScript: async () => { calls++; } };
+    const scripting = {
+      executeScript: async () => {
+        calls++;
+      },
+    };
     const r = new InjectionRegistry();
     await ensureInjected(1, "https://a/", r, scripting);
     await ensureInjected(1, "https://b/", r, scripting);
     expect(calls).toBe(2);
   });
   it("reports injection errors gracefully", async () => {
-    const scripting = { executeScript: async () => { throw new Error("boom"); } };
+    const scripting = {
+      executeScript: async () => {
+        throw new Error("boom");
+      },
+    };
     const r = new InjectionRegistry();
     const out = await ensureInjected(1, "https://a/", r, scripting);
     expect(out.injected).toBe(false);

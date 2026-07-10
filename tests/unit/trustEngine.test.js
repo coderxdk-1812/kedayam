@@ -65,7 +65,9 @@ describe("evaluateUrl", () => {
   });
 
   it("includes contributions and a confidence score", async () => {
-    const r = await evaluateUrl("http://paypa1.com/login-verify-secure-account", { settings: baseSettings });
+    const r = await evaluateUrl("http://paypa1.com/login-verify-secure-account", {
+      settings: baseSettings,
+    });
     expect(typeof r.confidence).toBe("number");
     const fired = r.signals.filter((s) => s.contribution < 0);
     expect(fired.length).toBeGreaterThan(0);

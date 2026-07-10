@@ -1,12 +1,17 @@
 import { describe, it, expect } from "vitest";
 import {
-  analyzeSensitivePayload, shannonEntropy, luhn, ibanChecksum,
-  verhoeffAadhaar, looksLikeMnemonic, _internal,
+  analyzeSensitivePayload,
+  shannonEntropy,
+  luhn,
+  ibanChecksum,
+  verhoeffAadhaar,
+  looksLikeMnemonic,
+  _internal,
 } from "../../extension/lib/sensitiveDataEngine.js";
 
 describe("sensitiveDataEngine — checksums", () => {
   it("luhn validates known good/bad PANs", () => {
-    expect(luhn("4111111111111111")).toBe(true);    // visa test
+    expect(luhn("4111111111111111")).toBe(true); // visa test
     expect(luhn("4111111111111112")).toBe(false);
     expect(luhn("abc")).toBe(false);
   });
@@ -19,13 +24,15 @@ describe("sensitiveDataEngine — checksums", () => {
     expect(verhoeffAadhaar("111111111112")).toBe(false);
   });
   it("shannonEntropy is monotonic on randomness", () => {
-    expect(shannonEntropy("aaaaaaaa")).toBeLessThan(
-      shannonEntropy("aZ9bX2qK"));
+    expect(shannonEntropy("aaaaaaaa")).toBeLessThan(shannonEntropy("aZ9bX2qK"));
   });
   it("looksLikeMnemonic accepts plausible 12-word phrases", () => {
-    const ok = "abandon ability able about above absent absorb abstract absurd abuse access accident";
+    const ok =
+      "abandon ability able about above absent absorb abstract absurd abuse access accident";
     expect(looksLikeMnemonic(ok)).toBe(true);
-    expect(looksLikeMnemonic("aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa")).toBe(false);
+    expect(looksLikeMnemonic("aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa")).toBe(
+      false,
+    );
   });
 });
 

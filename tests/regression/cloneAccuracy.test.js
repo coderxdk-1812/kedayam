@@ -88,7 +88,8 @@ describe("clone detection accuracy — infrastructure exclusion", () => {
         "https://unpkg.com/b.js",
         "https://cdnjs.cloudflare.com/c.js",
       ],
-      styles: [], images: [],
+      styles: [],
+      images: [],
     });
     expect(r.crossOriginRatio).toBe(0);
     expect(r.confidence).toBe(0);
@@ -99,7 +100,9 @@ describe("clone detection accuracy — multi-signal gating", () => {
   it("single signal (favicon only) never raises confidence", () => {
     const r = analyzeClone({
       pageOrigin: "https://random.tld",
-      scripts: [], styles: [], images: [],
+      scripts: [],
+      styles: [],
+      images: [],
       favicon: "https://paypal.com/favicon.ico",
     });
     expect(r.signalCount).toBe(1);
@@ -109,7 +112,8 @@ describe("clone detection accuracy — multi-signal gating", () => {
   it("single signal (brand image only) never raises confidence", () => {
     const r = analyzeClone({
       pageOrigin: "https://random.tld",
-      scripts: [], styles: [],
+      scripts: [],
+      styles: [],
       images: ["https://chase.com/logo.png"],
     });
     expect(r.signalCount).toBe(1);
@@ -119,7 +123,8 @@ describe("clone detection accuracy — multi-signal gating", () => {
   it("two signals (favicon + brand image) raises confidence", () => {
     const r = analyzeClone({
       pageOrigin: "https://random.tld",
-      scripts: [], styles: [],
+      scripts: [],
+      styles: [],
       images: ["https://paypal.com/logo.png"],
       favicon: "https://paypal.com/favicon.ico",
     });
@@ -130,7 +135,8 @@ describe("clone detection accuracy — multi-signal gating", () => {
   it("clone alone (no phishing corroboration) cannot push dangerous", () => {
     const r = analyzeClone({
       pageOrigin: "https://random.tld",
-      scripts: [], styles: [],
+      scripts: [],
+      styles: [],
       images: ["https://paypal.com/logo.png"],
       favicon: "https://paypal.com/favicon.ico",
     });
@@ -142,7 +148,8 @@ describe("clone detection — per-scan isolation", () => {
   it("does not leak state between scans", () => {
     const scan1 = analyzeClone({
       pageOrigin: "https://random.tld",
-      scripts: [], styles: [],
+      scripts: [],
+      styles: [],
       images: ["https://paypal.com/logo.png"],
       favicon: "https://paypal.com/favicon.ico",
       phishing: { credentialHarvest: true, externalFormPost: true },
@@ -168,7 +175,8 @@ describe("clone detection — per-scan isolation", () => {
     const r = analyzeClone({
       pageOrigin: "https://example.com",
       scripts: ["", "javascript:void(0)", "data:text/js,foo"],
-      styles: [], images: [""],
+      styles: [],
+      images: [""],
       favicon: "",
     });
     expect(r.confidence).toBe(0);

@@ -16,9 +16,16 @@ export class DiagnosticsBuffer {
     this.enabled = false;
     this.buf = [];
   }
-  enable()  { this.enabled = true; }
-  disable() { this.enabled = false; this.buf.length = 0; }
-  clear()   { this.buf.length = 0; }
+  enable() {
+    this.enabled = true;
+  }
+  disable() {
+    this.enabled = false;
+    this.buf.length = 0;
+  }
+  clear() {
+    this.buf.length = 0;
+  }
 
   record(kind, payload) {
     if (!this.enabled) return;
@@ -71,7 +78,11 @@ function redactString(s) {
   if (s.length > 64) return s.slice(0, 32) + "…[trunc]";
   // Strip obvious URLs to host-only.
   if (/^https?:\/\//i.test(s)) {
-    try { return new URL(s).host; } catch { return "[url]"; }
+    try {
+      return new URL(s).host;
+    } catch {
+      return "[url]";
+    }
   }
   // Strip obvious emails.
   if (/@/.test(s) && /\.[a-z]{2,}/i.test(s)) return "[email]";

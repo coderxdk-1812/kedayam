@@ -1,16 +1,20 @@
 import { describe, it, expect } from "vitest";
 import {
-  fingerprintAuthLayout, matchAuthTemplate, analyzeAuthLayout,
+  fingerprintAuthLayout,
+  matchAuthTemplate,
+  analyzeAuthLayout,
 } from "../../extension/lib/authLayout.js";
 
 const microsoftLike = {
   pageOrigin: "https://m1cr0soft-login.example/",
   title: "Sign in",
   visibleText: "Sign in to your Microsoft account. No account? Create one.",
-  forms: [{ hasPassword: false, hasEmailLike: true, hasOtp: false,
-    hiddenCount: 4, fieldsCount: 8 }],
+  forms: [
+    { hasPassword: false, hasEmailLike: true, hasOtp: false, hiddenCount: 4, fieldsCount: 8 },
+  ],
   oauthButtons: [],
-  hasLogoImage: true, hasHeading: true,
+  hasLogoImage: true,
+  hasHeading: true,
   firstFieldKind: "email",
 };
 
@@ -41,9 +45,12 @@ describe("authLayout — fingerprint + match", () => {
       pageOrigin: "https://g00gle-accounts.example/",
       title: "Sign in",
       visibleText: "Sign in. Use your Google account. Forgot email?",
-      forms: [{ hasPassword: false, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 2, fieldsCount: 6 }],
-      oauthButtons: [], hasLogoImage: true, hasHeading: true,
+      forms: [
+        { hasPassword: false, hasEmailLike: true, hasOtp: false, hiddenCount: 2, fieldsCount: 6 },
+      ],
+      oauthButtons: [],
+      hasLogoImage: true,
+      hasHeading: true,
       firstFieldKind: "email",
     });
     expect(r.matchedTemplate).toBe("google");

@@ -5,16 +5,25 @@ import { describe, it, expect } from "vitest";
 import { analyzeSensitivePayload } from "../../extension/lib/sensitiveDataEngine.js";
 import { evaluateUrl } from "../../extension/lib/trustEngine.js";
 import { analyzePhishing } from "../../extension/lib/phishingHeuristics.js";
-import { safeExecRegex, safeMatchAll, safeJSONParse, assertEnvelope } from "../../extension/lib/selfProtection.js";
+import {
+  safeExecRegex,
+  safeMatchAll,
+  safeJSONParse,
+  assertEnvelope,
+} from "../../extension/lib/selfProtection.js";
 
 function seeded(seed) {
   let s = seed >>> 0 || 1;
-  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0xffffffff; };
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0xffffffff;
+  };
 }
 
 function randomString(rand, maxLen) {
   const n = Math.floor(rand() * maxLen);
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.@/:;<>?\"' \t\n\u00a0\ud83d\ude00";
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.@/:;<>?\"' \t\n\u00a0\ud83d\ude00";
   let out = "";
   for (let i = 0; i < n; i++) out += chars[Math.floor(rand() * chars.length)];
   return out;

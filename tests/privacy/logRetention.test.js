@@ -27,7 +27,9 @@ function installStorageShim() {
           }
           return {};
         },
-        set: async (obj) => { for (const [k, v] of Object.entries(obj)) data.set(k, v); },
+        set: async (obj) => {
+          for (const [k, v] of Object.entries(obj)) data.set(k, v);
+        },
         remove: async (keys) => {
           const arr = Array.isArray(keys) ? keys : [keys];
           for (const k of arr) data.delete(k);
@@ -51,7 +53,7 @@ describe("R4 — activity log TTL + ring buffer", () => {
   it("entries older than ACTIVITY_TTL_MS are dropped on read", async () => {
     const KEY = "kedayam:v1:activity";
     const fresh = { kind: "trust", host: "a.test", at: Date.now() };
-    const old   = { kind: "trust", host: "b.test", at: Date.now() - mod.ACTIVITY_TTL_MS - 1000 };
+    const old = { kind: "trust", host: "b.test", at: Date.now() - mod.ACTIVITY_TTL_MS - 1000 };
     store.set(KEY, [fresh, old]);
     const out = await mod.getActivity();
     expect(out.map((e) => e.host)).toEqual(["a.test"]);
@@ -89,7 +91,10 @@ describe("R4 — activity log TTL + ring buffer", () => {
 
   it("strips fields not in the allowlist (no sensitive payload retention)", async () => {
     await mod.appendActivity({
-      kind: "trust", host: "x.test", score: 50, status: "suspicious",
+      kind: "trust",
+      host: "x.test",
+      score: 50,
+      status: "suspicious",
       // Forbidden fields — must NEVER persist.
       password: "hunter2",
       clipboard: "card number",

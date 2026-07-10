@@ -24,11 +24,18 @@ describe("credentialHarvest bypasses dampening", () => {
           "tutorial demo example getting started OAuth 2.0 authorization " +
           "code flow PKCE redirect_uri client_id access token " +
           "outlook office 365 sign in to your account",
-        forms: [{
-          action: "/login", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false,
-        }],
+        forms: [
+          {
+            action: "/login",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
         hasPasswordField: true,
       },
     });

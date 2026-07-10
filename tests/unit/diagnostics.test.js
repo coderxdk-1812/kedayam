@@ -35,7 +35,7 @@ describe("diagnostics", () => {
     const payload = JSON.parse('{"a":1, "__proto__":{"polluted":true}}');
     const r = redact(payload);
     expect(r.polluted).toBeUndefined();
-    expect(({}).polluted).toBeUndefined();
+    expect({}.polluted).toBeUndefined();
   });
 
   it("buffer is bounded", () => {

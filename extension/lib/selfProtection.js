@@ -12,10 +12,10 @@
 //
 // No Node, no chrome.* dependencies — unit-testable in vanilla JS.
 
-const DEFAULT_REGEX_MS  = 50;
-const DEFAULT_STRING_MAX = 200_000;     // 200 KB
-const DEFAULT_ARRAY_MAX  = 5_000;
-const DEFAULT_JSON_MAX   = 1_000_000;   // 1 MB
+const DEFAULT_REGEX_MS = 50;
+const DEFAULT_STRING_MAX = 200_000; // 200 KB
+const DEFAULT_ARRAY_MAX = 5_000;
+const DEFAULT_JSON_MAX = 1_000_000; // 1 MB
 
 /**
  * Run a regex against `input` with an input-size cap and a wall-clock
@@ -33,7 +33,9 @@ export function safeExecRegex(re, input, opts = {}) {
     const m = re.exec(input);
     if (Date.now() - start > deadlineMs) return null;
     return m;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -71,7 +73,11 @@ export function boundedArray(v, max = DEFAULT_ARRAY_MAX) {
 export function safeJSONParse(text, opts = {}) {
   const max = opts.maxLen ?? DEFAULT_JSON_MAX;
   if (typeof text !== "string" || text.length > max) return null;
-  try { return JSON.parse(text); } catch { return null; }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 /**

@@ -13,69 +13,142 @@ import { lookalikeAnalysis, rootDomain } from "./lookalike.js";
 // is treated as an "unknown login page" and capped.
 const TRUSTED_LOGIN_PROVIDERS = new Set([
   // Google
-  "google.com", "accounts.google.com", "youtube.com", "gmail.com",
+  "google.com",
+  "accounts.google.com",
+  "youtube.com",
+  "gmail.com",
   // Microsoft
-  "microsoft.com", "microsoftonline.com", "live.com", "office.com",
-  "outlook.com", "office365.com", "sharepoint.com",
+  "microsoft.com",
+  "microsoftonline.com",
+  "live.com",
+  "office.com",
+  "outlook.com",
+  "office365.com",
+  "sharepoint.com",
   // Apple
-  "apple.com", "icloud.com", "appleid.apple.com",
+  "apple.com",
+  "icloud.com",
+  "appleid.apple.com",
   // Major SaaS / dev
-  "github.com", "gitlab.com", "bitbucket.org", "atlassian.com",
-  "slack.com", "dropbox.com", "notion.so", "figma.com", "zoom.us",
-  "okta.com", "auth0.com", "onelogin.com", "duosecurity.com",
-  "linkedin.com", "twitter.com", "x.com", "facebook.com", "instagram.com",
+  "github.com",
+  "gitlab.com",
+  "bitbucket.org",
+  "atlassian.com",
+  "slack.com",
+  "dropbox.com",
+  "notion.so",
+  "figma.com",
+  "zoom.us",
+  "okta.com",
+  "auth0.com",
+  "onelogin.com",
+  "duosecurity.com",
+  "linkedin.com",
+  "twitter.com",
+  "x.com",
+  "facebook.com",
+  "instagram.com",
   // Commerce / payments
-  "amazon.com", "paypal.com", "stripe.com", "shopify.com", "ebay.com",
-  "netflix.com", "spotify.com", "adobe.com",
+  "amazon.com",
+  "paypal.com",
+  "stripe.com",
+  "shopify.com",
+  "ebay.com",
+  "netflix.com",
+  "spotify.com",
+  "adobe.com",
   // Major banks (sample)
-  "chase.com", "wellsfargo.com", "bankofamerica.com", "citi.com",
-  "capitalone.com", "americanexpress.com",
-  "hdfcbank.com", "icicibank.com", "axisbank.com", "kotak.com",
-  "sbi.co.in", "rbi.org.in",
-  "ionos.com", "1and1.com",
+  "chase.com",
+  "wellsfargo.com",
+  "bankofamerica.com",
+  "citi.com",
+  "capitalone.com",
+  "americanexpress.com",
+  "hdfcbank.com",
+  "icicibank.com",
+  "axisbank.com",
+  "kotak.com",
+  "sbi.co.in",
+  "rbi.org.in",
+  "ionos.com",
+  "1and1.com",
 ]);
 
 // Brand-keyword → canonical root. Used to detect impersonation in titles,
 // headings, and visible body text. Keep it tight to limit false positives.
 const BRAND_KEYWORDS = [
-  { kw: ["microsoft", "office 365", "office365", "outlook", "onedrive",
-         "sharepoint"], root: "microsoft.com",
-    aliases: ["microsoft.com", "microsoftonline.com", "live.com",
-              "office.com", "office365.com", "outlook.com", "sharepoint.com"] },
-  { kw: ["google account", "gmail", "google workspace", "google sign"],
+  {
+    kw: ["microsoft", "office 365", "office365", "outlook", "onedrive", "sharepoint"],
+    root: "microsoft.com",
+    aliases: [
+      "microsoft.com",
+      "microsoftonline.com",
+      "live.com",
+      "office.com",
+      "office365.com",
+      "outlook.com",
+      "sharepoint.com",
+    ],
+  },
+  {
+    kw: ["google account", "gmail", "google workspace", "google sign"],
     root: "google.com",
-    aliases: ["google.com", "gmail.com", "googlemail.com",
-              "googleusercontent.com", "googleapis.com"] },
-  { kw: ["apple id", "icloud", "appleid"], root: "apple.com",
-    aliases: ["apple.com", "icloud.com"] },
+    aliases: [
+      "google.com",
+      "gmail.com",
+      "googlemail.com",
+      "googleusercontent.com",
+      "googleapis.com",
+    ],
+  },
+  {
+    kw: ["apple id", "icloud", "appleid"],
+    root: "apple.com",
+    aliases: ["apple.com", "icloud.com"],
+  },
   { kw: ["paypal"], root: "paypal.com", aliases: ["paypal.com"] },
-  { kw: ["ionos", "1&1", "webmail ionos", "ionos login"], root: "ionos.com",
-    aliases: ["ionos.com", "1and1.com"] },
-  { kw: ["facebook", "meta business"], root: "facebook.com",
-    aliases: ["facebook.com", "fb.com", "meta.com"] },
+  {
+    kw: ["ionos", "1&1", "webmail ionos", "ionos login"],
+    root: "ionos.com",
+    aliases: ["ionos.com", "1and1.com"],
+  },
+  {
+    kw: ["facebook", "meta business"],
+    root: "facebook.com",
+    aliases: ["facebook.com", "fb.com", "meta.com"],
+  },
   { kw: ["instagram"], root: "instagram.com", aliases: ["instagram.com"] },
   { kw: ["netflix"], root: "netflix.com", aliases: ["netflix.com"] },
-  { kw: ["amazon"], root: "amazon.com",
-    aliases: ["amazon.com", "amazon.in", "amazon.co.uk", "amazon.de"] },
+  {
+    kw: ["amazon"],
+    root: "amazon.com",
+    aliases: ["amazon.com", "amazon.in", "amazon.co.uk", "amazon.de"],
+  },
   { kw: ["coinbase"], root: "coinbase.com", aliases: ["coinbase.com"] },
-  { kw: ["binance"], root: "binance.com",
-    aliases: ["binance.com", "binance.us"] },
+  { kw: ["binance"], root: "binance.com", aliases: ["binance.com", "binance.us"] },
   { kw: ["metamask"], root: "metamask.io", aliases: ["metamask.io"] },
-  { kw: ["chase bank", "jpmorgan"], root: "chase.com",
-    aliases: ["chase.com", "jpmorgan.com"] },
+  { kw: ["chase bank", "jpmorgan"], root: "chase.com", aliases: ["chase.com", "jpmorgan.com"] },
   { kw: ["wells fargo"], root: "wellsfargo.com", aliases: ["wellsfargo.com"] },
-  { kw: ["bank of america"], root: "bankofamerica.com",
-    aliases: ["bankofamerica.com", "bofa.com"] },
+  {
+    kw: ["bank of america"],
+    root: "bankofamerica.com",
+    aliases: ["bankofamerica.com", "bofa.com"],
+  },
   { kw: ["hdfc bank"], root: "hdfcbank.com", aliases: ["hdfcbank.com"] },
   { kw: ["icici bank"], root: "icicibank.com", aliases: ["icicibank.com"] },
-  { kw: ["state bank of india", "sbi online"], root: "sbi.co.in",
-    aliases: ["sbi.co.in", "onlinesbi.com"] },
+  {
+    kw: ["state bank of india", "sbi online"],
+    root: "sbi.co.in",
+    aliases: ["sbi.co.in", "onlinesbi.com"],
+  },
 ];
 
-const AUTH_PHRASES = /\b(sign in|log in|login|signin|verify your (account|identity)|confirm your (account|identity)|account suspended|unusual activity|two[- ]factor|2fa|mfa|one[- ]time (code|password)|otp|authenticator)\b/i;
+const AUTH_PHRASES =
+  /\b(sign in|log in|login|signin|verify your (account|identity)|confirm your (account|identity)|account suspended|unusual activity|two[- ]factor|2fa|mfa|one[- ]time (code|password)|otp|authenticator)\b/i;
 // Generic enterprise-SSO phrasing common in AiTM / IdP-relay kits that
 // carry NO brand keywords (so brand-impersonation never fires).
-const ENTERPRISE_SSO_PHRASES = /\b(continue to (your )?(organization|organisation|company|tenant|workspace)|device (verification|registration|trust)|approve (this )?sign[- ]?in request|sso (sign|log) ?in|enterprise (sign|log) ?in|use your (work|corporate|organization|company) account|verify it'?s you|complete sign[- ]?in on (another|your) device|your organization requires)\b/i;
+const ENTERPRISE_SSO_PHRASES =
+  /\b(continue to (your )?(organization|organisation|company|tenant|workspace)|device (verification|registration|trust)|approve (this )?sign[- ]?in request|sso (sign|log) ?in|enterprise (sign|log) ?in|use your (work|corporate|organization|company) account|verify it'?s you|complete sign[- ]?in on (another|your) device|your organization requires)\b/i;
 
 function isTrustedLoginHost(host) {
   if (!host) return false;
@@ -84,7 +157,11 @@ function isTrustedLoginHost(host) {
 }
 
 function hostOf(u) {
-  try { return new URL(u, "https://x/").hostname.toLowerCase(); } catch { return ""; }
+  try {
+    return new URL(u, "https://x/").hostname.toLowerCase();
+  } catch {
+    return "";
+  }
 }
 
 /**
@@ -115,11 +192,11 @@ export function analyzePhishing(ctx = {}) {
     confidence: 0,
     signals: [],
     credentialHarvest: false,
-    authRisk: "none",          // none | low | medium | high | critical
+    authRisk: "none", // none | low | medium | high | critical
     brandImpersonation: null, // { brand, evidence }
     externalFormPost: false,
-    cap: null,                // optional max trust score
-    forceStatus: null,        // "suspicious" | "dangerous" | null
+    cap: null, // optional max trust score
+    forceStatus: null, // "suspicious" | "dangerous" | null
   };
   if (!ctx || !ctx.pageOrigin) return out;
 
@@ -127,7 +204,9 @@ export function analyzePhishing(ctx = {}) {
   try {
     pageHost = new URL(ctx.pageOrigin).hostname.toLowerCase();
     pageRoot = rootDomain(pageHost.replace(/^www\./, ""));
-  } catch { return out; }
+  } catch {
+    return out;
+  }
 
   const trusted = TRUSTED_LOGIN_PROVIDERS.has(pageRoot);
   const text = `${ctx.title || ""} \n ${ctx.visibleText || ""}`.toLowerCase();
@@ -146,22 +225,32 @@ export function analyzePhishing(ctx = {}) {
     }
   }
   if (brandHit) {
-    out.brandImpersonation = { brand: brandHit.root,
-      evidence: brandHit.kw.find((k) => text.includes(k)) || brandHit.root };
+    out.brandImpersonation = {
+      brand: brandHit.root,
+      evidence: brandHit.kw.find((k) => text.includes(k)) || brandHit.root,
+    };
     out.signals.push({
-      id: "brand-impersonation", category: "identity", severity: "high",
+      id: "brand-impersonation",
+      category: "identity",
+      severity: "high",
       title: `Page mentions ${brandHit.root} but is not on that domain`,
       detail: `Found "${out.brandImpersonation.evidence}" in page text on ${pageRoot}.`,
-      weight: 50, confidence: 0.85,
+      weight: 50,
+      confidence: 0.85,
     });
   }
 
   if (lookalike.match) {
     out.signals.push({
-      id: "domain-spoofing", category: "identity", severity: hasIdnSpoof ? "critical" : "high",
-      title: hasIdnSpoof ? "Punycode / Unicode domain spoofing detected" : `Domain resembles ${lookalike.match.brand || "a protected brand"}`,
+      id: "domain-spoofing",
+      category: "identity",
+      severity: hasIdnSpoof ? "critical" : "high",
+      title: hasIdnSpoof
+        ? "Punycode / Unicode domain spoofing detected"
+        : `Domain resembles ${lookalike.match.brand || "a protected brand"}`,
       detail: lookalike.reasons.join(" "),
-      weight: hasIdnSpoof ? 55 : 38, confidence: Math.max(0.75, lookalike.confidence || 0),
+      weight: hasIdnSpoof ? 55 : 38,
+      confidence: Math.max(0.75, lookalike.confidence || 0),
     });
   }
 
@@ -170,37 +259,46 @@ export function analyzePhishing(ctx = {}) {
   const loginForms = forms.filter((f) => f.hasPassword || (f.hasEmailLike && f.hasOtp));
   // Email-first / OTP-only forms are also auth-flow forms; we still check
   // their action target for off-domain POST.
-  const authFlowForms = forms.filter((f) =>
-    f.hasPassword || f.hasEmailLike || f.hasOtp);
+  const authFlowForms = forms.filter((f) => f.hasPassword || f.hasEmailLike || f.hasOtp);
   const hasPwd = !!ctx.hasPasswordField || loginForms.length > 0;
-  const hasAuthWorkflow = hasPwd || loginForms.length > 0 || AUTH_PHRASES.test(text) || !!ctx.oauthButtons?.length;
+  const hasAuthWorkflow =
+    hasPwd || loginForms.length > 0 || AUTH_PHRASES.test(text) || !!ctx.oauthButtons?.length;
 
   if (hasPwd && !trusted) {
     out.credentialHarvest = true;
     out.authRisk = "high";
     out.signals.push({
-      id: "credential-form", category: "behavior", severity: "high",
+      id: "credential-form",
+      category: "behavior",
+      severity: "high",
       title: "Login / credential form on an unverified domain",
       detail: `${pageRoot} is not a known sign-in provider but is collecting a password.`,
-      weight: 25, confidence: 0.85,
+      weight: 25,
+      confidence: 0.85,
     });
   } else if (hasPwd && trusted) {
     out.authRisk = "low";
     out.signals.push({
-      id: "credential-form-trusted", category: "behavior", severity: "info",
+      id: "credential-form-trusted",
+      category: "behavior",
+      severity: "info",
       title: "Login form on a known sign-in provider",
       detail: `${pageRoot} is a recognized identity provider.`,
-      weight: 0, confidence: 1,
+      weight: 0,
+      confidence: 1,
     });
   }
 
   if (hasAuthWorkflow && !hasPwd && !trusted) {
     out.authRisk = "medium";
     out.signals.push({
-      id: "unknown-auth-workflow", category: "behavior", severity: "medium",
+      id: "unknown-auth-workflow",
+      category: "behavior",
+      severity: "medium",
       title: "Authentication workflow on an unverified domain",
       detail: `${pageRoot} shows sign-in or verification behavior without strong trust evidence.`,
-      weight: 18, confidence: 0.7,
+      weight: 18,
+      confidence: 0.7,
     });
   }
 
@@ -209,10 +307,13 @@ export function analyzePhishing(ctx = {}) {
     if (!f.action) continue;
     if (/^javascript:/i.test(f.action)) {
       out.signals.push({
-        id: "form-javascript", category: "behavior", severity: "high",
+        id: "form-javascript",
+        category: "behavior",
+        severity: "high",
         title: "Auth form submits via inline JavaScript",
         detail: "Real services post credentials to a server endpoint, not a javascript: URL.",
-        weight: 30, confidence: 0.9,
+        weight: 30,
+        confidence: 0.9,
       });
       continue;
     }
@@ -222,33 +323,45 @@ export function analyzePhishing(ctx = {}) {
     if (ar && ar !== pageRoot) {
       out.externalFormPost = true;
       out.signals.push({
-        id: "external-form-post", category: "behavior", severity: "critical",
+        id: "external-form-post",
+        category: "behavior",
+        severity: "critical",
         title: "Auth form would be posted to a different domain",
         detail: `Form on ${pageRoot} submits to ${ar}.`,
-        weight: 60, confidence: 0.95,
+        weight: 60,
+        confidence: 0.95,
       });
     }
     if (f.method && f.method.toLowerCase() === "get" && (f.hasPassword || f.hasOtp)) {
       out.signals.push({
-        id: "form-get", category: "behavior", severity: "medium",
+        id: "form-get",
+        category: "behavior",
+        severity: "medium",
         title: "Credential form uses GET (secrets in URL)",
-        weight: 20, confidence: 0.9,
+        weight: 20,
+        confidence: 0.9,
       });
     }
     if ((f.hiddenCount || 0) >= 4 && (f.fieldsCount || 0) <= 8 && !trusted) {
       out.signals.push({
-        id: "hidden-login-fields", category: "behavior", severity: "medium",
+        id: "hidden-login-fields",
+        category: "behavior",
+        severity: "medium",
         title: "Auth form contains many hidden fields",
         detail: "Phishing kits often hide routing or victim identifiers inside credential forms.",
-        weight: 16, confidence: 0.65,
+        weight: 16,
+        confidence: 0.65,
       });
     }
     if (f.insideIframe && !trusted && (f.hasPassword || f.hasOtp)) {
       out.signals.push({
-        id: "iframe-credential-form", category: "behavior", severity: "high",
+        id: "iframe-credential-form",
+        category: "behavior",
+        severity: "high",
         title: "Credential form is embedded inside an iframe",
         detail: "Embedded login forms can be used for overlays and clickjacking-style phishing.",
-        weight: 28, confidence: 0.85,
+        weight: 28,
+        confidence: 0.85,
       });
     }
   }
@@ -259,29 +372,38 @@ export function analyzePhishing(ctx = {}) {
   // ---- OAuth button impersonation ----
   if (ctx.oauthButtons?.length && !trusted && hasPwd) {
     out.signals.push({
-      id: "oauth-impersonation", category: "identity", severity: "high",
+      id: "oauth-impersonation",
+      category: "identity",
+      severity: "high",
       title: `"Sign in with ${ctx.oauthButtons.join(", ")}" on an unverified domain`,
       detail: "Phishing pages mimic SSO buttons to look credible.",
-      weight: 18, confidence: 0.7,
+      weight: 18,
+      confidence: 0.7,
     });
   }
 
   // ---- Auth phrasing ----
   if (AUTH_PHRASES.test(text) && !trusted && hasPwd) {
     out.signals.push({
-      id: "auth-phrasing", category: "behavior", severity: "medium",
+      id: "auth-phrasing",
+      category: "behavior",
+      severity: "medium",
       title: "Page uses urgent authentication phrasing",
       detail: "Phrases like 'verify your account' or 'unusual activity' are common in phishing.",
-      weight: 12, confidence: 0.6,
+      weight: 12,
+      confidence: 0.6,
     });
   }
 
   // ---- Top-level page in iframe (clickjack / overlay phish) ----
   if (ctx.topLevelIframe && hasPwd) {
     out.signals.push({
-      id: "iframe-login", category: "behavior", severity: "high",
+      id: "iframe-login",
+      category: "behavior",
+      severity: "high",
       title: "Login form rendered inside an iframe",
-      weight: 25, confidence: 0.8,
+      weight: 25,
+      confidence: 0.8,
     });
   }
 
@@ -291,16 +413,19 @@ export function analyzePhishing(ctx = {}) {
   // email-first flows, or MFA-approval prompts. We escalate these when on
   // an unknown root that is also showing auth-collection behavior.
   const hasEnterprisePhrasing = ENTERPRISE_SSO_PHRASES.test(text);
-  const emailFirst = authFlowForms.some((f) =>
-    f.hasEmailLike && !f.hasPassword && (f.fieldsCount || 0) <= 4);
+  const emailFirst = authFlowForms.some(
+    (f) => f.hasEmailLike && !f.hasPassword && (f.fieldsCount || 0) <= 4,
+  );
   const mfaOnly = authFlowForms.some((f) => f.hasOtp && !f.hasPassword);
-  if (hasEnterprisePhrasing && !trusted &&
-      (hasPwd || emailFirst || mfaOnly || hasAuthWorkflow)) {
+  if (hasEnterprisePhrasing && !trusted && (hasPwd || emailFirst || mfaOnly || hasAuthWorkflow)) {
     out.signals.push({
-      id: "generic-enterprise-auth", category: "behavior", severity: "high",
+      id: "generic-enterprise-auth",
+      category: "behavior",
+      severity: "high",
       title: "Generic enterprise sign-in flow on an unverified domain",
       detail: `${pageRoot} uses corporate SSO / device-trust phrasing without being a known identity provider.`,
-      weight: 24, confidence: 0.72,
+      weight: 24,
+      confidence: 0.72,
     });
     // Cap below the safe band so the badge becomes visible even when no
     // brand was named. External POST / MFA-only rules can still escalate
@@ -311,7 +436,6 @@ export function analyzePhishing(ctx = {}) {
       out.authRisk = "medium";
     }
   }
-
 
   let conf = 0;
   for (const s of out.signals) {

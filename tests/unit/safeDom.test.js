@@ -19,8 +19,12 @@ describe("safeDom — frozen native references", () => {
   it("qs/qsa work even after page monkey-patches Document.prototype", async () => {
     const safe = await import("../../extension/lib/safeDom.js?v=1");
     // Page poisons querySelector to return null for password fields.
-    Document.prototype.querySelector = function () { return null; };
-    Element.prototype.querySelector = function () { return null; };
+    Document.prototype.querySelector = function () {
+      return null;
+    };
+    Element.prototype.querySelector = function () {
+      return null;
+    };
     const form = safe.qs(document, "form#f");
     expect(form).not.toBeNull();
     const pwd = safe.qs(form, "input[type=password]");
@@ -31,7 +35,9 @@ describe("safeDom — frozen native references", () => {
     const safe = await import("../../extension/lib/safeDom.js?v=2");
     const form = document.querySelector("form");
     form.setAttribute("action", "/login");
-    Element.prototype.getAttribute = function () { return "https://evil.example/x"; };
+    Element.prototype.getAttribute = function () {
+      return "https://evil.example/x";
+    };
     expect(safe.attr(form, "action")).toBe("/login");
   });
 

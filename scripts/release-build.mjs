@@ -21,10 +21,20 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 
 const STEPS = [
   { name: "vitest", cmd: "bunx", args: ["vitest", "run"], required: true },
-  { name: "validate-extension", cmd: "node", args: ["scripts/validate-extension.mjs", "extension"], required: true },
+  {
+    name: "validate-extension",
+    cmd: "node",
+    args: ["scripts/validate-extension.mjs", "extension"],
+    required: true,
+  },
   { name: "profile", cmd: "node", args: ["scripts/profile-extension.mjs"], required: false },
   { name: "package", cmd: "node", args: ["scripts/package-extension.mjs"], required: true },
-  { name: "security-report", cmd: "node", args: ["scripts/generate-security-report.mjs"], required: false },
+  {
+    name: "security-report",
+    cmd: "node",
+    args: ["scripts/generate-security-report.mjs"],
+    required: false,
+  },
 ];
 
 function run(step) {

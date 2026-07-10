@@ -1,23 +1,63 @@
-import { mkdirSync, rmSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
+// Kedayam — deterministic extension packager.
+//
+// Produces a byte-reproducible public/kedayam.zip: the same committed source
+// always yields the same archive, so the CI drift gate is meaningful.
+//
+// Reproducibility rules:
+//   1. Icons are committed source — they are NOT regenerated here (regenerating
+//      them re-compresses via the runtime's zlib, whose bytes differ across
+//      Node/Bun versions). Run `bun run icons` deliberately when the art changes.
+//   2. Every entry's mtime is pinned to a fixed epoch (zip stores per-entry
+//      timestamps; floating mtimes would change the bytes on every checkout).
+//   3. Entries are added in a stable, locale-independent sorted order.
+//   4. `zip -X` strips platform-specific extra fields (uid/gid, extended
+//      timestamps) so macOS and Linux CI produce the same archive.
 
-const zipPath = 'public/kedayam.zip';
-mkdirSync('public', { recursive: true });
+import { mkdirSync, rmSync, cpSync, readdirSync, statSync, utimesSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { join, relative, sep } from "node:path";
+import { tmpdir } from "node:os";
 
-for (const cmd of [
-  ['bun', ['scripts/generate-icons.mjs']],
-  ['bun', ['scripts/validate-extension.mjs', 'extension']],
-]) {
-  const result = spawnSync(cmd[0], cmd[1], { stdio: 'inherit' });
-  if (result.status !== 0) process.exit(result.status ?? 1);
+const zipPath = "public/kedayam.zip";
+const absZip = join(process.cwd(), zipPath);
+mkdirSync("public", { recursive: true });
+
+// 1. Validate the source tree (no icon regeneration — icons are committed source).
+const validate = spawnSync("bun", ["scripts/validate-extension.mjs", "extension"], {
+  stdio: "inherit",
+});
+if (validate.status !== 0) process.exit(validate.status ?? 1);
+
+// 2. Stage a copy so timestamps can be normalized without touching the source tree.
+const stage = join(tmpdir(), "kedayam-pkg");
+rmSync(stage, { recursive: true, force: true });
+cpSync("extension", stage, { recursive: true });
+
+// 3. Collect files in a stable order and pin every mtime to a fixed epoch.
+//    1980-01-01 is the minimum timestamp representable in the ZIP (DOS) format.
+const FIXED = new Date("1980-01-01T00:00:00Z");
+function walk(dir) {
+  const out = [];
+  for (const name of readdirSync(dir)) {
+    const abs = join(dir, name);
+    if (statSync(abs).isDirectory()) out.push(...walk(abs));
+    else if (name !== ".DS_Store") out.push(abs);
+  }
+  return out;
 }
+const files = walk(stage)
+  .map((abs) => relative(stage, abs).split(sep).join("/"))
+  .sort();
+for (const rel of files) utimesSync(join(stage, rel), FIXED, FIXED);
 
-rmSync(zipPath, { force: true });
-const zipper = spawnSync(
-  'zip',
-  ['-qr', `../${zipPath}`, '.', '-x', '*.DS_Store'],
-  { cwd: 'extension', stdio: 'inherit' },
-);
+// 4. Build the archive from the sorted list (-@ reads names from stdin, in order).
+rmSync(absZip, { force: true });
+const zipper = spawnSync("zip", ["-X", "-q", absZip, "-@"], {
+  cwd: stage,
+  input: files.join("\n") + "\n",
+  stdio: ["pipe", "inherit", "inherit"],
+});
+rmSync(stage, { recursive: true, force: true });
 
 if (zipper.status !== 0) process.exit(zipper.status ?? 1);
-console.log(`Packaged ${zipPath}`);
+console.log(`Packaged ${zipPath} — ${files.length} entries, deterministic`);

@@ -6,15 +6,16 @@
 import { describe, it, expect } from "vitest";
 import { evaluateUrl } from "../../extension/lib/trustEngine.js";
 import { deriveSuspicion } from "../../extension/lib/suspicionLevels.js";
-import {
-  storeReplay, consumeReplay, _resetAll,
-} from "../../extension/lib/ephemeralReplay.js";
+import { storeReplay, consumeReplay, _resetAll } from "../../extension/lib/ephemeralReplay.js";
 import { RULES_BY_ID } from "../../extension/lib/rules/index.js";
 
 const baseSettings = {
-  detection: { sensitivity: "balanced",
+  detection: {
+    sensitivity: "balanced",
     regions: { india: true, us: true, eu: true, global: true },
-    cloneDetection: true } };
+    cloneDetection: true,
+  },
+};
 
 describe("Integration completeness — authFlow is NOT dead code", () => {
   it("credential-relay anomaly drives arbitration to high-risk / dangerous on unknown roots", async () => {
@@ -22,14 +23,31 @@ describe("Integration completeness — authFlow is NOT dead code", () => {
       settings: baseSettings,
       pageContext: {
         pageOrigin: "https://unknown-portal.example",
-        forms: [{ action: "https://harvester.cc/collect", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+        forms: [
+          {
+            action: "https://harvester.cc/collect",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
         hasPasswordField: true,
       },
-      authFlow: { steps: [], anomalies: [{ id: "credential-relay",
-        severity: "high",
-        explain: "Credential step targets harvester.cc, which is not part of the visited auth flow." }] },
+      authFlow: {
+        steps: [],
+        anomalies: [
+          {
+            id: "credential-relay",
+            severity: "high",
+            explain:
+              "Credential step targets harvester.cc, which is not part of the visited auth flow.",
+          },
+        ],
+      },
     });
     expect(["dangerous", "suspicious"]).toContain(r.status);
     expect(r.signals.some((s) => s.id === "authflow:credential-relay")).toBe(true);
@@ -42,16 +60,23 @@ describe("Integration completeness — authFlow is NOT dead code", () => {
       settings: baseSettings,
       pageContext: {
         pageOrigin: "https://parent-app.example",
-        forms: [], hasPasswordField: true,
+        forms: [],
+        hasPasswordField: true,
       },
-      authFlow: { steps: [], anomalies: [{ id: "iframe-origin-swap",
-        severity: "medium",
-        explain: "Credential entry happens inside an iframe." }] },
+      authFlow: {
+        steps: [],
+        anomalies: [
+          {
+            id: "iframe-origin-swap",
+            severity: "medium",
+            explain: "Credential entry happens inside an iframe.",
+          },
+        ],
+      },
     });
     expect(r.signals.some((s) => s.id === "authflow:iframe-origin-swap")).toBe(true);
     // Behavioral evidence is present → suspicion at least contextual.
-    expect(["contextual", "suspicious", "highRisk", "dangerous"])
-      .toContain(r.suspicion.level);
+    expect(["contextual", "suspicious", "highRisk", "dangerous"]).toContain(r.suspicion.level);
   });
 
   it("trusted-root anomaly trigger forces decay (no blanket trust blindness)", async () => {
@@ -59,13 +84,26 @@ describe("Integration completeness — authFlow is NOT dead code", () => {
       settings: baseSettings,
       pageContext: {
         pageOrigin: "https://github.com",
-        forms: [{ action: "https://attacker.cc/collect", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+        forms: [
+          {
+            action: "https://attacker.cc/collect",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
         hasPasswordField: true,
       },
-      authFlow: { steps: [], anomalies: [{ id: "credential-relay",
-        severity: "high", explain: "off-flow credential POST" }] },
+      authFlow: {
+        steps: [],
+        anomalies: [
+          { id: "credential-relay", severity: "high", explain: "off-flow credential POST" },
+        ],
+      },
     });
     // Trusted root must NOT remain "safe" when behavioral evidence is present.
     expect(r.status).not.toBe("safe");
@@ -88,11 +126,13 @@ describe("Integration completeness — progressive suspicion model is wired", ()
   it("derives all 5 bands deterministically", () => {
     expect(deriveSuspicion({ score: 95, status: "safe" }).level).toBe("informational");
     expect(deriveSuspicion({ score: 60, status: "suspicious" }).level).toBe("contextual");
-    expect(deriveSuspicion({ score: 50, status: "suspicious",
-      behavioralEvidence: true }).level).toBe("suspicious");
+    expect(
+      deriveSuspicion({ score: 50, status: "suspicious", behavioralEvidence: true }).level,
+    ).toBe("suspicious");
     expect(deriveSuspicion({ score: 30, status: "dangerous" }).level).toBe("highRisk");
-    expect(deriveSuspicion({ score: 10, status: "dangerous",
-      behavioralEvidence: true }).level).toBe("dangerous");
+    expect(
+      deriveSuspicion({ score: 10, status: "dangerous", behavioralEvidence: true }).level,
+    ).toBe("dangerous");
   });
 
   it("modal=hard only for fully-corroborated dangerous verdicts", () => {
@@ -137,9 +177,18 @@ describe("Integration completeness — no silent capability paper-claims", () =>
       settings: baseSettings,
       pageContext: {
         pageOrigin: "https://unknown-creds.example",
-        forms: [{ action: "https://elsewhere.cc/post", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+        forms: [
+          {
+            action: "https://elsewhere.cc/post",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
         hasPasswordField: true,
       },
     });

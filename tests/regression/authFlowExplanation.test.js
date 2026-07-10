@@ -13,8 +13,7 @@ import { explainVerdict } from "../../extension/lib/explanation.js";
 
 const EXPLAIN_RELAY =
   "Credential step targets https://evil.example, which is not part of the visited auth flow.";
-const EXPLAIN_DRIFT =
-  "OAuth token arrives on an origin different from the issuer.";
+const EXPLAIN_DRIFT = "OAuth token arrives on an origin different from the issuer.";
 
 function snapshotFromContent() {
   // Mirrors the shape produced by buildAuthFlowSnapshot() in content.js.
@@ -25,7 +24,11 @@ function snapshotFromContent() {
     favicon: "",
     hasPasswordField: true,
     topLevelIframe: false,
-    scripts: [], styles: [], images: [], links: [], oauthButtons: [],
+    scripts: [],
+    styles: [],
+    images: [],
+    links: [],
+    oauthButtons: [],
     forms: [],
     authFlow: {
       state: "credential-step",
@@ -59,15 +62,23 @@ describe("authFlow explanation propagation", () => {
     const clean = sanitizePageContext(snapshotFromContent());
     const anom = clean.authFlow.anomalies[0];
     const verdict = {
-      url: "https://login.example/", host: "login.example", root: "example",
-      score: 20, status: "dangerous",
-      phishingConfidence: 0.8, cloneConfidence: 0,
-      signals: [{
-        id: "credential-relay",
-        title: "Credential relay detected",
-        severity: "high", category: "behavior",
-        contribution: -50, detail: anom.explain,
-      }],
+      url: "https://login.example/",
+      host: "login.example",
+      root: "example",
+      score: 20,
+      status: "dangerous",
+      phishingConfidence: 0.8,
+      cloneConfidence: 0,
+      signals: [
+        {
+          id: "credential-relay",
+          title: "Credential relay detected",
+          severity: "high",
+          category: "behavior",
+          contribution: -50,
+          detail: anom.explain,
+        },
+      ],
       trustAdds: [],
       arbitration: { rules: [] },
     };
@@ -90,8 +101,7 @@ describe("authFlow explanation propagation", () => {
     bad.authFlow.anomalies = [
       { id: "credential-relay", severity: "high", explain: 12345 },
       { id: "oauth-token-drift", severity: "high" /* missing */ },
-      { id: "iframe-origin-swap", severity: "high",
-        explain: "x".repeat(10_000) },
+      { id: "iframe-origin-swap", severity: "high", explain: "x".repeat(10_000) },
     ];
     const clean = sanitizePageContext(bad);
     expect(clean.authFlow.anomalies[0].explain).toBe("");

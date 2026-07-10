@@ -1,16 +1,18 @@
 import { explainVerdict } from "../lib/explanation.js";
 
 const $ = (sel) => document.querySelector(sel);
-const send = (msg) => new Promise((resolve) => {
-  try {
-    chrome.runtime.sendMessage(msg, (response) => {
-      if (chrome.runtime.lastError) resolve({ ok: false, error: chrome.runtime.lastError.message });
-      else resolve(response);
-    });
-  } catch (error) {
-    resolve({ ok: false, error: String(error?.message || error) });
-  }
-});
+const send = (msg) =>
+  new Promise((resolve) => {
+    try {
+      chrome.runtime.sendMessage(msg, (response) => {
+        if (chrome.runtime.lastError)
+          resolve({ ok: false, error: chrome.runtime.lastError.message });
+        else resolve(response);
+      });
+    } catch (error) {
+      resolve({ ok: false, error: String(error?.message || error) });
+    }
+  });
 
 const STATUS_COPY = {
   loading: { label: "Scanning", sub: "Evaluating browser signals." },
@@ -83,43 +85,65 @@ function renderSignals(result) {
   // Calm, deterministic explanation rendered above the raw signal list.
   // Tone rules: technical, factual, no panic words ("DANGER", "HACKER").
   const explanation = result ? explainVerdict(result) : null;
-  const explainBlock = explanation ? `
+  const explainBlock = explanation
+    ? `
     <div class="explain" data-verdict="${escapeHtml(explanation.verdict)}">
       <div class="explain-headline">${escapeHtml(explanation.headline)}</div>
       ${explanation.summary ? `<p class="explain-summary">${escapeHtml(explanation.summary)}</p>` : ""}
-      ${explanation.bullets?.length ? `
+      ${
+        explanation.bullets?.length
+          ? `
         <div class="explain-sub">What we noticed</div>
-        <ul class="explain-bullets">${
-          explanation.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")
-        }</ul>` : ""}
-      ${explanation.recommendation ? `
-        <div class="explain-reco"><strong>What to do:</strong> ${escapeHtml(explanation.recommendation)}</div>` : ""}
-      ${explanation.triggeredRules?.length ? `
+        <ul class="explain-bullets">${explanation.bullets
+          .map((b) => `<li>${escapeHtml(b)}</li>`)
+          .join("")}</ul>`
+          : ""
+      }
+      ${
+        explanation.recommendation
+          ? `
+        <div class="explain-reco"><strong>What to do:</strong> ${escapeHtml(explanation.recommendation)}</div>`
+          : ""
+      }
+      ${
+        explanation.triggeredRules?.length
+          ? `
         <details class="explain-tech">
           <summary>Technical details</summary>
-          <div class="explain-rules">Triggered protections: ${
-            explanation.triggeredRules.slice(0, 4).map((r) => `<code>${escapeHtml(r)}</code>`).join(" · ")
-          }</div>
-        </details>` : ""}
-    </div>` : "";
+          <div class="explain-rules">Triggered protections: ${explanation.triggeredRules
+            .slice(0, 4)
+            .map((r) => `<code>${escapeHtml(r)}</code>`)
+            .join(" · ")}</div>
+        </details>`
+          : ""
+      }
+    </div>`
+    : "";
 
   // Show fired signals first (sorted by impact), then passing checks.
-  const fired = all.filter((s) => (s.contribution || 0) < 0)
+  const fired = all
+    .filter((s) => (s.contribution || 0) < 0)
     .sort((a, b) => (a.contribution || 0) - (b.contribution || 0));
   const caps = all.filter((s) => s.cap);
   const passed = all.filter((s) => (s.contribution || 0) === 0 && s.severity === "info");
 
-  const firedHtml = fired.length ? `
+  const firedHtml = fired.length
+    ? `
     <div class="group-label">Why this score</div>
-    ${fired.map(signalCard).join("")}` : "";
+    ${fired.map(signalCard).join("")}`
+    : "";
 
-  const capHtml = caps.length ? `
+  const capHtml = caps.length
+    ? `
     <div class="group-label">Trust caps</div>
-    ${caps.map(signalCard).join("")}` : "";
+    ${caps.map(signalCard).join("")}`
+    : "";
 
-  const passedHtml = passed.length ? `
+  const passedHtml = passed.length
+    ? `
     <div class="group-label">Passed checks</div>
-    ${passed.map(signalCard).join("")}` : "";
+    ${passed.map(signalCard).join("")}`
+    : "";
 
   root.innerHTML = explainBlock + riskMeter(result) + firedHtml + capHtml + passedHtml;
 }
@@ -132,8 +156,10 @@ function riskMeter(result) {
   // reflects the same calibration the content-script UX uses (informational
   // / contextual / suspicious / high-risk / dangerous).
   const susp = result?.suspicion?.level;
-  const suspChip = susp && susp !== "informational"
-    ? `<span class="susp susp-${escapeHtml(susp)}">${escapeHtml(susp)}</span>` : "";
+  const suspChip =
+    susp && susp !== "informational"
+      ? `<span class="susp susp-${escapeHtml(susp)}">${escapeHtml(susp)}</span>`
+      : "";
   if (!phishing && !clone && auth === "none" && !suspChip) return "";
   return `<div class="risk-strip">
     ${suspChip}
@@ -145,10 +171,15 @@ function riskMeter(result) {
 
 function signalCard(s) {
   const cat = s.category ? `<span class="cat">${escapeHtml(s.category)}</span>` : "";
-  const delta = s.cap ? `<span class="delta">≤${s.maxScore}</span>` : (s.contribution || 0) < 0
-    ? `<span class="delta">${s.contribution}</span>` : "";
-  const conf = typeof s.confidence === "number" && s.confidence < 1 && s.contribution
-    ? `<span class="conf">${Math.round(s.confidence * 100)}% conf</span>` : "";
+  const delta = s.cap
+    ? `<span class="delta">≤${s.maxScore}</span>`
+    : (s.contribution || 0) < 0
+      ? `<span class="delta">${s.contribution}</span>`
+      : "";
+  const conf =
+    typeof s.confidence === "number" && s.confidence < 1 && s.contribution
+      ? `<span class="conf">${Math.round(s.confidence * 100)}% conf</span>`
+      : "";
   return `
     <article class="signal" data-sev="${escapeHtml(s.severity)}">
       <span class="pin" aria-hidden="true"></span>
@@ -183,20 +214,25 @@ function renderDetails(result) {
 }
 
 async function renderActivity() {
-  const list = await send({ type: "getActivity" }) || [];
+  const list = (await send({ type: "getActivity" })) || [];
   const root = $("#panel-activity");
   if (!Array.isArray(list) || !list.length) {
     root.innerHTML = `<div class="empty">No activity yet.</div>`;
     return;
   }
-  root.innerHTML = list.slice(0, 20).map((e) => `
+  root.innerHTML = list
+    .slice(0, 20)
+    .map(
+      (e) => `
     <article class="activity-item">
       <div>
         <div>${escapeHtml(label(e))}</div>
         ${e.host ? `<div class="detail">${escapeHtml(e.host)}</div>` : ""}
       </div>
       <div class="when">${ago(e.at)}</div>
-    </article>`).join("");
+    </article>`,
+    )
+    .join("");
 }
 
 function apiLabel(api) {
@@ -207,13 +243,20 @@ function apiLabel(api) {
 
 function label(e) {
   switch (e.kind) {
-    case "trust": return `Trust score ${e.score}/100 (${e.status})`;
-    case "paste-blocked": return `Paste blocked (${e.count} items)`;
-    case "paste-allowed": return `Paste allowed (${e.count} items)`;
-    case "file-scan": return `File reviewed: ${(e.files || []).join(", ")}`;
-    case "permission-warn": return `${e.what} request reviewed`;
-    case "worker-error": return `Background warning`;
-    default: return e.kind || "Activity";
+    case "trust":
+      return `Trust score ${e.score}/100 (${e.status})`;
+    case "paste-blocked":
+      return `Paste blocked (${e.count} items)`;
+    case "paste-allowed":
+      return `Paste allowed (${e.count} items)`;
+    case "file-scan":
+      return `File reviewed: ${(e.files || []).join(", ")}`;
+    case "permission-warn":
+      return `${e.what} request reviewed`;
+    case "worker-error":
+      return `Background warning`;
+    default:
+      return e.kind || "Activity";
   }
 }
 
@@ -232,7 +275,10 @@ function showError(error) {
 }
 
 function escapeHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  return String(s ?? "").replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+  );
 }
 
 document.querySelectorAll(".tab").forEach((tab) => {

@@ -35,11 +35,15 @@ export function validatePolicy(raw) {
 /** Read managed policy, returning null on any error. Pure-callable in tests. */
 export async function readManagedPolicy(storage) {
   try {
-    const api = storage || (globalThis.chrome && globalThis.chrome.storage && globalThis.chrome.storage.managed);
+    const api =
+      storage ||
+      (globalThis.chrome && globalThis.chrome.storage && globalThis.chrome.storage.managed);
     if (!api) return null;
     const raw = await new Promise((resolve) => api.get(null, resolve));
     return validatePolicy(raw);
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -49,13 +53,15 @@ export async function readManagedPolicy(storage) {
 export function exportSettings(settings) {
   if (!settings || typeof settings !== "object") return null;
   const { schemaVersion, detection, allowlist, features } = settings;
-  return JSON.parse(JSON.stringify({
-    schemaVersion: schemaVersion ?? null,
-    detection: detection ?? null,
-    allowlist: Array.isArray(allowlist) ? allowlist : [],
-    features: features ?? null,
-    exportedAt: new Date().toISOString(),
-  }));
+  return JSON.parse(
+    JSON.stringify({
+      schemaVersion: schemaVersion ?? null,
+      detection: detection ?? null,
+      allowlist: Array.isArray(allowlist) ? allowlist : [],
+      features: features ?? null,
+      exportedAt: new Date().toISOString(),
+    }),
+  );
 }
 
 /** Reverse of exportSettings; throws never, returns null on bad input. */
@@ -64,7 +70,8 @@ export function importSettings(json) {
   const out = {};
   if (Number.isInteger(json.schemaVersion)) out.schemaVersion = json.schemaVersion;
   if (json.detection && typeof json.detection === "object") out.detection = json.detection;
-  if (Array.isArray(json.allowlist)) out.allowlist = json.allowlist.filter((s) => typeof s === "string");
+  if (Array.isArray(json.allowlist))
+    out.allowlist = json.allowlist.filter((s) => typeof s === "string");
   if (json.features && typeof json.features === "object") out.features = json.features;
   return out;
 }

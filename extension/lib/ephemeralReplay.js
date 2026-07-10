@@ -49,7 +49,9 @@ export function storeReplay(payload, ttlMs = DEFAULT_TTL_MS) {
   const entry = { payload, expires: Date.now() + ttlMs, timer: null };
   try {
     entry.timer = setTimeout(() => zeroize(token), ttlMs);
-  } catch { /* environments without timers */ }
+  } catch {
+    /* environments without timers */
+  }
   _store.set(token, entry);
   _evictOldest();
   return token;
@@ -71,7 +73,9 @@ export function consumeReplay(token) {
 export function zeroize(token) {
   const e = _store.get(token);
   if (!e) return;
-  try { if (e.timer) clearTimeout(e.timer); } catch {}
+  try {
+    if (e.timer) clearTimeout(e.timer);
+  } catch {}
   // best-effort string zeroization (V8 will GC; reference clearing is the
   // strongest guarantee a content script can make).
   e.payload = "";
@@ -80,12 +84,17 @@ export function zeroize(token) {
 }
 
 /** Test/diagnostic helpers — never expose payload values. */
-export function _size() { return _store.size; }
-export function _hasToken(t) { return _store.has(t); }
+export function _size() {
+  return _store.size;
+}
+export function _hasToken(t) {
+  return _store.has(t);
+}
 export function _resetAll() {
   for (const k of Array.from(_store.keys())) zeroize(k);
   _counter = 0;
 }
 export const EPHEMERAL_REPLAY_DEFAULTS = Object.freeze({
-  DEFAULT_TTL_MS, MAX_ENTRIES,
+  DEFAULT_TTL_MS,
+  MAX_ENTRIES,
 });

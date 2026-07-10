@@ -6,7 +6,9 @@ describe("debounce", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
     const d = debounce(fn, 50);
-    d(); d(); d();
+    d();
+    d();
+    d();
     expect(fn).not.toHaveBeenCalled();
     vi.advanceTimersByTime(60);
     expect(fn).toHaveBeenCalledTimes(1);
@@ -19,7 +21,9 @@ describe("throttle", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
     const t = throttle(fn, 100);
-    t("a"); t("b"); t("c");
+    t("a");
+    t("b");
+    t("c");
     expect(fn).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(120);
     expect(fn).toHaveBeenCalledTimes(2);

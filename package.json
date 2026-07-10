@@ -5,17 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "dev:extension": "bun scripts/generate-icons.mjs && bun scripts/validate-extension.mjs extension",
+    "dev:extension": "bun run icons && bun scripts/validate-extension.mjs extension",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:extension": "bun scripts/package-extension.mjs",
-    "validate:extension": "bun scripts/generate-icons.mjs && bun scripts/validate-extension.mjs extension",
+    "icons": "bun scripts/generate-icons.mjs",
+    "validate:extension": "bun scripts/validate-extension.mjs extension",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

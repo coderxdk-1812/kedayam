@@ -13,7 +13,13 @@ let _cached = null;
 
 export function detectCapabilities(g = globalThis) {
   if (_cached) return _cached;
-  const safe = (fn, fallback = false) => { try { return fn(); } catch { return fallback; } };
+  const safe = (fn, fallback = false) => {
+    try {
+      return fn();
+    } catch {
+      return fallback;
+    }
+  };
 
   const nav = safe(() => g.navigator, null);
   const chrome = safe(() => g.chrome, null);
@@ -27,14 +33,17 @@ export function detectCapabilities(g = globalThis) {
     storageLocal: !!storage?.local,
     storageManaged: !!storage?.managed,
     scripting: !!scripting,
-    scriptingMainWorld: !!(scripting?.executeScript &&
-      safe(() => scripting.executeScript.length >= 1)),
+    scriptingMainWorld: !!(
+      scripting?.executeScript && safe(() => scripting.executeScript.length >= 1)
+    ),
     clipboardRead: safe(() => typeof nav?.clipboard?.readText === "function"),
     clipboardWrite: safe(() => typeof nav?.clipboard?.writeText === "function"),
     shadowDom: safe(() => typeof g.ShadowRoot !== "undefined"),
     mutationObserver: safe(() => typeof g.MutationObserver !== "undefined"),
-    csp: safe(() => typeof g.TrustedTypePolicyFactory !== "undefined" ||
-      typeof g.trustedTypes !== "undefined"),
+    csp: safe(
+      () =>
+        typeof g.TrustedTypePolicyFactory !== "undefined" || typeof g.trustedTypes !== "undefined",
+    ),
     intersectionObserver: safe(() => typeof g.IntersectionObserver !== "undefined"),
     weakRef: safe(() => typeof g.WeakRef === "function"),
     performance: safe(() => typeof g.performance?.now === "function"),
@@ -49,8 +58,14 @@ export function detectCapabilities(g = globalThis) {
 export function withCapabilities(names, fn, fallback) {
   const c = detectCapabilities();
   for (const n of names) if (!c[n]) return typeof fallback === "function" ? fallback() : fallback;
-  try { return fn(c); } catch { return typeof fallback === "function" ? fallback() : fallback; }
+  try {
+    return fn(c);
+  } catch {
+    return typeof fallback === "function" ? fallback() : fallback;
+  }
 }
 
 /** Test-only: clear the cached capabilities snapshot. */
-export function _resetCapabilities() { _cached = null; }
+export function _resetCapabilities() {
+  _cached = null;
+}

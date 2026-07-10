@@ -21,8 +21,20 @@ jobs:
       - name: Install zip
         run: sudo apt-get install -y zip
 
+      - name: Lint (eslint + prettier)
+        run: bun run lint
+
+      - name: Validate extension (manifest, CSP, resources)
+        run: bun run validate:extension
+
       - name: Unit + redteam + compatibility tests
         run: bun run test
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: End-to-end extension tests
+        run: bun run test:e2e
 
       - name: Build + package + checksum the extension from current source
         run: node scripts/release-build.mjs

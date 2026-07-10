@@ -5,30 +5,33 @@
 // consumer must either produce a safe verdict or be fully no-op.
 
 import { describe, it, expect } from "vitest";
-import {
-  validateMessage,
-  sanitizePageContext,
-} from "../../extension/lib/messageSchemas.js";
+import { validateMessage, sanitizePageContext } from "../../extension/lib/messageSchemas.js";
 import { analyzeClone } from "../../extension/lib/cloneDetection.js";
 import { analyzePhishing } from "../../extension/lib/phishingHeuristics.js";
 
 // Build a deeply malformed pageContext that historically crashed the scan
 // pipeline with "X.filter is not a function".
 const malformedShapes = [
-  { name: "forms not array",      ctx: { pageOrigin: "https://x.test/", forms: "not-an-array" } },
-  { name: "scripts not array",    ctx: { pageOrigin: "https://x.test/", scripts: { 0: "x" } } },
-  { name: "images null",          ctx: { pageOrigin: "https://x.test/", images: null } },
-  { name: "links is number",      ctx: { pageOrigin: "https://x.test/", links: 42 } },
-  { name: "oauthButtons object",  ctx: { pageOrigin: "https://x.test/", oauthButtons: { a: 1 } } },
-  { name: "favicon as object",    ctx: { pageOrigin: "https://x.test/", favicon: { url: "x" } } },
+  { name: "forms not array", ctx: { pageOrigin: "https://x.test/", forms: "not-an-array" } },
+  { name: "scripts not array", ctx: { pageOrigin: "https://x.test/", scripts: { 0: "x" } } },
+  { name: "images null", ctx: { pageOrigin: "https://x.test/", images: null } },
+  { name: "links is number", ctx: { pageOrigin: "https://x.test/", links: 42 } },
+  { name: "oauthButtons object", ctx: { pageOrigin: "https://x.test/", oauthButtons: { a: 1 } } },
+  { name: "favicon as object", ctx: { pageOrigin: "https://x.test/", favicon: { url: "x" } } },
   { name: "hasPasswordField str", ctx: { pageOrigin: "https://x.test/", hasPasswordField: "yes" } },
-  { name: "topLevelIframe 1",     ctx: { pageOrigin: "https://x.test/", topLevelIframe: 1 } },
-  { name: "title is array",       ctx: { pageOrigin: "https://x.test/", title: ["a","b"] } },
-  { name: "visibleText buffer",   ctx: { pageOrigin: "https://x.test/", visibleText: new Uint8Array([1]) } },
-  { name: "authFlow array",       ctx: { pageOrigin: "https://x.test/", authFlow: [1,2,3] } },
-  { name: "form item is string",  ctx: { pageOrigin: "https://x.test/", forms: ["nope", null, 7] } },
-  { name: "form fieldCount neg",  ctx: { pageOrigin: "https://x.test/", forms: [{ fieldCount: -3 }] } },
-  { name: "sparse forms array",   ctx: { pageOrigin: "https://x.test/", forms: new Array(10) } },
+  { name: "topLevelIframe 1", ctx: { pageOrigin: "https://x.test/", topLevelIframe: 1 } },
+  { name: "title is array", ctx: { pageOrigin: "https://x.test/", title: ["a", "b"] } },
+  {
+    name: "visibleText buffer",
+    ctx: { pageOrigin: "https://x.test/", visibleText: new Uint8Array([1]) },
+  },
+  { name: "authFlow array", ctx: { pageOrigin: "https://x.test/", authFlow: [1, 2, 3] } },
+  { name: "form item is string", ctx: { pageOrigin: "https://x.test/", forms: ["nope", null, 7] } },
+  {
+    name: "form fieldCount neg",
+    ctx: { pageOrigin: "https://x.test/", forms: [{ fieldCount: -3 }] },
+  },
+  { name: "sparse forms array", ctx: { pageOrigin: "https://x.test/", forms: new Array(10) } },
 ];
 
 describe("R1 — malformed pageContext sanitization", () => {
@@ -70,17 +73,19 @@ describe("R1 — malformed pageContext sanitization", () => {
     for (const { ctx } of malformedShapes) {
       const clean = sanitizePageContext(ctx);
       expect(() => analyzeClone(clean)).not.toThrow();
-      expect(() => analyzePhishing({
-        pageOrigin: clean.pageOrigin,
-        host: "x.test",
-        rootHost: "x.test",
-        title: clean.title,
-        visibleText: clean.visibleText,
-        forms: clean.forms,
-        hasPasswordField: clean.hasPasswordField,
-        oauthButtons: clean.oauthButtons,
-        topLevelIframe: clean.topLevelIframe,
-      })).not.toThrow();
+      expect(() =>
+        analyzePhishing({
+          pageOrigin: clean.pageOrigin,
+          host: "x.test",
+          rootHost: "x.test",
+          title: clean.title,
+          visibleText: clean.visibleText,
+          forms: clean.forms,
+          hasPasswordField: clean.hasPasswordField,
+          oauthButtons: clean.oauthButtons,
+          topLevelIframe: clean.topLevelIframe,
+        }),
+      ).not.toThrow();
     }
   });
 
@@ -109,8 +114,13 @@ describe("R1 — scan pipeline never silently freezes", () => {
     // Mirrors the .catch() wired in background.js around the scan IIFE.
     const inflight = new Map();
     let rejectedRan = false;
-    const p = (async () => { throw new Error("boom"); })()
-      .catch(() => { rejectedRan = true; return null; })
+    const p = (async () => {
+      throw new Error("boom");
+    })()
+      .catch(() => {
+        rejectedRan = true;
+        return null;
+      })
       .finally(() => inflight.delete("k"));
     inflight.set("k", p);
     const r = await p;

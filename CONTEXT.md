@@ -1,23 +1,35 @@
 # Kedayam Browser Shield — Project Context
 
-Last updated: 2026-06-23
+Last updated: 2026-07-10
 
 ## Pending
 
-- **Store-submission logistics** (not code): host a public Privacy Policy URL,
-  produce ≥1 screenshot (1280×800) + a 440×280 promo tile, register the
+- **Rebuild the release artifact & commit it** (blocker): source drifted from the
+  committed zip. Now that builds are byte-stable, run
+  `node scripts/release-build.mjs && node scripts/release-certify.mjs` and commit
+  `public/kedayam.zip` + `.sha256` + `kedayam-release-cert.json`. (Done in the
+  working tree on 2026-07-10 — pending commit.)
+- **Store-submission logistics** (not code): host a public Privacy Policy URL
+  (page exists at `src/routes/privacy.tsx` — must be deployed), produce ≥1
+  screenshot (1280×800) + a 440×280 promo tile (none exist yet), register the
   Chrome Web Store developer account ($5 + ID verification), fill the
-  data-handling disclosures. Broad `host_permissions` will trigger extended review.
+  data-handling disclosures. Broad `host_permissions` + `webRequest` will trigger
+  extended review — prepare a tight single-purpose justification.
 - **Build-time threat-feed snapshot**: bake a large URLhaus + Phishing Army
   snapshot into each release so day-one offline coverage is thousands of hosts,
   not just the seed in `lib/rules/blocklistSeed.js`.
 - **On-device ML phishing classifier** (TF.js/ONNX, bundled, local-only).
-- **E2E tests**: `tests/e2e/` is configured (Playwright) but empty.
-- **CI**: no `.github/workflows/`; add validate → test → certify on push.
 - **Cross-browser builds** (Firefox/Edge manifests) + i18n of warning copy.
-- **Toolchain note**: tests/build require Node 20+ (repo default shell may be
-  Node 18, which the installed Vitest/Vite reject). Use
-  `~/.nvm/versions/node/v22.x/bin` or add `.nvmrc` / `engines`.
+
+### Done 2026-07-10 (infra)
+- **CI hardened**: `release-verify.yml` now runs lint → validate:extension →
+  tests → e2e → build → certify → drift gate.
+- **E2E works**: `tests/e2e/extension.spec.ts` loads the MV3 extension via
+  `channel: "chromium"`; both tests green and wired into CI.
+- **Byte-stable rebuilds**: icons are committed source (not regenerated on
+  build); zip is deterministic (fixed mtimes + sorted + `-X`); cert is a pure
+  function of source; profile/security-report are gitignored.
+- **Node ≥20 pinned** via `engines`; prettier/eslint baseline cleared.
 
 ## Snapshot
 

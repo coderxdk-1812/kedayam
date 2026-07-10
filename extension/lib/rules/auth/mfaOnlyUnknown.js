@@ -11,7 +11,8 @@ export const ruleMfaOnlyOnUnknownDomain = Object.freeze({
     const allMfaOnly = forms.every((f) => f.hasOtp && !f.hasPassword);
     if (!allMfaOnly) return { matched: false, contribution: 0 };
     return {
-      matched: true, contribution: -30,
+      matched: true,
+      contribution: -30,
       explain: "Only an MFA code is being collected on an unverified domain.",
     };
   },

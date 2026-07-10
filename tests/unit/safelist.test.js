@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { SAFELIST, SAFELIST_VERSION, isSafelistedRoot, safelistCategory } from "../../extension/lib/safelist.js";
+import {
+  SAFELIST,
+  SAFELIST_VERSION,
+  isSafelistedRoot,
+  safelistCategory,
+} from "../../extension/lib/safelist.js";
 
 describe("safelist", () => {
   it("is frozen and versioned", () => {

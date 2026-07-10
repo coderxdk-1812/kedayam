@@ -17,10 +17,10 @@
 
 export const SUSPICION_LEVELS = Object.freeze({
   informational: 0,
-  contextual:    1,
-  suspicious:    2,
-  highRisk:      3,
-  dangerous:     4,
+  contextual: 1,
+  suspicious: 2,
+  highRisk: 3,
+  dangerous: 4,
 });
 
 const ORDER = ["informational", "contextual", "suspicious", "highRisk", "dangerous"];
@@ -37,18 +37,20 @@ const ORDER = ["informational", "contextual", "suspicious", "highRisk", "dangero
  */
 export function deriveSuspicion(input) {
   const {
-    score = 100, status = "safe",
-    behavioralEvidence = false, anomalyDelta = 0,
+    score = 100,
+    status = "safe",
+    behavioralEvidence = false,
+    anomalyDelta = 0,
     trustedRoot = false,
   } = input || {};
 
   let level = "informational";
 
   if (status === "dangerous" && behavioralEvidence) level = "dangerous";
-  else if (status === "dangerous")                  level = "highRisk";
+  else if (status === "dangerous") level = "highRisk";
   else if (status === "suspicious" && behavioralEvidence) level = "suspicious";
-  else if (status === "suspicious")                       level = "contextual";
-  else if (score < 71)                                    level = "contextual";
+  else if (status === "suspicious") level = "contextual";
+  else if (score < 71) level = "contextual";
 
   // Trusted root anomaly nudges — never modal, only contextual band.
   if (trustedRoot && anomalyDelta >= 5 && level === "informational") {

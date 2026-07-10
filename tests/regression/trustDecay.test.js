@@ -10,12 +10,22 @@ describe("trust anomaly decay (M3)", () => {
     const r = await evaluateUrl("https://github.com/login", {
       settings,
       pageContext: {
-        pageOrigin: "https://github.com", title: "Sign in",
+        pageOrigin: "https://github.com",
+        title: "Sign in",
         visibleText: "sign in to github",
         hasPasswordField: true,
-        forms: [{ action: "https://github.com/session", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+        forms: [
+          {
+            action: "https://github.com/session",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
       },
     });
     expect(r.status).toBe("safe");
@@ -27,12 +37,22 @@ describe("trust anomaly decay (M3)", () => {
     const r = await evaluateUrl("https://github.com/login", {
       settings,
       pageContext: {
-        pageOrigin: "https://github.com", title: "Sign in",
+        pageOrigin: "https://github.com",
+        title: "Sign in",
         visibleText: "sign in to github",
         hasPasswordField: true,
-        forms: [{ action: "https://attacker.cc/grab", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+        forms: [
+          {
+            action: "https://attacker.cc/grab",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: false,
+          },
+        ],
       },
     });
     expect(r.trustDecay.delta).toBeGreaterThan(0);
@@ -43,8 +63,9 @@ describe("trust anomaly decay (M3)", () => {
     const r = await evaluateUrl("https://google.com/", {
       settings,
       pageContext: { pageOrigin: "https://google.com", title: "Google" },
-      authFlow: { anomalies: [{ id: "oauth-token-drift", severity: "high",
-        explain: "Token from elsewhere" }] },
+      authFlow: {
+        anomalies: [{ id: "oauth-token-drift", severity: "high", explain: "Token from elsewhere" }],
+      },
     });
     expect(r.trustDecay.anomalies.some((a) => a.id === "oauth-relay-mismatch")).toBe(true);
   });

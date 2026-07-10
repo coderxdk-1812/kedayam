@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { migrate, isEnabled, SCHEMA_VERSION, FEATURE_FLAGS } from "../../extension/lib/featureFlags.js";
+import {
+  migrate,
+  isEnabled,
+  SCHEMA_VERSION,
+  FEATURE_FLAGS,
+} from "../../extension/lib/featureFlags.js";
 
 describe("featureFlags", () => {
   it("migrate stamps the current schema version", () => {

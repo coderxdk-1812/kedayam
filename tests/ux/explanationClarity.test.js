@@ -13,19 +13,35 @@ import { isUserVisible, extractVisibleText } from "../../extension/lib/visibleTe
 
 const MAX_USER_STR = 220; // mirrors explanation.js
 const JARGON_TOKENS = [
-  "CSP", "OAuth issuer", "eTLD+1", "JWT", "XSS", "CSRF", "MITM", "AiTM",
-  "SAML", "JOSE", "HSTS", "TLS handshake", "CORS", "PKCE",
+  "CSP",
+  "OAuth issuer",
+  "eTLD+1",
+  "JWT",
+  "XSS",
+  "CSRF",
+  "MITM",
+  "AiTM",
+  "SAML",
+  "JOSE",
+  "HSTS",
+  "TLS handshake",
+  "CORS",
+  "PKCE",
 ];
 const RULE_ID_SHAPE = /\b[a-z]+(?:-[a-z]+){2,}\b/; // e.g. "auth-flow-anomaly"
 
 function makeVerdict(status, extra = {}) {
   return {
-    url: "https://example.test/", host: "example.test", root: "example",
+    url: "https://example.test/",
+    host: "example.test",
+    root: "example",
     score: status === "dangerous" ? 15 : status === "suspicious" ? 55 : 92,
     status,
     phishingConfidence: status === "dangerous" ? 0.9 : 0.2,
     cloneConfidence: 0,
-    signals: [], trustAdds: [], arbitration: { rules: [] },
+    signals: [],
+    trustAdds: [],
+    arbitration: { rules: [] },
     ...extra,
   };
 }
@@ -33,13 +49,20 @@ function makeVerdict(status, extra = {}) {
 describe("explainVerdict — clarity & length bounds", () => {
   it("clamps every user-facing string to a readable length", () => {
     const long = "x".repeat(2000);
-    const x = explainVerdict(makeVerdict("dangerous", {
-      signals: [
-        { id: "lookalike", title: long, severity: "critical",
-          category: "identity", contribution: -50 },
-      ],
-      arbitration: { rules: [{ id: "lookalike-creds", cap: 25, reason: long }] },
-    }));
+    const x = explainVerdict(
+      makeVerdict("dangerous", {
+        signals: [
+          {
+            id: "lookalike",
+            title: long,
+            severity: "critical",
+            category: "identity",
+            contribution: -50,
+          },
+        ],
+        arbitration: { rules: [{ id: "lookalike-creds", cap: 25, reason: long }] },
+      }),
+    );
     expect(x.headline.length).toBeLessThanOrEqual(MAX_USER_STR);
     expect(x.summary.length).toBeLessThanOrEqual(MAX_USER_STR);
     expect(x.recommendation.length).toBeLessThanOrEqual(MAX_USER_STR);
@@ -47,18 +70,30 @@ describe("explainVerdict — clarity & length bounds", () => {
   });
 
   it("never leaks internal jargon or raw rule-id strings to bullets", () => {
-    const x = explainVerdict(makeVerdict("dangerous", {
-      signals: [
-        // Title intentionally jargon-y to mimic a future internal label
-        // that didn't get a curated translation yet.
-        { id: "future-internal-signal", title: "AiTM CSP downgrade detected",
-          severity: "high", category: "behavior", contribution: -30 },
-      ],
-      arbitration: { rules: [
-        { id: "novel-internal-rule", cap: 40,
-          reason: "credential-relay-evidence with SAML-style anomaly" },
-      ] },
-    }));
+    const x = explainVerdict(
+      makeVerdict("dangerous", {
+        signals: [
+          // Title intentionally jargon-y to mimic a future internal label
+          // that didn't get a curated translation yet.
+          {
+            id: "future-internal-signal",
+            title: "AiTM CSP downgrade detected",
+            severity: "high",
+            category: "behavior",
+            contribution: -30,
+          },
+        ],
+        arbitration: {
+          rules: [
+            {
+              id: "novel-internal-rule",
+              cap: 40,
+              reason: "credential-relay-evidence with SAML-style anomaly",
+            },
+          ],
+        },
+      }),
+    );
     const allText = [x.headline, x.summary, x.recommendation, ...x.bullets].join(" ");
     for (const tok of JARGON_TOKENS) {
       expect(allText).not.toContain(tok);
@@ -96,12 +131,19 @@ describe("explainVerdict — clarity & length bounds", () => {
   });
 
   it("renders curated plain text for known signal IDs", () => {
-    const x = explainVerdict(makeVerdict("dangerous", {
-      signals: [
-        { id: "external-form-post", title: "External form post",
-          severity: "critical", category: "behavior", contribution: -45 },
-      ],
-    }));
+    const x = explainVerdict(
+      makeVerdict("dangerous", {
+        signals: [
+          {
+            id: "external-form-post",
+            title: "External form post",
+            severity: "critical",
+            category: "behavior",
+            contribution: -45,
+          },
+        ],
+      }),
+    );
     const first = x.contributingRisks[0];
     expect(first.plain.toLowerCase()).toContain("different website");
     // Must not be a single-word id or a token-shaped string.
@@ -112,27 +154,38 @@ describe("explainVerdict — clarity & length bounds", () => {
 // ----- hidden DOM exclusion (visibleText normalization) ---------------
 
 function fakeEl({
-  tag = "P", text = "", aria = null, parent = null,
+  tag = "P",
+  text = "",
+  aria = null,
+  parent = null,
   style = { display: "block", visibility: "visible", opacity: "1" },
   rect = { width: 100, height: 20 },
 } = {}) {
   const el = {
-    tagName: tag, textContent: text,
-    _aria: aria, _parent: parent,
+    tagName: tag,
+    textContent: text,
+    _aria: aria,
+    _parent: parent,
     getBoundingClientRect: () => rect,
     closest(sel) {
       if (sel === '[aria-hidden="true"]') {
         let cur = this;
-        while (cur) { if (cur._aria === "true") return cur; cur = cur._parent; }
+        while (cur) {
+          if (cur._aria === "true") return cur;
+          cur = cur._parent;
+        }
       }
       return null;
     },
   };
   return el;
 }
-const styleFor = (map) => (el) => map.get(el) || {
-  display: "block", visibility: "visible", opacity: "1",
-};
+const styleFor = (map) => (el) =>
+  map.get(el) || {
+    display: "block",
+    visibility: "visible",
+    opacity: "1",
+  };
 
 describe("visibleText normalization — hidden DOM excluded", () => {
   it("rejects display:none / visibility:hidden / opacity:0 elements", () => {
@@ -158,8 +211,9 @@ describe("visibleText normalization — hidden DOM excluded", () => {
     const script = fakeEl({ tag: "SCRIPT", text: "evil()" });
     const style = fakeEl({ tag: "STYLE", text: "body{}" });
     const visible = fakeEl({ text: "real label" });
-    const out = extractVisibleText([inAriaHidden, script, style, visible],
-      { getStyle: styleFor(new Map()) });
+    const out = extractVisibleText([inAriaHidden, script, style, visible], {
+      getStyle: styleFor(new Map()),
+    });
     expect(out).toContain("real label");
     expect(out).not.toContain("aria-trap");
     expect(out).not.toContain("evil()");
@@ -176,7 +230,8 @@ describe("visibleText normalization — hidden DOM excluded", () => {
 
   it("includes the document title when supplied", () => {
     const out = extractVisibleText([], {
-      titleText: "Sign in to Acme", getStyle: styleFor(new Map()),
+      titleText: "Sign in to Acme",
+      getStyle: styleFor(new Map()),
     });
     expect(out).toBe("Sign in to Acme");
   });
@@ -184,14 +239,14 @@ describe("visibleText normalization — hidden DOM excluded", () => {
   it("bounds the output length", () => {
     const big = fakeEl({ text: "x".repeat(10000) });
     const out = extractVisibleText([big], {
-      maxLen: 4000, getStyle: styleFor(new Map()),
+      maxLen: 4000,
+      getStyle: styleFor(new Map()),
     });
     expect(out.length).toBeLessThanOrEqual(4000);
   });
 
   it("isUserVisible defaults to true on malformed input (no over-filtering)", () => {
-    expect(isUserVisible({ tagName: "DIV", textContent: "ok" },
-      () => null)).toBe(true);
+    expect(isUserVisible({ tagName: "DIV", textContent: "ok" }, () => null)).toBe(true);
     // Missing tagName → not an element → rejected.
     expect(isUserVisible({}, () => null)).toBe(false);
   });

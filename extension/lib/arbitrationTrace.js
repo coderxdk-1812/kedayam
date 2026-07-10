@@ -15,13 +15,12 @@
  * @param {boolean} [args.behavioralEvidence]
  */
 export function buildArbitrationTrace(args = {}) {
-  const arb  = args.arbitration || { rules: [] };
+  const arb = args.arbitration || { rules: [] };
   const decay = args.decay || { delta: 0, anomalies: [] };
   const susp = args.suspicion || null;
   const rules = (arb.rules || []).map((r) => ({
     id: r.id,
-    role: r.force ? "escalation"
-        : (r.cap != null && r.cap < 100) ? "cap" : "informational",
+    role: r.force ? "escalation" : r.cap != null && r.cap < 100 ? "cap" : "informational",
     cap: r.cap ?? null,
     force: r.force || null,
     reason: r.reason || "",
@@ -31,7 +30,7 @@ export function buildArbitrationTrace(args = {}) {
 
   // Lineage groups — rules that share an arbitration role.
   const escalations = rules.filter((r) => r.role === "escalation");
-  const caps        = rules.filter((r) => r.role === "cap");
+  const caps = rules.filter((r) => r.role === "cap");
   const informational = rules.filter((r) => r.role === "informational");
 
   return Object.freeze({
@@ -59,8 +58,12 @@ export function buildArbitrationTrace(args = {}) {
 function explainTrace({ rules, decay, susp, trustFloor }) {
   const lines = [];
   if (trustFloor != null) lines.push(`Trust floor applied at ${trustFloor}.`);
-  if (decay.delta > 0) lines.push(`Trust decay -${decay.delta} from ${decay.anomalies.length} anomal${decay.anomalies.length === 1 ? "y" : "ies"}.`);
-  for (const r of rules.filter((x) => x.force)) lines.push(`Forced ${r.force}: ${r.id} — ${r.reason}`);
+  if (decay.delta > 0)
+    lines.push(
+      `Trust decay -${decay.delta} from ${decay.anomalies.length} anomal${decay.anomalies.length === 1 ? "y" : "ies"}.`,
+    );
+  for (const r of rules.filter((x) => x.force))
+    lines.push(`Forced ${r.force}: ${r.id} — ${r.reason}`);
   for (const r of rules.filter((x) => x.role === "cap")) lines.push(`Cap ${r.cap}: ${r.id}.`);
   if (susp) lines.push(`Suspicion band: ${susp.level} (modal=${susp.modal}).`);
   return lines;

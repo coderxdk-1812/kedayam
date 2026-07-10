@@ -26,8 +26,12 @@ describe("red team — JS tampering", () => {
   });
 
   it("qs() continues to work after page overwrites querySelector", () => {
-    Document.prototype.querySelector = function () { throw new Error("blocked"); };
-    Element.prototype.querySelector = function () { throw new Error("blocked"); };
+    Document.prototype.querySelector = function () {
+      throw new Error("blocked");
+    };
+    Element.prototype.querySelector = function () {
+      throw new Error("blocked");
+    };
     const form = safeDom.qs(document, "form#f");
     expect(form).not.toBeNull();
   });
@@ -38,13 +42,20 @@ describe("red team — JS tampering", () => {
     vi.resetModules();
     const { arbitrate } = await import("../../extension/lib/arbitration.js?red=1");
     const out = arbitrate({
-      allowlistRoot: false, isReputableRoot: false, isTrustedProvider: false,
+      allowlistRoot: false,
+      isReputableRoot: false,
+      isTrustedProvider: false,
       hasAuthWorkflow: false,
       lookalike: { match: null, confidence: 0 },
       idnSpoof: false,
       clone: { confidence: 0 },
-      phishing: { credentialHarvest: false, externalFormPost: false,
-        brandImpersonation: null, confidence: 0, authRisk: "none" },
+      phishing: {
+        credentialHarvest: false,
+        externalFormPost: false,
+        brandImpersonation: null,
+        confidence: 0,
+        authRisk: "none",
+      },
     });
     expect(out).toBeDefined();
     expect(Array.isArray(out.rules)).toBe(true);

@@ -5,7 +5,9 @@ import { analyzePhishing } from "../../extension/lib/phishingHeuristics.js";
 import { arbitrate, ARB_CONST } from "../../extension/lib/arbitration.js";
 
 const baseCtx = {
-  allowlistRoot: false, isReputableRoot: false, isTrustedProvider: false,
+  allowlistRoot: false,
+  isReputableRoot: false,
+  isTrustedProvider: false,
   hasAuthWorkflow: true,
   lookalike: { match: null, confidence: 0 },
   idnSpoof: false,
@@ -18,10 +20,14 @@ describe("red team — credential flow evasion", () => {
       pageOrigin: "https://verify-now.example.org",
       title: "Verify your code",
       visibleText: "Enter the 6-digit code from your authenticator app",
-      forms: [{ hasPassword: false, hasEmailLike: false, hasOtp: true,
-        hiddenCount: 1, fieldsCount: 2 }],
-      hasPasswordField: false, oauthButtons: [],
-      scripts: [], styles: [], images: [],
+      forms: [
+        { hasPassword: false, hasEmailLike: false, hasOtp: true, hiddenCount: 1, fieldsCount: 2 },
+      ],
+      hasPasswordField: false,
+      oauthButtons: [],
+      scripts: [],
+      styles: [],
+      images: [],
     });
     const a = arbitrate({ ...baseCtx, phishing: r });
     expect(a.cap).toBeLessThanOrEqual(ARB_CONST.CAP_MFA_HARVEST_UNKNOWN);
@@ -32,11 +38,22 @@ describe("red team — credential flow evasion", () => {
       pageOrigin: "https://login.cheap-host.example",
       title: "Continue with Google",
       visibleText: "Sign in with Google",
-      forms: [{ hasPassword: false, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 1,
-        action: "https://collector.bad.tld/oauth-relay", method: "post" }],
-      oauthButtons: ["google"], hasPasswordField: false,
-      scripts: [], styles: [], images: [],
+      forms: [
+        {
+          hasPassword: false,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 0,
+          fieldsCount: 1,
+          action: "https://collector.bad.tld/oauth-relay",
+          method: "post",
+        },
+      ],
+      oauthButtons: ["google"],
+      hasPasswordField: false,
+      scripts: [],
+      styles: [],
+      images: [],
     });
     const a = arbitrate({ ...baseCtx, phishing: r });
     expect(a.cap).toBeDefined();
@@ -46,11 +63,16 @@ describe("red team — credential flow evasion", () => {
   it("multi-step email-first flow on unverified root is capped", () => {
     const r = analyzePhishing({
       pageOrigin: "https://signin.suspicious.example",
-      title: "Sign in", visibleText: "Enter your email to continue",
-      forms: [{ hasPassword: false, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 1, fieldsCount: 2 }],
-      hasPasswordField: false, oauthButtons: [],
-      scripts: [], styles: [], images: [],
+      title: "Sign in",
+      visibleText: "Enter your email to continue",
+      forms: [
+        { hasPassword: false, hasEmailLike: true, hasOtp: false, hiddenCount: 1, fieldsCount: 2 },
+      ],
+      hasPasswordField: false,
+      oauthButtons: [],
+      scripts: [],
+      styles: [],
+      images: [],
     });
     const a = arbitrate({ ...baseCtx, phishing: r });
     expect(a.cap).toBeLessThanOrEqual(ARB_CONST.CAP_EMAIL_FIRST);
@@ -61,10 +83,14 @@ describe("red team — credential flow evasion", () => {
       pageOrigin: "https://device-verify.example.cc",
       title: "Verify your device",
       visibleText: "We need to verify this device — enter your password",
-      forms: [{ hasPassword: true, hasEmailLike: false, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 1 }],
-      hasPasswordField: true, oauthButtons: [],
-      scripts: [], styles: [], images: [],
+      forms: [
+        { hasPassword: true, hasEmailLike: false, hasOtp: false, hiddenCount: 0, fieldsCount: 1 },
+      ],
+      hasPasswordField: true,
+      oauthButtons: [],
+      scripts: [],
+      styles: [],
+      images: [],
     });
     const a = arbitrate({ ...baseCtx, phishing: r });
     // Single-password "verify device" on unknown root must cap below 70.

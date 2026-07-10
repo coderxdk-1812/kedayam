@@ -25,27 +25,57 @@ import { rootDomain } from "./lookalike.js";
 import { analyzeAuthLayout } from "./authLayout.js";
 
 const PROTECTED_BRAND_HOSTS = [
-  "paypal.com", "apple.com", "microsoft.com",
-  "amazon.com", "facebook.com", "instagram.com", "github.com",
-  "ionos.com", "1and1.com", "binance.com", "coinbase.com", "metamask.io", "chase.com",
-  "wellsfargo.com", "bankofamerica.com", "hdfcbank.com", "icicibank.com",
+  "paypal.com",
+  "apple.com",
+  "microsoft.com",
+  "amazon.com",
+  "facebook.com",
+  "instagram.com",
+  "github.com",
+  "ionos.com",
+  "1and1.com",
+  "binance.com",
+  "coinbase.com",
+  "metamask.io",
+  "chase.com",
+  "wellsfargo.com",
+  "bankofamerica.com",
+  "hdfcbank.com",
+  "icicibank.com",
 ];
 
 // Shared infrastructure. NEVER contributes to clone confidence under any
 // condition — including when listed as a "protected brand".
 const INFRA_HOSTS = [
-  "googleapis.com", "gstatic.com", "googleusercontent.com",
-  "fonts.googleapis.com", "fonts.gstatic.com",
-  "cloudflare.com", "cloudflareinsights.com", "cdnjs.cloudflare.com",
-  "jsdelivr.net", "unpkg.com", "bootstrapcdn.com", "jquery.com",
-  "fontawesome.com", "amazonaws.com", "cloudfront.net", "akamaihd.net",
-  "github.io", "githubusercontent.com", "vercel.app", "netlify.app",
-  "google-analytics.com", "googletagmanager.com",
+  "googleapis.com",
+  "gstatic.com",
+  "googleusercontent.com",
+  "fonts.googleapis.com",
+  "fonts.gstatic.com",
+  "cloudflare.com",
+  "cloudflareinsights.com",
+  "cdnjs.cloudflare.com",
+  "jsdelivr.net",
+  "unpkg.com",
+  "bootstrapcdn.com",
+  "jquery.com",
+  "fontawesome.com",
+  "amazonaws.com",
+  "cloudfront.net",
+  "akamaihd.net",
+  "github.io",
+  "githubusercontent.com",
+  "vercel.app",
+  "netlify.app",
+  "google-analytics.com",
+  "googletagmanager.com",
 ];
 
 function isInfrastructureHost(host) {
   if (!host) return true;
-  const h = String(host).toLowerCase().replace(/^www\./, "");
+  const h = String(host)
+    .toLowerCase()
+    .replace(/^www\./, "");
   if (!h) return true;
   return INFRA_HOSTS.some((c) => h === c || h.endsWith("." + c));
 }
@@ -54,15 +84,19 @@ function hostOf(u) {
   try {
     const h = new URL(u, "https://x/").hostname.toLowerCase().replace(/^www\./, "");
     return h && h !== "x" ? h : "";
-  } catch { return ""; }
+  } catch {
+    return "";
+  }
 }
 
 function safeRoot(host) {
   if (!host) return "";
   try {
     const r = rootDomain(host);
-    return (r && typeof r === "string" && r.includes(".")) ? r.toLowerCase() : "";
-  } catch { return ""; }
+    return r && typeof r === "string" && r.includes(".") ? r.toLowerCase() : "";
+  } catch {
+    return "";
+  }
 }
 
 /**
@@ -78,8 +112,11 @@ export function analyzeClone(ctx) {
   if (!ctx || !ctx.pageOrigin) return empty();
 
   let pageHost = "";
-  try { pageHost = new URL(ctx.pageOrigin).hostname.toLowerCase().replace(/^www\./, ""); }
-  catch { return empty(); }
+  try {
+    pageHost = new URL(ctx.pageOrigin).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return empty();
+  }
   const pageRoot = safeRoot(pageHost);
   if (!pageRoot) return empty();
 
@@ -129,7 +166,11 @@ export function analyzeClone(ctx) {
   // ---- Signal 3: structural auth-layout match on unrelated domain ----
   let layout = null;
   let layoutSignal = false;
-  try { layout = analyzeAuthLayout(ctx); } catch { layout = null; }
+  try {
+    layout = analyzeAuthLayout(ctx);
+  } catch {
+    layout = null;
+  }
   if (layout && layout.matchedTemplate && layout.matchedRoot) {
     const tplRoot = String(layout.matchedRoot).replace(/^\*/, "").replace(/\*$/, "");
     const wildcard = String(layout.matchedRoot).includes("*");
@@ -146,8 +187,7 @@ export function analyzeClone(ctx) {
   // ctx.phishing, supplied by the engine when available) ----
   const ph = ctx.phishing || {};
   const phishingCorroboration =
-    !!ph.credentialHarvest || !!ph.externalFormPost ||
-    !!ph.oauthSpoof || !!ph.brandImpersonation;
+    !!ph.credentialHarvest || !!ph.externalFormPost || !!ph.oauthSpoof || !!ph.brandImpersonation;
   if (phishingCorroboration) {
     if (ph.externalFormPost) reasons.push("credential form posts off-domain");
     else if (ph.oauthSpoof) reasons.push("OAuth spoof flow detected");
@@ -157,23 +197,22 @@ export function analyzeClone(ctx) {
 
   // Asset ratio is reported but NEVER a signal on its own.
   if (crossOriginRatio >= 0.5 && externalAssets.length >= 3) {
-    reasons.push(`${Math.round(crossOriginRatio * 100)}% of assets load from unrelated non-CDN origins (informational)`);
+    reasons.push(
+      `${Math.round(crossOriginRatio * 100)}% of assets load from unrelated non-CDN origins (informational)`,
+    );
   }
 
   // ---- Multi-signal gating ----
-  const signals = [
-    faviconMismatch,
-    brandImageMismatch,
-    layoutSignal,
-    phishingCorroboration,
-  ];
+  const signals = [faviconMismatch, brandImageMismatch, layoutSignal, phishingCorroboration];
   const signalCount = signals.filter(Boolean).length;
 
   let confidence = 0;
   if (signalCount >= 2) {
     // Each independent signal contributes ~0.25, capped at 1.
-    confidence = Math.min(1, signalCount * 0.25 +
-      (layoutSignal ? Math.min(0.15, (layout?.confidence || 0) * 0.2) : 0));
+    confidence = Math.min(
+      1,
+      signalCount * 0.25 + (layoutSignal ? Math.min(0.15, (layout?.confidence || 0) * 0.2) : 0),
+    );
   }
 
   // Cap clone contribution. Clone alone cannot push a site to dangerous —
@@ -197,7 +236,13 @@ export function analyzeClone(ctx) {
 
 function empty() {
   return {
-    score: 0, confidence: 0, reasons: [], crossOriginRatio: 0,
-    brandImageMismatch: false, faviconMismatch: false, signalCount: 0, layout: null,
+    score: 0,
+    confidence: 0,
+    reasons: [],
+    crossOriginRatio: 0,
+    brandImageMismatch: false,
+    faviconMismatch: false,
+    signalCount: 0,
+    layout: null,
   };
 }

@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
-  safeExecRegex, safeMatchAll, boundedString, boundedArray,
-  safeJSONParse, assertEnvelope, verifyModuleIntegrity, SELF_PROTECTION_LIMITS,
+  safeExecRegex,
+  safeMatchAll,
+  boundedString,
+  boundedArray,
+  safeJSONParse,
+  assertEnvelope,
+  verifyModuleIntegrity,
+  SELF_PROTECTION_LIMITS,
 } from "../../extension/lib/selfProtection.js";
 
 describe("selfProtection", () => {
@@ -45,7 +51,7 @@ describe("selfProtection", () => {
   });
   it("verifyModuleIntegrity catches missing/shrunk registries", () => {
     expect(verifyModuleIntegrity("x", null, 1).ok).toBe(false);
-    expect(verifyModuleIntegrity("x", Object.freeze({a:1,b:2}), 5).ok).toBe(false);
-    expect(verifyModuleIntegrity("x", Object.freeze({a:1,b:2}), 2).ok).toBe(true);
+    expect(verifyModuleIntegrity("x", Object.freeze({ a: 1, b: 2 }), 5).ok).toBe(false);
+    expect(verifyModuleIntegrity("x", Object.freeze({ a: 1, b: 2 }), 2).ok).toBe(true);
   });
 });

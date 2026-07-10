@@ -68,8 +68,8 @@ const RUN_DIALOG_PHRASES = [
   /\bctrl\s*\+\s*v\b.*\b(enter|run)\b/i,
   /\bpaste\b.*\b(and\s+)?(press|hit)\s+(enter|return)\b/i,
   /\b(open|launch|press)\s+(spotlight|terminal|finder)\b/i,
-/\b(command|⌘)\s*(\+|key\s+and)\s*(space|spacebar)\b/i,
-/\btype\s+(in\s+)?terminal\b/i,
+  /\b(command|⌘)\s*(\+|key\s+and)\s*(space|spacebar)\b/i,
+  /\btype\s+(in\s+)?terminal\b/i,
 ];
 const FAKE_VERIFY_PHRASES = [
   /\bverify\s+(you('| a)?re|that you are)\s+(a\s+)?human\b/i,

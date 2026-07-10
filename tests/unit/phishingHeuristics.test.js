@@ -13,9 +13,18 @@ describe("analyzePhishing", () => {
       pageOrigin: "https://accounts.google.com",
       title: "Sign in - Google Accounts",
       visibleText: "Sign in to your Google Account",
-      forms: [{ action: "/signin", method: "post",
-        hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 2, fieldsCount: 3, insideIframe: false }],
+      forms: [
+        {
+          action: "/signin",
+          method: "post",
+          hasPassword: true,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 2,
+          fieldsCount: 3,
+          insideIframe: false,
+        },
+      ],
       hasPasswordField: true,
     });
     expect(r.credentialHarvest).toBe(false);
@@ -28,9 +37,18 @@ describe("analyzePhishing", () => {
       pageOrigin: "https://my-secure-portal.tld",
       title: "Login",
       visibleText: "please sign in",
-      forms: [{ action: "/post", method: "post",
-        hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+      forms: [
+        {
+          action: "/post",
+          method: "post",
+          hasPassword: true,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 0,
+          fieldsCount: 2,
+          insideIframe: false,
+        },
+      ],
       hasPasswordField: true,
     });
     expect(r.credentialHarvest).toBe(true);
@@ -42,9 +60,18 @@ describe("analyzePhishing", () => {
       pageOrigin: "https://office365-secure-login.tld",
       title: "Sign in to your Microsoft account",
       visibleText: "outlook office 365 sign in to your account",
-      forms: [{ action: "/login", method: "post",
-        hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+      forms: [
+        {
+          action: "/login",
+          method: "post",
+          hasPassword: true,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 0,
+          fieldsCount: 2,
+          insideIframe: false,
+        },
+      ],
       hasPasswordField: true,
     });
     expect(r.brandImpersonation?.brand).toBe("microsoft.com");
@@ -58,9 +85,18 @@ describe("analyzePhishing", () => {
       pageOrigin: "https://login-portal.tld",
       title: "Login",
       visibleText: "log in",
-      forms: [{ action: "https://evil-collector.tld/grab", method: "post",
-        hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+      forms: [
+        {
+          action: "https://evil-collector.tld/grab",
+          method: "post",
+          hasPassword: true,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 0,
+          fieldsCount: 2,
+          insideIframe: false,
+        },
+      ],
       hasPasswordField: true,
     });
     expect(r.externalFormPost).toBe(true);
@@ -70,9 +106,18 @@ describe("analyzePhishing", () => {
   it("flags javascript: form actions", () => {
     const r = analyzePhishing({
       pageOrigin: "https://something.tld",
-      forms: [{ action: "javascript:void(0)", method: "post",
-        hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+      forms: [
+        {
+          action: "javascript:void(0)",
+          method: "post",
+          hasPassword: true,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 0,
+          fieldsCount: 2,
+          insideIframe: false,
+        },
+      ],
       hasPasswordField: true,
     });
     expect(r.signals.some((s) => s.id === "form-javascript")).toBe(true);
@@ -94,9 +139,18 @@ describe("analyzePhishing", () => {
       pageOrigin: "https://www.paypal.com",
       title: "PayPal sign in",
       visibleText: "Log in to your PayPal account",
-      forms: [{ action: "/login", method: "post",
-        hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+      forms: [
+        {
+          action: "/login",
+          method: "post",
+          hasPassword: true,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 0,
+          fieldsCount: 2,
+          insideIframe: false,
+        },
+      ],
       hasPasswordField: true,
     });
     expect(r.brandImpersonation).toBeNull();

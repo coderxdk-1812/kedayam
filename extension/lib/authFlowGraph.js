@@ -17,7 +17,7 @@
 //   - the graph is bounded (MAX_NODES); oldest evicted FIFO
 //   - calling `serialize()` returns a redacted, JSON-safe summary
 
-const TTL_MS    = 5 * 60 * 1000;   // 5 minutes
+const TTL_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_NODES = 64;
 
 /** @typedef {"entry"|"credential"|"mfa"|"oauth"|"redirect"|"token"|"iframe"} StepKind */
@@ -68,9 +68,15 @@ export class AuthFlowGraph {
     return step;
   }
 
-  steps() { this._gc(); return this._steps.slice(); }
+  steps() {
+    this._gc();
+    return this._steps.slice();
+  }
 
-  reset() { this._steps = []; this._gen = 0; }
+  reset() {
+    this._steps = [];
+    this._gen = 0;
+  }
 
   /**
    * Pure analytical pass — returns anomaly objects, never throws.
@@ -83,12 +89,8 @@ export class AuthFlowGraph {
     if (steps.length < 2) return out;
 
     const origins = new Set(steps.map((s) => s.origin).filter(Boolean));
-    const credSteps = steps.filter(
-      (s) => s.kind === "credential" || s.kind === "mfa",
-    );
-    const postOrigins = new Set(
-      credSteps.map((s) => s.postOrigin).filter(Boolean),
-    );
+    const credSteps = steps.filter((s) => s.kind === "credential" || s.kind === "mfa");
+    const postOrigins = new Set(credSteps.map((s) => s.postOrigin).filter(Boolean));
 
     // a. Credentials POSTed to an origin never visited in-flow.
     for (const p of postOrigins) {
@@ -103,10 +105,8 @@ export class AuthFlowGraph {
 
     // b. OAuth continuation drift — token step on an origin different from
     // every prior oauth-issuer origin.
-    const oauthOrigins = steps.filter((s) => s.kind === "oauth")
-      .map((s) => s.origin);
-    const tokenOrigins = steps.filter((s) => s.kind === "token")
-      .map((s) => s.origin);
+    const oauthOrigins = steps.filter((s) => s.kind === "oauth").map((s) => s.origin);
+    const tokenOrigins = steps.filter((s) => s.kind === "token").map((s) => s.origin);
     if (oauthOrigins.length && tokenOrigins.length) {
       const issuerSet = new Set(oauthOrigins);
       if (tokenOrigins.some((o) => !issuerSet.has(o))) {
@@ -164,8 +164,12 @@ export class AuthFlowGraph {
     this._gc();
     return {
       steps: this._steps.map((s) => ({
-        id: s.id, kind: s.kind, origin: s.origin,
-        postOrigin: s.postOrigin, inIframe: s.inIframe, t: s.t,
+        id: s.id,
+        kind: s.kind,
+        origin: s.origin,
+        postOrigin: s.postOrigin,
+        inIframe: s.inIframe,
+        t: s.t,
         tags: s.tags,
       })),
       anomalies: this.anomalies(),
@@ -175,7 +179,11 @@ export class AuthFlowGraph {
 
 function safeOrigin(o) {
   if (!o) return "";
-  try { return new URL(o).origin; } catch { return String(o).slice(0, 200); }
+  try {
+    return new URL(o).origin;
+  } catch {
+    return String(o).slice(0, 200);
+  }
 }
 
 /** Singleton helper — most callers want one graph per tab/session. */
@@ -184,4 +192,6 @@ export function sharedAuthFlowGraph() {
   if (!_shared) _shared = new AuthFlowGraph();
   return _shared;
 }
-export function resetSharedAuthFlowGraph() { _shared = null; }
+export function resetSharedAuthFlowGraph() {
+  _shared = null;
+}

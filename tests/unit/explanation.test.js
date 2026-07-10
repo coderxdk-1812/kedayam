@@ -3,25 +3,48 @@ import { explainVerdict } from "../../extension/lib/explanation.js";
 
 const sampleVerdict = {
   url: "https://m1cr0soft-login.example/",
-  host: "m1cr0soft-login.example", root: "example",
-  score: 18, status: "dangerous",
-  phishingConfidence: 0.91, cloneConfidence: 0.4,
+  host: "m1cr0soft-login.example",
+  root: "example",
+  score: 18,
+  status: "dangerous",
+  phishingConfidence: 0.91,
+  cloneConfidence: 0.4,
   signals: [
-    { id: "lookalike", title: "Visually resembles Microsoft", severity: "critical",
-      category: "identity", contribution: -40, detail: "punycode" },
-    { id: "credential-form", title: "Login form on an unverified domain",
-      severity: "high", category: "behavior", contribution: -22 },
-    { id: "https-trust", title: "Encrypted connection", severity: "info",
-      category: "trust", contribution: 10 },
+    {
+      id: "lookalike",
+      title: "Visually resembles Microsoft",
+      severity: "critical",
+      category: "identity",
+      contribution: -40,
+      detail: "punycode",
+    },
+    {
+      id: "credential-form",
+      title: "Login form on an unverified domain",
+      severity: "high",
+      category: "behavior",
+      contribution: -22,
+    },
+    {
+      id: "https-trust",
+      title: "Encrypted connection",
+      severity: "info",
+      category: "trust",
+      contribution: 10,
+    },
   ],
-  trustAdds: [
-    { id: "https-trust", title: "Encrypted connection (HTTPS)", contribution: 10 },
-  ],
-  arbitration: { rules: [
-    { id: "lookalike-creds", cap: 25, force: "dangerous",
-      reason: "Hostname mimics a known brand and is collecting credentials." },
-    { id: "unknown-login", cap: 60, reason: "Credential form on an unverified domain." },
-  ] },
+  trustAdds: [{ id: "https-trust", title: "Encrypted connection (HTTPS)", contribution: 10 }],
+  arbitration: {
+    rules: [
+      {
+        id: "lookalike-creds",
+        cap: 25,
+        force: "dangerous",
+        reason: "Hostname mimics a known brand and is collecting credentials.",
+      },
+      { id: "unknown-login", cap: 60, reason: "Credential form on an unverified domain." },
+    ],
+  },
 };
 
 describe("explainVerdict", () => {

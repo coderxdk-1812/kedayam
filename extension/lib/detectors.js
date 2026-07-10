@@ -97,11 +97,16 @@ const PATTERNS = {
 
 function luhn(num) {
   if (num.length < 13 || num.length > 19) return false;
-  let sum = 0, alt = false;
+  let sum = 0,
+    alt = false;
   for (let i = num.length - 1; i >= 0; i--) {
     let n = parseInt(num[i], 10);
-    if (alt) { n *= 2; if (n > 9) n -= 9; }
-    sum += n; alt = !alt;
+    if (alt) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+    alt = !alt;
   }
   return sum % 10 === 0;
 }
@@ -124,13 +129,21 @@ export function highEntropySecrets(text, { minLen = 24, threshold = 4.2 } = {}) 
   for (const t of tokens) {
     if (t.length < minLen) continue;
     if (shannonEntropy(t) >= threshold) {
-      out.push({ kind: "highEntropy", label: "High-entropy secret", severity: "medium", value: redact(t) });
+      out.push({
+        kind: "highEntropy",
+        label: "High-entropy secret",
+        severity: "medium",
+        value: redact(t),
+      });
     }
   }
   return out;
 }
 
-export function scanText(text, { regions } = { regions: { india: true, us: true, eu: true, global: true } }) {
+export function scanText(
+  text,
+  { regions } = { regions: { india: true, us: true, eu: true, global: true } },
+) {
   if (!text || typeof text !== "string") return [];
   const findings = [];
   for (const [kind, def] of Object.entries(PATTERNS)) {
@@ -167,6 +180,7 @@ function dedupe(findings) {
   return findings.filter((f) => {
     const k = `${f.kind}:${f.value}`;
     if (seen.has(k)) return false;
-    seen.add(k); return true;
+    seen.add(k);
+    return true;
   });
 }

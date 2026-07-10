@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { validatePolicy, exportSettings, importSettings, readManagedPolicy } from "../../extension/lib/managedPolicy.js";
+import {
+  validatePolicy,
+  exportSettings,
+  importSettings,
+  readManagedPolicy,
+} from "../../extension/lib/managedPolicy.js";
 
 describe("managedPolicy", () => {
   it("validatePolicy returns null on garbage", () => {

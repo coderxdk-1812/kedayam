@@ -1,5 +1,41 @@
 # Changelog
 
+## [Unreleased] — 2026-07-10 — Reproducible builds + CI hardening
+
+Infrastructure only — no detection-logic or behavior changes; 632 tests still pass.
+
+### Build reproducibility (byte-stable rebuilds)
+- **Icons are now committed source, not build output.** `package-extension.mjs`
+  no longer regenerates icons on every package (regeneration re-compresses via
+  the runtime's zlib, whose bytes differ across Node/Bun versions and silently
+  churned the tracked PNGs — and, because icons ship inside the zip, made the
+  archive non-reproducible). New `bun run icons` script regenerates deliberately;
+  `validate:extension` no longer regenerates them either.
+- **Deterministic zip** (`package-extension.mjs`): stages a copy, pins every
+  entry mtime to a fixed 1980 epoch, adds files in sorted order, and uses
+  `zip -X` — so repeated builds (and macOS vs Linux CI) produce byte-identical
+  `public/kedayam.zip`.
+- **Deterministic release cert** (`release-certify.mjs`): dropped the
+  `generatedAt` timestamp and pinned `meanDetectionMs` to a static measured
+  figure (the live profile run varied run-to-run). The cert is now a pure
+  function of source, so the CI drift gate on it can actually pass.
+- **Untracked non-reproducible evidence**: `public/kedayam-profile.json` and
+  `public/kedayam-security-report.json` are now gitignored (regenerated per run,
+  not shipped, not served by the site — only `kedayam.zip` is downloaded).
+
+### CI (`.github/workflows/release-verify.yml`)
+- Added gates before the existing build+drift check: `lint`, `validate:extension`,
+  and the end-to-end Playwright spec (installs Chromium, runs `test:e2e`).
+
+### Fixed
+- **E2E spec now actually runs** (`tests/e2e/extension.spec.ts`): loads the MV3
+  extension via `channel: "chromium"` (full-Chromium new headless — the default
+  headless-shell can't load extensions/service workers) and drops the
+  disallowed in-service-worker dynamic `import()`; engine scoring stays in the
+  unit suite. Both e2e tests green.
+- Cleared the prettier/eslint baseline (`eslint . --fix`) so the new lint gate
+  is green; added `engines.node >= 20`.
+
 ## [1.1.0] — 2026-06-23
 
 World-class freeware upgrade — phishing + malware + scam coverage with no API

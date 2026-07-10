@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { decodePunycodeLabel, levenshtein, normalizeHomoglyphs, rootDomain, lookalikeAnalysis } from "../../extension/lib/lookalike.js";
+import {
+  decodePunycodeLabel,
+  levenshtein,
+  normalizeHomoglyphs,
+  rootDomain,
+  lookalikeAnalysis,
+} from "../../extension/lib/lookalike.js";
 
 describe("levenshtein", () => {
   it("returns 0 for equal strings", () => expect(levenshtein("abc", "abc")).toBe(0));

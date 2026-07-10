@@ -32,11 +32,12 @@ export function isUserVisible(el, getStyle) {
   try {
     if (!el || typeof el !== "object" || !el.tagName) return false;
     if (HIDDEN_TAGS.has(el.tagName)) return false;
-    if (typeof el.closest === "function" &&
-        el.closest('[aria-hidden="true"]')) return false;
-    const lookup = getStyle ||
+    if (typeof el.closest === "function" && el.closest('[aria-hidden="true"]')) return false;
+    const lookup =
+      getStyle ||
       (typeof globalThis.getComputedStyle === "function"
-        ? globalThis.getComputedStyle.bind(globalThis) : null);
+        ? globalThis.getComputedStyle.bind(globalThis)
+        : null);
     const cs = lookup ? lookup(el) : null;
     if (cs) {
       if (cs.display === "none") return false;

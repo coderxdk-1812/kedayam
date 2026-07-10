@@ -32,10 +32,13 @@ describe("content scan pipeline contract", () => {
       favicon: "https://microsoft.com/favicon.ico",
       title: "Sign in to your Microsoft account",
       visibleText: "Sign in Use your Microsoft account",
-      forms: [{ hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 2, fieldsCount: 4 }],
+      forms: [
+        { hasPassword: true, hasEmailLike: true, hasOtp: false, hiddenCount: 2, fieldsCount: 4 },
+      ],
       oauthButtons: [],
-      hasLogoImage: true, hasHeading: true, firstFieldKind: "email",
+      hasLogoImage: true,
+      hasHeading: true,
+      firstFieldKind: "email",
       phishing: { credentialHarvest: true, brandImpersonation: true },
     };
     const c = analyzeClone(ctx);
@@ -44,21 +47,34 @@ describe("content scan pipeline contract", () => {
     expect(c.layout).toBeTruthy();
   });
 
-
   it("explanation contract surfaces headline + bullets", () => {
     const verdict = {
-      url: "https://bad.example.com/login", host: "bad.example.com",
-      score: 32, status: "dangerous",
+      url: "https://bad.example.com/login",
+      host: "bad.example.com",
+      score: 32,
+      status: "dangerous",
       signals: [
-        { id: "lookalike", title: "Domain mimics a brand",
-          severity: "high", contribution: -25, category: "identity" },
-        { id: "clone", title: "Page structurally clones a login",
-          severity: "high", contribution: -20, category: "clone" },
+        {
+          id: "lookalike",
+          title: "Domain mimics a brand",
+          severity: "high",
+          contribution: -25,
+          category: "identity",
+        },
+        {
+          id: "clone",
+          title: "Page structurally clones a login",
+          severity: "high",
+          contribution: -20,
+          category: "clone",
+        },
       ],
       trustAdds: [],
-      arbitration: { rules: [{ id: "credential-clone", cap: 35,
-        reason: "credential form on cloned layout" }] },
-      phishingConfidence: 0.86, cloneConfidence: 0.74,
+      arbitration: {
+        rules: [{ id: "credential-clone", cap: 35, reason: "credential form on cloned layout" }],
+      },
+      phishingConfidence: 0.86,
+      cloneConfidence: 0.74,
     };
     const ex = explainVerdict(verdict);
     expect(ex.headline).toMatch(/dangerous|unusual|safe/i);
@@ -70,10 +86,14 @@ describe("content scan pipeline contract", () => {
 
   it("auth layout match is deterministic given identical input", () => {
     const ctx = {
-      title: "Sign in to Coinbase", visibleText: "Sign in coinbase",
-      forms: [{ hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 1, fieldsCount: 4 }],
-      oauthButtons: [], hasLogoImage: true, hasHeading: true,
+      title: "Sign in to Coinbase",
+      visibleText: "Sign in coinbase",
+      forms: [
+        { hasPassword: true, hasEmailLike: true, hasOtp: false, hiddenCount: 1, fieldsCount: 4 },
+      ],
+      oauthButtons: [],
+      hasLogoImage: true,
+      hasHeading: true,
       firstFieldKind: "email",
     };
     const a = analyzeAuthLayout(ctx);

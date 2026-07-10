@@ -14,50 +14,89 @@
 export const SAFELIST_VERSION = 1;
 
 const _IDP = [
-  "google.com", "accounts.google.com",
-  "microsoft.com", "microsoftonline.com", "live.com", "office.com",
-  "apple.com", "icloud.com",
-  "okta.com", "auth0.com", "onelogin.com", "duosecurity.com", "pingidentity.com",
-  "github.com", "gitlab.com", "bitbucket.org",
-  "facebook.com", "linkedin.com",
+  "google.com",
+  "accounts.google.com",
+  "microsoft.com",
+  "microsoftonline.com",
+  "live.com",
+  "office.com",
+  "apple.com",
+  "icloud.com",
+  "okta.com",
+  "auth0.com",
+  "onelogin.com",
+  "duosecurity.com",
+  "pingidentity.com",
+  "github.com",
+  "gitlab.com",
+  "bitbucket.org",
+  "facebook.com",
+  "linkedin.com",
 ];
 
 const _BANKING = [
-  "chase.com", "bankofamerica.com", "wellsfargo.com", "citi.com",
-  "capitalone.com", "usbank.com", "americanexpress.com",
-  "hsbc.com", "barclays.co.uk", "lloydsbank.com", "natwest.com",
-  "santander.com", "bnpparibas.com", "deutschebank.com",
-  "scotiabank.com", "td.com", "rbc.com",
-  "sbi.co.in", "hdfcbank.com", "icicibank.com", "axisbank.com",
+  "chase.com",
+  "bankofamerica.com",
+  "wellsfargo.com",
+  "citi.com",
+  "capitalone.com",
+  "usbank.com",
+  "americanexpress.com",
+  "hsbc.com",
+  "barclays.co.uk",
+  "lloydsbank.com",
+  "natwest.com",
+  "santander.com",
+  "bnpparibas.com",
+  "deutschebank.com",
+  "scotiabank.com",
+  "td.com",
+  "rbc.com",
+  "sbi.co.in",
+  "hdfcbank.com",
+  "icicibank.com",
+  "axisbank.com",
 ];
 
 const _PAYMENTS = [
-  "paypal.com", "stripe.com", "wise.com", "revolut.com",
-  "venmo.com", "cashapp.com", "squareup.com",
+  "paypal.com",
+  "stripe.com",
+  "wise.com",
+  "revolut.com",
+  "venmo.com",
+  "cashapp.com",
+  "squareup.com",
 ];
 
 const _PWMGR = [
-  "1password.com", "bitwarden.com", "lastpass.com",
-  "dashlane.com", "keepersecurity.com", "nordpass.com",
+  "1password.com",
+  "bitwarden.com",
+  "lastpass.com",
+  "dashlane.com",
+  "keepersecurity.com",
+  "nordpass.com",
 ];
 
 const _SAAS_TRUSTED = [
-  "salesforce.com", "workday.com", "atlassian.com",
-  "slack.com", "zoom.us", "dropbox.com", "box.com",
+  "salesforce.com",
+  "workday.com",
+  "atlassian.com",
+  "slack.com",
+  "zoom.us",
+  "dropbox.com",
+  "box.com",
 ];
 
 export const SAFELIST = Object.freeze({
   version: SAFELIST_VERSION,
   identityProviders: Object.freeze([..._IDP]),
-  banking:           Object.freeze([..._BANKING]),
-  payments:          Object.freeze([..._PAYMENTS]),
-  passwordManagers:  Object.freeze([..._PWMGR]),
-  saas:              Object.freeze([..._SAAS_TRUSTED]),
+  banking: Object.freeze([..._BANKING]),
+  payments: Object.freeze([..._PAYMENTS]),
+  passwordManagers: Object.freeze([..._PWMGR]),
+  saas: Object.freeze([..._SAAS_TRUSTED]),
 });
 
-const _ALL = new Set([
-  ..._IDP, ..._BANKING, ..._PAYMENTS, ..._PWMGR, ..._SAAS_TRUSTED,
-]);
+const _ALL = new Set([..._IDP, ..._BANKING, ..._PAYMENTS, ..._PWMGR, ..._SAAS_TRUSTED]);
 
 /** True if `root` is a curated provider root. Case-insensitive. */
 export function isSafelistedRoot(root) {

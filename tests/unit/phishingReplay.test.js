@@ -18,12 +18,37 @@ const here = dirname(fileURLToPath(import.meta.url));
 const FIX = join(here, "../fixtures/phishing");
 
 const EXPECT = {
-  "microsoft365.html":     { origin: "https://login.evil.example", verdict: "dangerous", ruleAny: ["external-post", "external-post-clone"] },
-  "coinbase.html":         { origin: "https://coinbase-secure.evil.example", verdict: "dangerous", ruleAny: ["external-post", "external-post-clone", "brand-creds"] },
-  "mfa-harvest.html":      { origin: "https://verify.unknown.example", verdict: "dangerous", ruleAny: ["mfa-harvest"] },
-  "iframe-credentials.html": { origin: "https://outer.example", verdict: "dangerous", ruleAny: ["cross-origin-credentials"], synthetic: { iframe: true } },
-  "oauth-spoof.html":      { origin: "https://login.evil.example", verdict: "dangerous", ruleAny: ["oauth-spoof", "external-post"] },
-  "fake-bank.html":        { origin: "https://chase-secure-login.example", verdict: "dangerous", ruleAny: ["external-post", "external-post-clone", "brand-creds"] },
+  "microsoft365.html": {
+    origin: "https://login.evil.example",
+    verdict: "dangerous",
+    ruleAny: ["external-post", "external-post-clone"],
+  },
+  "coinbase.html": {
+    origin: "https://coinbase-secure.evil.example",
+    verdict: "dangerous",
+    ruleAny: ["external-post", "external-post-clone", "brand-creds"],
+  },
+  "mfa-harvest.html": {
+    origin: "https://verify.unknown.example",
+    verdict: "dangerous",
+    ruleAny: ["mfa-harvest"],
+  },
+  "iframe-credentials.html": {
+    origin: "https://outer.example",
+    verdict: "dangerous",
+    ruleAny: ["cross-origin-credentials"],
+    synthetic: { iframe: true },
+  },
+  "oauth-spoof.html": {
+    origin: "https://login.evil.example",
+    verdict: "dangerous",
+    ruleAny: ["oauth-spoof", "external-post"],
+  },
+  "fake-bank.html": {
+    origin: "https://chase-secure-login.example",
+    verdict: "dangerous",
+    ruleAny: ["external-post", "external-post-clone", "brand-creds"],
+  },
 };
 
 function buildContext(html, origin, synthetic = {}) {
@@ -39,20 +64,26 @@ function buildContext(html, origin, synthetic = {}) {
     });
     const hasOtp = inputs.some((i) => {
       const n = `${i.name || ""} ${i.id || ""} ${i.autocomplete || ""}`.toLowerCase();
-      return /otp|one[-_ ]?time|2fa|mfa|verification[-_ ]?code/.test(n) ||
-        ((i.maxLength | 0) >= 4 && (i.maxLength | 0) <= 8 && /numeric/i.test(i.inputMode || ""));
+      return (
+        /otp|one[-_ ]?time|2fa|mfa|verification[-_ ]?code/.test(n) ||
+        ((i.maxLength | 0) >= 4 && (i.maxLength | 0) <= 8 && /numeric/i.test(i.inputMode || ""))
+      );
     });
     return {
       action: f.getAttribute("action") || "",
       method: f.getAttribute("method") || "post",
-      hasPassword, hasEmailLike, hasOtp,
+      hasPassword,
+      hasEmailLike,
+      hasOtp,
       hiddenCount: inputs.filter((i) => (i.type || "").toLowerCase() === "hidden").length,
       fieldsCount: inputs.length,
       insideIframe: !!synthetic.iframe,
     };
   });
-  const pick = (sel, attr) => Array.from(doc.querySelectorAll(sel))
-    .map((e) => e.getAttribute(attr)).filter(Boolean);
+  const pick = (sel, attr) =>
+    Array.from(doc.querySelectorAll(sel))
+      .map((e) => e.getAttribute(attr))
+      .filter(Boolean);
   const text = (doc.body?.textContent || "").replace(/\s+/g, " ").trim().slice(0, 4000);
   return {
     pageOrigin: origin,
@@ -61,7 +92,12 @@ function buildContext(html, origin, synthetic = {}) {
     forms,
     hasPasswordField: !!doc.querySelector("input[type=password]"),
     oauthButtons: Array.from(doc.querySelectorAll("button, a"))
-      .map((e) => (e.textContent || "").match(/sign in with (google|microsoft|apple|facebook|github)/i)?.[1])
+      .map(
+        (e) =>
+          (e.textContent || "").match(
+            /sign in with (google|microsoft|apple|facebook|github)/i,
+          )?.[1],
+      )
       .filter(Boolean),
     topLevelIframe: !!synthetic.iframe,
     scripts: pick("script[src]", "src"),
@@ -70,8 +106,11 @@ function buildContext(html, origin, synthetic = {}) {
     favicon: doc.querySelector("link[rel~='icon']")?.getAttribute("href") || null,
     hasLogoImage: !!doc.querySelector("img[alt]"),
     hasHeading: !!doc.querySelector("h1"),
-    firstFieldKind: doc.querySelector("input[type=email]") ? "email" :
-      doc.querySelector("input[type=password]") ? "password" : null,
+    firstFieldKind: doc.querySelector("input[type=email]")
+      ? "email"
+      : doc.querySelector("input[type=password]")
+        ? "password"
+        : null,
   };
 }
 
@@ -90,8 +129,12 @@ function evaluateFixture(html, expected) {
       const u = new URL(f.getAttribute("src"), expected.origin);
       if (u.host && u.host !== new URL(expected.origin).host) {
         crossOriginIframeCreds = true;
-        phishing.signals.push({ id: "iframe-credential-form",
-          severity: "high", weight: 28, confidence: 0.85 });
+        phishing.signals.push({
+          id: "iframe-credential-form",
+          severity: "high",
+          weight: 28,
+          confidence: 0.85,
+        });
       }
     } catch {}
   }
@@ -100,15 +143,18 @@ function evaluateFixture(html, expected) {
     allowlistRoot: false,
     isReputableRoot: false,
     isTrustedProvider: false,
-    hasAuthWorkflow: phishing.credentialHarvest || ctx.hasPasswordField ||
-      crossOriginIframeCreds,
+    hasAuthWorkflow: phishing.credentialHarvest || ctx.hasPasswordField || crossOriginIframeCreds,
     lookalike: { match: null, confidence: 0 },
     idnSpoof: false,
-    clone, phishing, authLayout,
+    clone,
+    phishing,
+    authLayout,
     hiddenLoginOverlay: false,
-    emailFirstFlow: (phishing.forms || []).some((f) =>
-      f.hasEmailLike && !f.hasPassword && (f.fieldsCount || 0) <= 4),
-    mfaOnly: (phishing.forms || []).length > 0 &&
+    emailFirstFlow: (phishing.forms || []).some(
+      (f) => f.hasEmailLike && !f.hasPassword && (f.fieldsCount || 0) <= 4,
+    ),
+    mfaOnly:
+      (phishing.forms || []).length > 0 &&
       (phishing.forms || []).every((f) => f.hasOtp && !f.hasPassword),
   });
   return { phishing, clone, authLayout, arb };

@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
-  storeReplay, consumeReplay, zeroize, _size, _resetAll, _hasToken,
+  storeReplay,
+  consumeReplay,
+  zeroize,
+  _size,
+  _resetAll,
+  _hasToken,
 } from "../../extension/lib/ephemeralReplay.js";
 
 describe("ephemeralReplay (Issue NEW-01)", () => {
@@ -32,11 +37,13 @@ describe("ephemeralReplay (Issue NEW-01)", () => {
 
   it("expires payload after TTL", () => {
     const t = storeReplay("transient", 5);
-    return new Promise((resolve) => setTimeout(() => {
-      expect(consumeReplay(t)).toBeNull();
-      expect(_size()).toBe(0);
-      resolve();
-    }, 25));
+    return new Promise((resolve) =>
+      setTimeout(() => {
+        expect(consumeReplay(t)).toBeNull();
+        expect(_size()).toBe(0);
+        resolve();
+      }, 25),
+    );
   });
 
   it("never throws and always cleans on consume of unknown token", () => {

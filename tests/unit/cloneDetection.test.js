@@ -26,7 +26,9 @@ describe("analyzeClone", () => {
   it("records favicon mismatch as a single signal but does NOT raise confidence alone", () => {
     const r = analyzeClone({
       pageOrigin: "https://attacker-site.tld",
-      scripts: [], styles: [], images: [],
+      scripts: [],
+      styles: [],
+      images: [],
       favicon: "https://paypal.com/favicon.ico",
     });
     expect(r.faviconMismatch).toBe(true);
@@ -37,7 +39,8 @@ describe("analyzeClone", () => {
   it("records brand-image theft as a single signal but does NOT raise confidence alone", () => {
     const r = analyzeClone({
       pageOrigin: "https://attacker-site.tld",
-      scripts: [], styles: [],
+      scripts: [],
+      styles: [],
       images: ["https://paypal.com/assets/logo.png"],
     });
     expect(r.brandImageMismatch).toBe(true);
@@ -49,7 +52,8 @@ describe("analyzeClone", () => {
   it("raises confidence only when 2+ independent signals agree", () => {
     const r = analyzeClone({
       pageOrigin: "https://attacker-site.tld",
-      scripts: [], styles: [],
+      scripts: [],
+      styles: [],
       images: ["https://paypal.com/logo.png"],
       favicon: "https://paypal.com/favicon.ico",
     });
@@ -61,10 +65,13 @@ describe("analyzeClone", () => {
     const r = analyzeClone({
       pageOrigin: "https://attacker.tld",
       scripts: [
-        "https://evil1.tld/a.js", "https://evil2.tld/b.js",
-        "https://evil3.tld/c.js", "https://evil4.tld/d.js",
+        "https://evil1.tld/a.js",
+        "https://evil2.tld/b.js",
+        "https://evil3.tld/c.js",
+        "https://evil4.tld/d.js",
       ],
-      styles: [], images: [],
+      styles: [],
+      images: [],
     });
     expect(r.crossOriginRatio).toBeGreaterThan(0.5);
     expect(r.signalCount).toBe(0);
@@ -87,7 +94,8 @@ describe("analyzeClone", () => {
   it("clone alone (no phishing corroboration) caps contribution low", () => {
     const r = analyzeClone({
       pageOrigin: "https://attacker.tld",
-      scripts: [], styles: [],
+      scripts: [],
+      styles: [],
       images: ["https://paypal.com/logo.png"],
       favicon: "https://paypal.com/favicon.ico",
     });
@@ -98,7 +106,8 @@ describe("analyzeClone", () => {
   it("clone + phishing corroboration produces a meaningful contribution", () => {
     const r = analyzeClone({
       pageOrigin: "https://attacker.tld",
-      scripts: [], styles: [],
+      scripts: [],
+      styles: [],
       images: ["https://paypal.com/logo.png"],
       favicon: "https://paypal.com/favicon.ico",
       phishing: { credentialHarvest: true, externalFormPost: true },
@@ -108,14 +117,18 @@ describe("analyzeClone", () => {
 
   it("each scan is independent — pure function, no cross-call state", () => {
     const a = analyzeClone({
-      pageOrigin: "https://attacker.tld", scripts: [], styles: [],
+      pageOrigin: "https://attacker.tld",
+      scripts: [],
+      styles: [],
       images: ["https://paypal.com/logo.png"],
       favicon: "https://paypal.com/favicon.ico",
       phishing: { credentialHarvest: true },
     });
     const b = analyzeClone({
       pageOrigin: "https://example.com",
-      scripts: [], styles: [], images: [],
+      scripts: [],
+      styles: [],
+      images: [],
     });
     expect(b.confidence).toBe(0);
     expect(b.signalCount).toBe(0);

@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { detectCapabilities, withCapabilities, _resetCapabilities } from "../../extension/lib/browserCapabilities.js";
+import {
+  detectCapabilities,
+  withCapabilities,
+  _resetCapabilities,
+} from "../../extension/lib/browserCapabilities.js";
 
 describe("browserCapabilities", () => {
   beforeEach(() => _resetCapabilities());
@@ -20,7 +24,13 @@ describe("browserCapabilities", () => {
     _resetCapabilities();
     const fake = { ShadowRoot: function () {} };
     detectCapabilities(fake);
-    const out = withCapabilities(["shadowDom"], () => { throw new Error("x"); }, "ok");
+    const out = withCapabilities(
+      ["shadowDom"],
+      () => {
+        throw new Error("x");
+      },
+      "ok",
+    );
     expect(out).toBe("ok");
   });
 

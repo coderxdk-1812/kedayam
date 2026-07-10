@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { makeEnvelope, isValidEnvelope, NonceCache, ENVELOPE_VERSION } from "../../extension/lib/bus.js";
+import {
+  makeEnvelope,
+  isValidEnvelope,
+  NonceCache,
+  ENVELOPE_VERSION,
+} from "../../extension/lib/bus.js";
 
 describe("envelope", () => {
   it("creates a valid envelope", () => {
@@ -28,7 +33,9 @@ describe("NonceCache", () => {
   });
   it("evicts oldest beyond max", () => {
     const c = new NonceCache(2);
-    c.seen("a"); c.seen("b"); c.seen("c");
+    c.seen("a");
+    c.seen("b");
+    c.seen("c");
     expect(c.seen("a")).toBe(false);
     expect(c.seen("c")).toBe(true);
   });

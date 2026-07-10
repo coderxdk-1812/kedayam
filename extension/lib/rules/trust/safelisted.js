@@ -12,7 +12,8 @@ export const ruleSafelistedRoot = Object.freeze({
     if (!ctx.pageRoot) return { matched: false, contribution: 0 };
     if (!isSafelistedRoot(ctx.pageRoot)) return { matched: false, contribution: 0 };
     return {
-      matched: true, contribution: +10,
+      matched: true,
+      contribution: +10,
       explain: `Recognised ${safelistCategory(ctx.pageRoot)} provider: ${ctx.pageRoot}.`,
     };
   },

@@ -16,15 +16,19 @@ const OUT = "public/kedayam-security-report.json";
 
 function runVitest() {
   const res = spawnSync("bunx", ["vitest", "run", "--reporter=json"], {
-    encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 120_000,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: 120_000,
   });
   // vitest --reporter=json prints JSON to stdout on the last line
   const stdout = res.stdout || "";
   let parsed = null;
   // Find the JSON object — vitest prepends some progress lines.
-  const start = stdout.lastIndexOf("{\"numTotalTestSuites\"");
+  const start = stdout.lastIndexOf('{"numTotalTestSuites"');
   if (start >= 0) {
-    try { parsed = JSON.parse(stdout.slice(start)); } catch {}
+    try {
+      parsed = JSON.parse(stdout.slice(start));
+    } catch {}
   }
   return { exitCode: res.status, parsed, raw: stdout, stderr: res.stderr };
 }
@@ -42,7 +46,11 @@ function summarize(parsed) {
 function loadProfile() {
   const p = "public/kedayam-profile.json";
   if (!existsSync(p)) return null;
-  try { return JSON.parse(readFileSync(p, "utf8")); } catch { return null; }
+  try {
+    return JSON.parse(readFileSync(p, "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 const vitest = runVitest();
@@ -69,14 +77,15 @@ const report = {
     phishingFixtureCount,
     phishingRecall,
     falsePositiveRate: null, // computed by replay harness when available
-    suppressionLayers: ["placeholder", "doc-context", "mock-number",
-      "dev-host", "confidence-band"],
+    suppressionLayers: ["placeholder", "doc-context", "mock-number", "dev-host", "confidence-band"],
   },
-  runtime: profile ? {
-    evaluateUrlMeanMs: profile.evaluateUrl?.ms?.mean ?? null,
-    evaluateUrlP95Ms: profile.evaluateUrl?.ms?.p95 ?? null,
-    sensitiveScanMeanMs: profile.sensitiveScan?.ms?.mean ?? null,
-  } : null,
+  runtime: profile
+    ? {
+        evaluateUrlMeanMs: profile.evaluateUrl?.ms?.mean ?? null,
+        evaluateUrlP95Ms: profile.evaluateUrl?.ms?.p95 ?? null,
+        sensitiveScanMeanMs: profile.sensitiveScan?.ms?.mean ?? null,
+      }
+    : null,
   tests,
   hardening: {
     prototypeTamperResistant: true,
@@ -101,5 +110,7 @@ function readVersion() {
   try {
     const m = JSON.parse(readFileSync("extension/manifest.json", "utf8"));
     return m.version || "0.0.0";
-  } catch { return "0.0.0"; }
+  } catch {
+    return "0.0.0";
+  }
 }

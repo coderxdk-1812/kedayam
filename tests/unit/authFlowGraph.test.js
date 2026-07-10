@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { AuthFlowGraph, sharedAuthFlowGraph, resetSharedAuthFlowGraph } from "../../extension/lib/authFlowGraph.js";
+import {
+  AuthFlowGraph,
+  sharedAuthFlowGraph,
+  resetSharedAuthFlowGraph,
+} from "../../extension/lib/authFlowGraph.js";
 
 describe("authFlowGraph", () => {
   it("refuses to store secret-shaped values", () => {
@@ -12,8 +16,10 @@ describe("authFlowGraph", () => {
   it("flags credential-relay when POST origin was never visited", () => {
     const g = new AuthFlowGraph();
     g.record("entry", { origin: "https://login.corp.example" });
-    g.record("credential", { origin: "https://login.corp.example",
-      postOrigin: "https://harvester.cc" });
+    g.record("credential", {
+      origin: "https://login.corp.example",
+      postOrigin: "https://harvester.cc",
+    });
     const a = g.anomalies();
     expect(a.some((x) => x.id === "credential-relay")).toBe(true);
   });
@@ -29,18 +35,22 @@ describe("authFlowGraph", () => {
   it("flags iframe-origin-swap", () => {
     const g = new AuthFlowGraph();
     g.record("entry", { origin: "https://parent.example" });
-    g.record("credential", { origin: "https://embedded.attacker.cc",
-      inIframe: true, postOrigin: "https://embedded.attacker.cc" });
+    g.record("credential", {
+      origin: "https://embedded.attacker.cc",
+      inIframe: true,
+      postOrigin: "https://embedded.attacker.cc",
+    });
     expect(g.anomalies().some((a) => a.id === "iframe-origin-swap")).toBe(true);
   });
 
   it("flags mfa-origin-split", () => {
     const g = new AuthFlowGraph();
     g.record("entry", { origin: "https://login.example" });
-    g.record("credential", { origin: "https://login.example",
-      postOrigin: "https://login.example" });
-    g.record("mfa", { origin: "https://mfa-relay.cc",
-      postOrigin: "https://mfa-relay.cc" });
+    g.record("credential", {
+      origin: "https://login.example",
+      postOrigin: "https://login.example",
+    });
+    g.record("mfa", { origin: "https://mfa-relay.cc", postOrigin: "https://mfa-relay.cc" });
     expect(g.anomalies().some((a) => a.id === "mfa-origin-split")).toBe(true);
   });
 

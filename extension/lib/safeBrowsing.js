@@ -2,12 +2,30 @@
 // Without keys we degrade to local-only signals (still useful).
 
 const TRUSTED_CDNS = [
-  "googleapis.com", "gstatic.com", "googleusercontent.com", "google.com",
-  "cloudflare.com", "cloudflareinsights.com", "jsdelivr.net", "unpkg.com",
-  "bootstrapcdn.com", "jquery.com", "fontawesome.com", "fonts.googleapis.com",
-  "fonts.gstatic.com", "github.io", "githubusercontent.com", "vercel.app",
-  "netlify.app", "amazonaws.com", "cloudfront.net", "akamaihd.net",
-  "stripe.com", "stripe.network", "youtube.com", "ytimg.com",
+  "googleapis.com",
+  "gstatic.com",
+  "googleusercontent.com",
+  "google.com",
+  "cloudflare.com",
+  "cloudflareinsights.com",
+  "jsdelivr.net",
+  "unpkg.com",
+  "bootstrapcdn.com",
+  "jquery.com",
+  "fontawesome.com",
+  "fonts.googleapis.com",
+  "fonts.gstatic.com",
+  "github.io",
+  "githubusercontent.com",
+  "vercel.app",
+  "netlify.app",
+  "amazonaws.com",
+  "cloudfront.net",
+  "akamaihd.net",
+  "stripe.com",
+  "stripe.network",
+  "youtube.com",
+  "ytimg.com",
 ];
 
 export function isTrustedCdn(host) {
@@ -20,8 +38,7 @@ const FETCH_TIMEOUT_MS = 4500;
 function fetchWithTimeout(url, init = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
-  return fetch(url, { ...init, signal: ctrl.signal })
-    .finally(() => clearTimeout(t));
+  return fetch(url, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(t));
 }
 
 export async function checkGoogleSafeBrowsing(url, apiKey) {
@@ -35,18 +52,27 @@ export async function checkGoogleSafeBrowsing(url, apiKey) {
         body: JSON.stringify({
           client: { clientId: "kedayam", clientVersion: "1.0.0" },
           threatInfo: {
-            threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
+            threatTypes: [
+              "MALWARE",
+              "SOCIAL_ENGINEERING",
+              "UNWANTED_SOFTWARE",
+              "POTENTIALLY_HARMFUL_APPLICATION",
+            ],
             platformTypes: ["ANY_PLATFORM"],
             threatEntryTypes: ["URL"],
             threatEntries: [{ url }],
           },
         }),
-      }
+      },
     );
     if (!res.ok) return { skipped: true, reason: `http-${res.status}` };
     const data = await res.json();
     const matches = data.matches || [];
-    return { skipped: false, malicious: matches.length > 0, threats: matches.map((m) => m.threatType) };
+    return {
+      skipped: false,
+      malicious: matches.length > 0,
+      threats: matches.map((m) => m.threatType),
+    };
   } catch (e) {
     return { skipped: true, reason: e?.name === "AbortError" ? "timeout" : "network-error" };
   }

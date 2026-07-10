@@ -20,7 +20,7 @@ describe("R2 — deepMerge forbidden-key sanitization", () => {
 
   it("ignores nested forbidden keys at any depth", () => {
     const payload = JSON.parse(
-      '{"detection":{"__proto__":{"sneaky":true},"sensitivity":"strict"}}'
+      '{"detection":{"__proto__":{"sneaky":true},"sensitivity":"strict"}}',
     );
     const out = deepMerge({ detection: { sensitivity: "balanced" } }, payload);
     expect(out.detection.sensitivity).toBe("strict");

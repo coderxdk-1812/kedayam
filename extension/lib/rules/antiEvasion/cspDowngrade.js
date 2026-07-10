@@ -11,7 +11,8 @@ export const ruleCspDowngrade = Object.freeze({
     if (ctx?.cspPresent) return { matched: false, contribution: 0 };
     if (!ctx?.cspChecked) return { matched: false, contribution: 0 };
     return {
-      matched: true, contribution: -8,
+      matched: true,
+      contribution: -8,
       explain: "Credential page is served without a Content-Security-Policy header.",
     };
   },

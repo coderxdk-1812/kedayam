@@ -19,55 +19,150 @@
 // confidence of visual-only inputs (lookalike / clone / brand-text).
 
 const RESEARCH_TERMS = [
-  "phishing analysis", "phishing kit", "phishing campaign", "phishing sample",
-  "phishing url", "threat intelligence", "ioc", "indicator of compromise",
-  "indicators of compromise", "malware sample", "malware analysis",
-  "sandbox analysis", "detonation", "url scan", "url analysis",
-  "scan report", "submission report", "submitted url", "analysis report",
-  "virustotal", "urlscan", "phishtank", "any.run", "anyrun",
-  "hybrid-analysis", "hybrid analysis", "joe sandbox", "joesandbox",
-  "tria.ge", "triage report", "abuse.ch", "openphish", "alienvault",
-  "otx pulse", "misp", "yara rule", "sigma rule",
+  "phishing analysis",
+  "phishing kit",
+  "phishing campaign",
+  "phishing sample",
+  "phishing url",
+  "threat intelligence",
+  "ioc",
+  "indicator of compromise",
+  "indicators of compromise",
+  "malware sample",
+  "malware analysis",
+  "sandbox analysis",
+  "detonation",
+  "url scan",
+  "url analysis",
+  "scan report",
+  "submission report",
+  "submitted url",
+  "analysis report",
+  "virustotal",
+  "urlscan",
+  "phishtank",
+  "any.run",
+  "anyrun",
+  "hybrid-analysis",
+  "hybrid analysis",
+  "joe sandbox",
+  "joesandbox",
+  "tria.ge",
+  "triage report",
+  "abuse.ch",
+  "openphish",
+  "alienvault",
+  "otx pulse",
+  "misp",
+  "yara rule",
+  "sigma rule",
 ];
 
 const EDU_TERMS = [
-  "tutorial", "documentation", "docs", "example", "code example",
-  "demo", "demonstration", "sample app", "getting started", "guide",
-  "walkthrough", "reference", "developer guide", "api reference",
-  "training", "course", "lesson", "workshop", "lab exercise",
-  "awareness", "simulation exercise", "phishing awareness",
-  "security training", "security awareness", "educational",
+  "tutorial",
+  "documentation",
+  "docs",
+  "example",
+  "code example",
+  "demo",
+  "demonstration",
+  "sample app",
+  "getting started",
+  "guide",
+  "walkthrough",
+  "reference",
+  "developer guide",
+  "api reference",
+  "training",
+  "course",
+  "lesson",
+  "workshop",
+  "lab exercise",
+  "awareness",
+  "simulation exercise",
+  "phishing awareness",
+  "security training",
+  "security awareness",
+  "educational",
 ];
 
 const AUTH_DOC_TERMS = [
-  "oauth 2.0", "oauth2", "openid connect", "oidc",
-  "authorization code flow", "authorization code grant",
-  "implicit flow", "client credentials", "device code flow",
-  "pkce", "redirect_uri", "client_id", "client_secret",
-  "access token", "refresh token", "id_token", "scopes",
-  "saml assertion", "saml response", "jwks", "well-known/openid-configuration",
+  "oauth 2.0",
+  "oauth2",
+  "openid connect",
+  "oidc",
+  "authorization code flow",
+  "authorization code grant",
+  "implicit flow",
+  "client credentials",
+  "device code flow",
+  "pkce",
+  "redirect_uri",
+  "client_id",
+  "client_secret",
+  "access token",
+  "refresh token",
+  "id_token",
+  "scopes",
+  "saml assertion",
+  "saml response",
+  "jwks",
+  "well-known/openid-configuration",
 ];
 
 // Host fragments commonly belonging to security/analysis platforms,
 // developer docs hubs, and educational content. NOT a safelist — these
 // only feed the dampening score; behavioral evidence still escalates.
 const RESEARCH_HOST_FRAGMENTS = [
-  "virustotal.com", "urlscan.io", "phishtank.", "phishtank.org",
-  "any.run", "app.any.run", "hybrid-analysis.com", "tria.ge",
-  "joesandbox.com", "abuse.ch", "openphish.com", "alienvault.com",
-  "otx.alienvault.com", "misp-project.org", "threatcrowd.org",
-  "shodan.io", "censys.io", "greynoise.io", "abuseipdb.com",
+  "virustotal.com",
+  "urlscan.io",
+  "phishtank.",
+  "phishtank.org",
+  "any.run",
+  "app.any.run",
+  "hybrid-analysis.com",
+  "tria.ge",
+  "joesandbox.com",
+  "abuse.ch",
+  "openphish.com",
+  "alienvault.com",
+  "otx.alienvault.com",
+  "misp-project.org",
+  "threatcrowd.org",
+  "shodan.io",
+  "censys.io",
+  "greynoise.io",
+  "abuseipdb.com",
 ];
 
 const DOC_HOST_PREFIXES = [
-  "docs.", "developer.", "developers.", "learn.", "help.",
-  "support.", "guide.", "guides.", "tutorial.", "tutorials.",
+  "docs.",
+  "developer.",
+  "developers.",
+  "learn.",
+  "help.",
+  "support.",
+  "guide.",
+  "guides.",
+  "tutorial.",
+  "tutorials.",
 ];
 
 const DOC_PATH_FRAGMENTS = [
-  "/docs/", "/doc/", "/documentation/", "/developer/", "/developers/",
-  "/learn/", "/tutorial", "/tutorials/", "/guide/", "/guides/",
-  "/reference/", "/examples/", "/cookbook/", "/howto/",
+  "/docs/",
+  "/doc/",
+  "/documentation/",
+  "/developer/",
+  "/developers/",
+  "/learn/",
+  "/tutorial",
+  "/tutorials/",
+  "/guide/",
+  "/guides/",
+  "/reference/",
+  "/examples/",
+  "/cookbook/",
+  "/howto/",
 ];
 
 function countMatches(haystack, needles) {
@@ -82,16 +177,26 @@ function countMatches(haystack, needles) {
  * @returns {{ score:number, reasons:string[], buckets:Record<string,number> }}
  */
 export function analyzeSecurityContext(input) {
-  const out = { score: 0, reasons: [], buckets: {
-    research: 0, education: 0, authDocs: 0, host: 0, path: 0,
-  } };
+  const out = {
+    score: 0,
+    reasons: [],
+    buckets: {
+      research: 0,
+      education: 0,
+      authDocs: 0,
+      host: 0,
+      path: 0,
+    },
+  };
   if (!input) return out;
 
   const host = (input.host || "").toLowerCase();
   const path = (input.path || "").toLowerCase();
   const pc = input.pageContext || {};
   const title = String(pc.title || "").toLowerCase();
-  const text = String(pc.visibleText || "").toLowerCase().slice(0, 20000);
+  const text = String(pc.visibleText || "")
+    .toLowerCase()
+    .slice(0, 20000);
   const haystack = `${title}\n${text}`;
 
   // ---- text buckets ----
@@ -124,7 +229,10 @@ export function analyzeSecurityContext(input) {
   // ---- host hints ----
   let hostHit = 0;
   for (const frag of RESEARCH_HOST_FRAGMENTS) {
-    if (host.includes(frag)) { hostHit++; break; }
+    if (host.includes(frag)) {
+      hostHit++;
+      break;
+    }
   }
   if (hostHit) {
     out.score += 0.45;
@@ -152,8 +260,10 @@ export function analyzeSecurityContext(input) {
   }
 
   // GitHub-style demo / sample / example repositories.
-  if (/github\.(com|io)$/.test(host) &&
-      /(demo|example|sample|tutorial|awareness|training|playground)/.test(path)) {
+  if (
+    /github\.(com|io)$/.test(host) &&
+    /(demo|example|sample|tutorial|awareness|training|playground)/.test(path)
+  ) {
     out.score += 0.2;
     out.reasons.push("GitHub demo/example/training path");
   }

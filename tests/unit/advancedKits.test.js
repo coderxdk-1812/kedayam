@@ -12,9 +12,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const FIX = join(here, "../fixtures/phishing");
 
 const CASES = [
-  { file: "reverse-proxy-aitm.html",    origin: "https://office365-secure.evilhost.cc" },
-  { file: "fake-browser-update.html",   origin: "https://chrome-update.evilhost.cc" },
-  { file: "fake-extension-install.html",origin: "https://secure-extension.evilhost.cc" },
+  { file: "reverse-proxy-aitm.html", origin: "https://office365-secure.evilhost.cc" },
+  { file: "fake-browser-update.html", origin: "https://chrome-update.evilhost.cc" },
+  { file: "fake-extension-install.html", origin: "https://secure-extension.evilhost.cc" },
 ];
 
 function ctxOf(html, origin) {
@@ -26,8 +26,11 @@ function ctxOf(html, origin) {
       action: f.getAttribute("action") || "",
       method: f.getAttribute("method") || "post",
       hasPassword: inputs.some((i) => (i.type || "").toLowerCase() === "password"),
-      hasEmailLike: inputs.some((i) => (i.type || "").toLowerCase() === "email" ||
-        /email|user|login/.test(`${i.name || ""}${i.id || ""}`)),
+      hasEmailLike: inputs.some(
+        (i) =>
+          (i.type || "").toLowerCase() === "email" ||
+          /email|user|login/.test(`${i.name || ""}${i.id || ""}`),
+      ),
       hasOtp: false,
       hiddenCount: 0,
       fieldsCount: inputs.length,
@@ -53,11 +56,18 @@ describe("advanced phishing kit fixtures", () => {
       const clone = analyzeClone(ctx);
       const authLayout = analyzeAuthLayout(ctx);
       const arb = arbitrate({
-        allowlistRoot: false, isReputableRoot: false, isTrustedProvider: false,
+        allowlistRoot: false,
+        isReputableRoot: false,
+        isTrustedProvider: false,
         hasAuthWorkflow: true,
-        lookalike: { match: null, confidence: 0 }, idnSpoof: false,
-        clone, phishing, authLayout,
-        hiddenLoginOverlay: false, emailFirstFlow: false, mfaOnly: false,
+        lookalike: { match: null, confidence: 0 },
+        idnSpoof: false,
+        clone,
+        phishing,
+        authLayout,
+        hiddenLoginOverlay: false,
+        emailFirstFlow: false,
+        mfaOnly: false,
       });
       expect(arb.forceStatus).toBe("dangerous");
     });

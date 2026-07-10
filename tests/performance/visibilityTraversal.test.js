@@ -29,7 +29,10 @@ import { describe, it, expect } from "vitest";
 import { extractVisibleText, isUserVisible } from "../../extension/lib/visibleText.js";
 
 function makeNode({
-  tag = "P", text = "v", aria = null, parent = null,
+  tag = "P",
+  text = "v",
+  aria = null,
+  parent = null,
   style = { display: "block", visibility: "visible", opacity: "1" },
   rect = { width: 100, height: 20 },
 } = {}) {
@@ -43,15 +46,21 @@ function makeNode({
     closest(sel) {
       if (sel === '[aria-hidden="true"]') {
         let cur = this;
-        while (cur) { if (cur._aria === "true") return cur; cur = cur._parent; }
+        while (cur) {
+          if (cur._aria === "true") return cur;
+          cur = cur._parent;
+        }
       }
       return null;
     },
   };
 }
-const styleLookup = (el) => el._style || {
-  display: "block", visibility: "visible", opacity: "1",
-};
+const styleLookup = (el) =>
+  el._style || {
+    display: "block",
+    visibility: "visible",
+    opacity: "1",
+  };
 
 function buildSyntheticDom(n) {
   const nodes = [];
@@ -64,24 +73,41 @@ function buildSyntheticDom(n) {
   for (let i = 0; i < n; i++) {
     const bucket = i % 7;
     if (bucket === 0) nodes.push(makeNode({ text: `visible-${i}` }));
-    else if (bucket === 1) nodes.push(makeNode({
-      text: `hidden-${i}`,
-      style: { display: "none", visibility: "visible", opacity: "1" },
-    }));
-    else if (bucket === 2) nodes.push(makeNode({
-      text: `invisible-${i}`,
-      style: { display: "block", visibility: "hidden", opacity: "1" },
-    }));
-    else if (bucket === 3) nodes.push(makeNode({
-      text: `opacity-${i}`,
-      style: { display: "block", visibility: "visible", opacity: "0" },
-    }));
-    else if (bucket === 4) nodes.push(makeNode({
-      text: `aria-trap-${i}`, parent: chain,
-    }));
-    else if (bucket === 5) nodes.push(makeNode({
-      text: `trap-${i}`, rect: { width: 0, height: 0 },
-    }));
+    else if (bucket === 1)
+      nodes.push(
+        makeNode({
+          text: `hidden-${i}`,
+          style: { display: "none", visibility: "visible", opacity: "1" },
+        }),
+      );
+    else if (bucket === 2)
+      nodes.push(
+        makeNode({
+          text: `invisible-${i}`,
+          style: { display: "block", visibility: "hidden", opacity: "1" },
+        }),
+      );
+    else if (bucket === 3)
+      nodes.push(
+        makeNode({
+          text: `opacity-${i}`,
+          style: { display: "block", visibility: "visible", opacity: "0" },
+        }),
+      );
+    else if (bucket === 4)
+      nodes.push(
+        makeNode({
+          text: `aria-trap-${i}`,
+          parent: chain,
+        }),
+      );
+    else if (bucket === 5)
+      nodes.push(
+        makeNode({
+          text: `trap-${i}`,
+          rect: { width: 0, height: 0 },
+        }),
+      );
     else nodes.push(makeNode({ tag: "SCRIPT", text: `evil(${i})` }));
   }
   return nodes;
@@ -100,7 +126,9 @@ describe("visibility traversal — performance baseline", () => {
     const large = buildSyntheticDom(4000);
 
     // Warm-up to take JIT noise off the critical measurement.
-    timeExtract(small); timeExtract(mid); timeExtract(large);
+    timeExtract(small);
+    timeExtract(mid);
+    timeExtract(large);
 
     const a = timeExtract(small).ms;
     const b = timeExtract(mid).ms;
@@ -154,7 +182,8 @@ describe("visibility traversal — performance baseline", () => {
     const small = buildSyntheticDom(500);
     const large = buildSyntheticDom(4000);
     // Warm-up.
-    timeExtract(small); timeExtract(large);
+    timeExtract(small);
+    timeExtract(large);
     for (let i = 0; i < 5; i++) {
       const a = timeExtract(small).ms;
       const c = timeExtract(large).ms;

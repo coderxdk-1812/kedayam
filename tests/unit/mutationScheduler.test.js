@@ -13,7 +13,8 @@ describe("Budget token bucket", () => {
 
   it("recovers tokens after the window elapses", async () => {
     const b = new Budget({ max: 2, windowMs: 30 });
-    b.allow(); b.allow();
+    b.allow();
+    b.allow();
     expect(b.allow()).toBe(false);
     await new Promise((r) => setTimeout(r, 45));
     expect(b.allow()).toBe(true);
@@ -35,7 +36,9 @@ describe("throttle", () => {
   it("invokes leading and trailing only, never every call", async () => {
     const fn = vi.fn();
     const t = throttle(fn, 30);
-    t(1); t(2); t(3);
+    t(1);
+    t(2);
+    t(3);
     await new Promise((r) => setTimeout(r, 50));
     t(4);
     expect(fn.mock.calls.length).toBeLessThanOrEqual(3);

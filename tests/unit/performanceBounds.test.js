@@ -6,7 +6,7 @@ import { Budget } from "../../extension/lib/scheduler.js";
 
 describe("performance bounds", () => {
   it("caps findings even when the page is a wall of matches", () => {
-    const noise = ("AKIAABCDEFGHIJKLMNOP ").repeat(500);
+    const noise = "AKIAABCDEFGHIJKLMNOP ".repeat(500);
     const start = Date.now();
     const v = analyzeSensitivePayload(noise);
     const elapsed = Date.now() - start;
@@ -16,8 +16,7 @@ describe("performance bounds", () => {
   });
 
   it("scans a realistic 50KB payload in under 100ms", () => {
-    const body = "Lorem ipsum dolor sit amet ".repeat(2000) +
-      "\nMy email is alice@example.com\n";
+    const body = "Lorem ipsum dolor sit amet ".repeat(2000) + "\nMy email is alice@example.com\n";
     const start = Date.now();
     analyzeSensitivePayload(body);
     expect(Date.now() - start).toBeLessThan(150);
@@ -31,8 +30,10 @@ describe("performance bounds", () => {
   });
 
   it("entropy fallback does not produce unbounded entries", () => {
-    const random = Array.from({ length: 200 }, () =>
-      Math.random().toString(36).slice(2, 18) + "+_=").join(" ");
+    const random = Array.from(
+      { length: 200 },
+      () => Math.random().toString(36).slice(2, 18) + "+_=",
+    ).join(" ");
     const v = analyzeSensitivePayload(random);
     const entropy = v.findings.filter((f) => f.id === "entropy_blob");
     expect(entropy.length).toBeLessThanOrEqual(40);

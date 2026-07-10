@@ -12,7 +12,7 @@ describe("stability: 1000 navigations", () => {
     const start = Date.now();
     for (let i = 0; i < 1000; i++) {
       const u = `https://host${i % 50}.example/${i}`;
-      // eslint-disable-next-line no-await-in-loop
+
       await evaluateUrl(u, { settings });
     }
     const elapsed = Date.now() - start;

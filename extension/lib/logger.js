@@ -10,31 +10,53 @@ export class Logger {
     this.minLevel = LEVELS[level] ?? LEVELS.info;
     this.entries = [];
   }
-  setLevel(level) { this.minLevel = LEVELS[level] ?? this.minLevel; }
+  setLevel(level) {
+    this.minLevel = LEVELS[level] ?? this.minLevel;
+  }
 
   _emit(level, msg, meta) {
     if (LEVELS[level] < this.minLevel) return;
     const entry = {
-      level, msg: String(msg).slice(0, 500),
-      meta: redact(meta), at: Date.now(), scope: this.scope,
+      level,
+      msg: String(msg).slice(0, 500),
+      meta: redact(meta),
+      at: Date.now(),
+      scope: this.scope,
     };
     this.entries.push(entry);
     if (this.entries.length > MAX_ENTRIES) this.entries.shift();
     try {
-      const fn = level === "error" ? console.error
-              : level === "warn"  ? console.warn
-              : level === "debug" ? console.debug : console.info;
+      const fn =
+        level === "error"
+          ? console.error
+          : level === "warn"
+            ? console.warn
+            : level === "debug"
+              ? console.debug
+              : console.info;
       fn(`[${this.scope}]`, msg, meta ?? "");
     } catch {}
     return entry;
   }
-  debug(m, meta) { return this._emit("debug", m, meta); }
-  info (m, meta) { return this._emit("info",  m, meta); }
-  warn (m, meta) { return this._emit("warn",  m, meta); }
-  error(m, meta) { return this._emit("error", m, meta); }
+  debug(m, meta) {
+    return this._emit("debug", m, meta);
+  }
+  info(m, meta) {
+    return this._emit("info", m, meta);
+  }
+  warn(m, meta) {
+    return this._emit("warn", m, meta);
+  }
+  error(m, meta) {
+    return this._emit("error", m, meta);
+  }
 
-  recent(n = 50) { return this.entries.slice(-n); }
-  clear() { this.entries.length = 0; }
+  recent(n = 50) {
+    return this.entries.slice(-n);
+  }
+  clear() {
+    this.entries.length = 0;
+  }
 }
 
 const SECRET_PATTERNS = [

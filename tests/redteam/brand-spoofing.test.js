@@ -19,11 +19,16 @@ describe("red team — brand spoofing", () => {
     // The classic "paypal.account-verify.com".
     const r = analyzePhishing({
       pageOrigin: "https://paypal.account-verify.example",
-      title: "Log in to PayPal", visibleText: "Log in to PayPal",
-      forms: [{ hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 2 }],
-      hasPasswordField: true, oauthButtons: [],
-      scripts: [], styles: [], images: [],
+      title: "Log in to PayPal",
+      visibleText: "Log in to PayPal",
+      forms: [
+        { hasPassword: true, hasEmailLike: true, hasOtp: false, hiddenCount: 0, fieldsCount: 2 },
+      ],
+      hasPasswordField: true,
+      oauthButtons: [],
+      scripts: [],
+      styles: [],
+      images: [],
     });
     expect(r.authRisk).not.toBe("none");
     expect(r.brandImpersonation || r.confidence > 0.3).toBeTruthy();
@@ -36,10 +41,14 @@ describe("red team — brand spoofing", () => {
       pageOrigin: "https://office-secure-login.example",
       title: "Microsoft account verification",
       visibleText: "Use your Microsoft account to continue",
-      forms: [{ hasPassword: true, hasEmailLike: true, hasOtp: false,
-        hiddenCount: 0, fieldsCount: 2 }],
-      hasPasswordField: true, oauthButtons: [],
-      scripts: [], styles: [], images: [],
+      forms: [
+        { hasPassword: true, hasEmailLike: true, hasOtp: false, hiddenCount: 0, fieldsCount: 2 },
+      ],
+      hasPasswordField: true,
+      oauthButtons: [],
+      scripts: [],
+      styles: [],
+      images: [],
     });
     expect(r.brandImpersonation || r.confidence > 0.4).toBeTruthy();
   });

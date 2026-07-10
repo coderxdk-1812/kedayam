@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { evaluateAll, RULES, RULES_BY_CATEGORY, REGISTRY_VERSION } from "../../extension/lib/rules/index.js";
+import {
+  evaluateAll,
+  RULES,
+  RULES_BY_CATEGORY,
+  REGISTRY_VERSION,
+} from "../../extension/lib/rules/index.js";
 
 describe("expanded rule registry (M4)", () => {
   it("registry version bumped and frozen", () => {
@@ -11,11 +16,15 @@ describe("expanded rule registry (M4)", () => {
     expect(RULES_BY_CATEGORY.antiEvasion?.length).toBeGreaterThanOrEqual(1);
   });
   it("behavioral rules fire from authFlow anomalies", () => {
-    const ctx = { authFlow: { anomalies: [
-      { id: "credential-relay",   explain: "to evil" },
-      { id: "oauth-token-drift",  explain: "drift"   },
-      { id: "iframe-origin-swap", explain: "iframe"  },
-    ] } };
+    const ctx = {
+      authFlow: {
+        anomalies: [
+          { id: "credential-relay", explain: "to evil" },
+          { id: "oauth-token-drift", explain: "drift" },
+          { id: "iframe-origin-swap", explain: "iframe" },
+        ],
+      },
+    };
     const results = evaluateAll(ctx);
     const fired = results.filter((r) => r.matched).map((r) => r.id);
     expect(fired).toContain("credential-relay");

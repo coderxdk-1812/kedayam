@@ -2,21 +2,67 @@
 // Pure functions, fully local, no network calls.
 
 const PROTECTED_BRANDS = [
-  "google.com", "gmail.com", "youtube.com", "facebook.com", "instagram.com",
-  "whatsapp.com", "apple.com", "icloud.com", "microsoft.com", "outlook.com",
-  "live.com", "office.com", "amazon.com", "paypal.com", "netflix.com",
-  "github.com", "linkedin.com", "twitter.com", "x.com", "dropbox.com",
-  "adobe.com", "ionos.com", "1and1.com", "binance.com", "coinbase.com", "metamask.io", "chase.com",
-  "wellsfargo.com", "bankofamerica.com", "hdfcbank.com", "icicibank.com",
-  "sbi.co.in", "axisbank.com", "kotak.com", "rbi.org.in",
+  "google.com",
+  "gmail.com",
+  "youtube.com",
+  "facebook.com",
+  "instagram.com",
+  "whatsapp.com",
+  "apple.com",
+  "icloud.com",
+  "microsoft.com",
+  "outlook.com",
+  "live.com",
+  "office.com",
+  "amazon.com",
+  "paypal.com",
+  "netflix.com",
+  "github.com",
+  "linkedin.com",
+  "twitter.com",
+  "x.com",
+  "dropbox.com",
+  "adobe.com",
+  "ionos.com",
+  "1and1.com",
+  "binance.com",
+  "coinbase.com",
+  "metamask.io",
+  "chase.com",
+  "wellsfargo.com",
+  "bankofamerica.com",
+  "hdfcbank.com",
+  "icicibank.com",
+  "sbi.co.in",
+  "axisbank.com",
+  "kotak.com",
+  "rbi.org.in",
 ];
 
 const HOMOGLYPHS = {
-  a: ["а", "@", "4"], b: ["6", "ь"], c: ["с", "ϲ"], d: ["ԁ"],
-  e: ["е", "3"], g: ["9", "ǵ"], h: ["һ"], i: ["і", "1", "l", "!"],
-  k: ["к"], l: ["1", "I", "ӏ"], m: ["м"], n: ["п"], o: ["0", "о", "ο"],
-  p: ["р", "ρ"], q: ["զ"], r: ["г"], s: ["ѕ", "5", "$"], t: ["т", "7"],
-  u: ["υ", "ս"], v: ["ν", "ѵ"], w: ["ԝ"], x: ["х", "×"], y: ["у", "ү"],
+  a: ["а", "@", "4"],
+  b: ["6", "ь"],
+  c: ["с", "ϲ"],
+  d: ["ԁ"],
+  e: ["е", "3"],
+  g: ["9", "ǵ"],
+  h: ["һ"],
+  i: ["і", "1", "l", "!"],
+  k: ["к"],
+  l: ["1", "I", "ӏ"],
+  m: ["м"],
+  n: ["п"],
+  o: ["0", "о", "ο"],
+  p: ["р", "ρ"],
+  q: ["զ"],
+  r: ["г"],
+  s: ["ѕ", "5", "$"],
+  t: ["т", "7"],
+  u: ["υ", "ս"],
+  v: ["ν", "ѵ"],
+  w: ["ԝ"],
+  x: ["х", "×"],
+  y: ["у", "ү"],
   z: ["2"],
 };
 
@@ -46,7 +92,8 @@ const GLYPH_MAP = (() => {
 
 export function levenshtein(a, b) {
   if (a === b) return 0;
-  const m = a.length, n = b.length;
+  const m = a.length,
+    n = b.length;
   if (!m) return n;
   if (!n) return m;
   const dp = new Array(n + 1);
@@ -56,9 +103,7 @@ export function levenshtein(a, b) {
     dp[0] = i;
     for (let j = 1; j <= n; j++) {
       const tmp = dp[j];
-      dp[j] = a[i - 1] === b[j - 1]
-        ? prev
-        : 1 + Math.min(prev, dp[j], dp[j - 1]);
+      dp[j] = a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, dp[j], dp[j - 1]);
       prev = tmp;
     }
   }
@@ -67,7 +112,9 @@ export function levenshtein(a, b) {
 
 export function normalizeHomoglyphs(host) {
   let out = "";
-  for (const ch of String(host || "").normalize("NFKC").toLowerCase()) {
+  for (const ch of String(host || "")
+    .normalize("NFKC")
+    .toLowerCase()) {
     out += GLYPH_MAP.get(ch) ?? ch;
   }
   return out;
@@ -81,19 +128,25 @@ export function decodePunycodeLabel(label) {
   if (!input.startsWith("xn--")) return label;
   const puny = input.slice(4);
   const out = [];
-  const base = 36, tMin = 1, tMax = 26, skew = 38, damp = 700;
-  let n = 128, i = 0, bias = 72;
+  const base = 36,
+    tMin = 1,
+    tMax = 26,
+    skew = 38,
+    damp = 700;
+  let n = 128,
+    i = 0,
+    bias = 72;
   const adapt = (delta, numPoints, first) => {
     delta = first ? Math.floor(delta / damp) : delta >> 1;
     delta += Math.floor(delta / numPoints);
     let k = 0;
-    while (delta > (((base - tMin) * tMax) >> 1)) {
+    while (delta > ((base - tMin) * tMax) >> 1) {
       delta = Math.floor(delta / (base - tMin));
       k += base;
     }
     return k + Math.floor(((base - tMin + 1) * delta) / (delta + skew));
   };
-  const digit = (cp) => cp >= 48 && cp <= 57 ? cp - 22 : cp >= 97 && cp <= 122 ? cp - 97 : base;
+  const digit = (cp) => (cp >= 48 && cp <= 57 ? cp - 22 : cp >= 97 && cp <= 122 ? cp - 97 : base);
   const dash = puny.lastIndexOf("-");
   if (dash > -1) for (const ch of puny.slice(0, dash)) out.push(ch.codePointAt(0));
   let idx = dash > -1 ? dash + 1 : 0;
@@ -124,7 +177,11 @@ export function toUnicodeHost(hostname) {
     .replace(/^www\./i, "")
     .split(".")
     .map((label) => {
-      try { return decodePunycodeLabel(label); } catch { return label; }
+      try {
+        return decodePunycodeLabel(label);
+      } catch {
+        return label;
+      }
     })
     .join(".")
     .normalize("NFKC")
@@ -145,31 +202,102 @@ export function toUnicodeHost(hostname) {
 // ----------------------------------------------------------------------
 const PSL_TWO_LEVEL = new Set([
   // United Kingdom
-  "co.uk", "org.uk", "ac.uk", "gov.uk", "net.uk", "ltd.uk", "plc.uk", "me.uk",
+  "co.uk",
+  "org.uk",
+  "ac.uk",
+  "gov.uk",
+  "net.uk",
+  "ltd.uk",
+  "plc.uk",
+  "me.uk",
   // India
-  "co.in", "net.in", "org.in", "gen.in", "firm.in", "ind.in", "ac.in", "gov.in",
+  "co.in",
+  "net.in",
+  "org.in",
+  "gen.in",
+  "firm.in",
+  "ind.in",
+  "ac.in",
+  "gov.in",
   // Australia
-  "com.au", "net.au", "org.au", "edu.au", "gov.au", "asn.au", "id.au",
+  "com.au",
+  "net.au",
+  "org.au",
+  "edu.au",
+  "gov.au",
+  "asn.au",
+  "id.au",
   // New Zealand
-  "co.nz", "net.nz", "org.nz", "ac.nz", "govt.nz", "school.nz", "geek.nz",
+  "co.nz",
+  "net.nz",
+  "org.nz",
+  "ac.nz",
+  "govt.nz",
+  "school.nz",
+  "geek.nz",
   // South Africa
-  "co.za", "net.za", "org.za", "web.za", "gov.za", "ac.za",
+  "co.za",
+  "net.za",
+  "org.za",
+  "web.za",
+  "gov.za",
+  "ac.za",
   // Japan
-  "co.jp", "ne.jp", "or.jp", "ac.jp", "go.jp", "ad.jp", "ed.jp", "gr.jp",
+  "co.jp",
+  "ne.jp",
+  "or.jp",
+  "ac.jp",
+  "go.jp",
+  "ad.jp",
+  "ed.jp",
+  "gr.jp",
   // Brazil
-  "com.br", "net.br", "org.br", "gov.br", "edu.br", "ind.br",
+  "com.br",
+  "net.br",
+  "org.br",
+  "gov.br",
+  "edu.br",
+  "ind.br",
   // Singapore / Hong Kong / others frequently seen with brand spoofing
-  "com.sg", "edu.sg", "com.hk", "org.hk", "com.mx", "com.ar", "com.tr",
+  "com.sg",
+  "edu.sg",
+  "com.hk",
+  "org.hk",
+  "com.mx",
+  "com.ar",
+  "com.tr",
   // Pakistan
-  "com.pk", "net.pk", "org.pk", "edu.pk", "gov.pk", "gob.pk",
+  "com.pk",
+  "net.pk",
+  "org.pk",
+  "edu.pk",
+  "gov.pk",
+  "gob.pk",
   // Kenya
-  "co.ke", "ne.ke", "or.ke", "ac.ke", "go.ke", "sc.ke", "me.ke",
+  "co.ke",
+  "ne.ke",
+  "or.ke",
+  "ac.ke",
+  "go.ke",
+  "sc.ke",
+  "me.ke",
   // Nigeria
-  "com.ng", "net.ng", "org.ng", "edu.ng", "gov.ng", "sch.ng",
+  "com.ng",
+  "net.ng",
+  "org.ng",
+  "edu.ng",
+  "gov.ng",
+  "sch.ng",
   // Indonesia
-  "co.id", "net.id", "or.id", "ac.id", "go.id", "sch.id", "web.id", "my.id",
+  "co.id",
+  "net.id",
+  "or.id",
+  "ac.id",
+  "go.id",
+  "sch.id",
+  "web.id",
+  "my.id",
 ]);
-
 
 export function rootDomain(host) {
   if (!host || typeof host !== "string") return host;
@@ -182,10 +310,11 @@ export function rootDomain(host) {
   return parts.slice(-2).join(".");
 }
 
-
 export function lookalikeAnalysis(hostname) {
   if (!hostname) return { match: null, confidence: 0, reasons: [] };
-  const asciiHost = String(hostname).toLowerCase().replace(/^www\./, "");
+  const asciiHost = String(hostname)
+    .toLowerCase()
+    .replace(/^www\./, "");
   const host = toUnicodeHost(asciiHost);
   const root = rootDomain(host);
   const asciiRoot = rootDomain(asciiHost);
@@ -208,7 +337,11 @@ export function lookalikeAnalysis(hostname) {
   }
 
   for (const brand of PROTECTED_BRANDS) {
-    const d = Math.min(levenshtein(root, brand), levenshtein(normalized, brand), levenshtein(asciiRoot, brand));
+    const d = Math.min(
+      levenshtein(root, brand),
+      levenshtein(normalized, brand),
+      levenshtein(asciiRoot, brand),
+    );
     if (d > 0 && d <= 2 && Math.abs(normalized.length - brand.length) <= 3) {
       if (!best || d < best.distance) {
         best = { brand, distance: d, kind: "typo" };
@@ -231,10 +364,13 @@ export function lookalikeAnalysis(hostname) {
   if (!best) return { match: null, confidence: 0, reasons };
 
   const confidence =
-    best.kind === "homoglyph" ? 0.95 :
-    best.kind === "punycode" ? 0.75 :
-    best.kind === "typo" ? Math.max(0.6, 1 - best.distance * 0.2) :
-    0.55;
+    best.kind === "homoglyph"
+      ? 0.95
+      : best.kind === "punycode"
+        ? 0.75
+        : best.kind === "typo"
+          ? Math.max(0.6, 1 - best.distance * 0.2)
+          : 0.55;
 
   if (best.kind === "typo") {
     reasons.push(`Edit distance ${best.distance} from ${best.brand}.`);

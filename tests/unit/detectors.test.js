@@ -17,7 +17,9 @@ describe("scanText", () => {
     expect(f.find((x) => x.kind === "aadhaar")).toBeTruthy();
   });
   it("does not detect Aadhaar when India region disabled", () => {
-    const f = scanText("1234 5678 9012", { regions: { india: false, us: true, eu: true, global: true } });
+    const f = scanText("1234 5678 9012", {
+      regions: { india: false, us: true, eu: true, global: true },
+    });
     expect(f.find((x) => x.kind === "aadhaar")).toBeFalsy();
   });
   it("detects PAN", () => {
@@ -30,7 +32,11 @@ describe("scanText", () => {
     expect(scanText("AKIAIOSFODNN7EXAMPLE", REGIONS).find((x) => x.kind === "awsKey")).toBeTruthy();
   });
   it("detects GitHub PAT", () => {
-    expect(scanText("token ghp_abcdefghijklmnopqrstuvwxyz0123456789", REGIONS).find((x) => x.kind === "ghToken")).toBeTruthy();
+    expect(
+      scanText("token ghp_abcdefghijklmnopqrstuvwxyz0123456789", REGIONS).find(
+        (x) => x.kind === "ghToken",
+      ),
+    ).toBeTruthy();
   });
   it("redacts the captured value", () => {
     const f = scanText("test@example.com", REGIONS);

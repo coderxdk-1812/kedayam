@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { evaluateAll, RULES, RULES_BY_ID, REGISTRY_VERSION } from "../../extension/lib/rules/index.js";
+import {
+  evaluateAll,
+  RULES,
+  RULES_BY_ID,
+  REGISTRY_VERSION,
+} from "../../extension/lib/rules/index.js";
 
 describe("rule registry", () => {
   it("has stable shape and version", () => {
@@ -25,7 +30,8 @@ describe("rule registry", () => {
   });
   it("external-form-post fires on cross-root POST", () => {
     const r = RULES_BY_ID["external-form-post"].evaluate({
-      pageOrigin: "https://a.example/", pageRoot: "a.example",
+      pageOrigin: "https://a.example/",
+      pageRoot: "a.example",
       forms: [{ action: "https://b.example/x", hasPassword: true }],
     });
     expect(r.matched).toBe(true);

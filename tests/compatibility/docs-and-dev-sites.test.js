@@ -26,7 +26,8 @@ describe("compatibility — docs/dev sites do not produce live findings", () => 
   }
 
   it("aggregate false-positive rate across all samples stays under 5%", () => {
-    let live = 0, total = 0;
+    let live = 0,
+      total = 0;
     for (const text of DOC_SAMPLES) {
       const v = analyzeSensitivePayload(text);
       total += v.findings.length;

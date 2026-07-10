@@ -34,3 +34,8 @@ dist-ssr
 # Playwright
 test-results/
 playwright-report/
+
+# Non-reproducible build evidence (regenerated per run; not part of the shipped
+# artifact and not served by the site — only public/kedayam.zip is downloaded).
+public/kedayam-profile.json
+public/kedayam-security-report.json

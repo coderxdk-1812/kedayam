@@ -19,11 +19,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const FIX = join(here, "../fixtures/phishing");
 
 const CASES = [
-  { file: "banking-mfa.html",  origin: "https://securebank-verify.example.cc" },
+  { file: "banking-mfa.html", origin: "https://securebank-verify.example.cc" },
   { file: "sso-redirect.html", origin: "https://office365-portal.example.tld" },
-  { file: "federated-idp.html",origin: "https://login-aggregator.example.tld" },
+  { file: "federated-idp.html", origin: "https://login-aggregator.example.tld" },
   { file: "captcha-wrap.html", origin: "https://account-verify.example.cc" },
-  { file: "qr-login.html",     origin: "https://wa-web.example.tld" },
+  { file: "qr-login.html", origin: "https://wa-web.example.tld" },
 ];
 
 function buildCtx(html, origin) {
@@ -44,7 +44,9 @@ function buildCtx(html, origin) {
     return {
       action: f.getAttribute("action") || "",
       method: f.getAttribute("method") || "post",
-      hasPassword, hasEmailLike, hasOtp,
+      hasPassword,
+      hasEmailLike,
+      hasOtp,
       hiddenCount: inputs.filter((i) => (i.type || "").toLowerCase() === "hidden").length,
       fieldsCount: inputs.length,
       insideIframe: false,
@@ -77,11 +79,15 @@ describe("edge-case phishing fixtures", () => {
         hasAuthWorkflow: phishing.credentialHarvest || ctx.hasPasswordField,
         lookalike: { match: null, confidence: 0 },
         idnSpoof: false,
-        clone, phishing, authLayout,
+        clone,
+        phishing,
+        authLayout,
         hiddenLoginOverlay: false,
-        emailFirstFlow: (phishing.forms || []).some((f) =>
-          f.hasEmailLike && !f.hasPassword && (f.fieldsCount || 0) <= 4),
-        mfaOnly: (phishing.forms || []).length > 0 &&
+        emailFirstFlow: (phishing.forms || []).some(
+          (f) => f.hasEmailLike && !f.hasPassword && (f.fieldsCount || 0) <= 4,
+        ),
+        mfaOnly:
+          (phishing.forms || []).length > 0 &&
           (phishing.forms || []).every((f) => f.hasOtp && !f.hasPassword),
       });
       expect(arb.forceStatus).toBe("dangerous");

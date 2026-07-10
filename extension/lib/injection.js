@@ -12,13 +12,24 @@
 // exercise the URL gating without a chrome runtime.
 
 const SKIP_PROTOCOLS = new Set([
-  "chrome:", "edge:", "about:", "opera:", "brave:", "vivaldi:",
-  "chrome-extension:", "moz-extension:", "view-source:", "devtools:",
-  "file:", "data:", "blob:", "javascript:",
+  "chrome:",
+  "edge:",
+  "about:",
+  "opera:",
+  "brave:",
+  "vivaldi:",
+  "chrome-extension:",
+  "moz-extension:",
+  "view-source:",
+  "devtools:",
+  "file:",
+  "data:",
+  "blob:",
+  "javascript:",
 ]);
 
 const SKIP_HOSTS = [
-  "chrome.google.com",        // Web Store blocks content scripts
+  "chrome.google.com", // Web Store blocks content scripts
   "chromewebstore.google.com",
   "addons.mozilla.org",
   "microsoftedge.microsoft.com",
@@ -28,7 +39,11 @@ const SKIP_HOSTS = [
 export function isInjectableUrl(url) {
   if (!url || typeof url !== "string") return false;
   let u;
-  try { u = new URL(url); } catch { return false; }
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
   if (SKIP_PROTOCOLS.has(u.protocol)) return false;
   if (u.protocol !== "http:" && u.protocol !== "https:") return false;
   if (SKIP_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith("." + h))) return false;
@@ -37,10 +52,16 @@ export function isInjectableUrl(url) {
 
 export function reasonForSkip(url) {
   if (!url) return "no-url";
-  let u; try { u = new URL(url); } catch { return "invalid-url"; }
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    return "invalid-url";
+  }
   if (SKIP_PROTOCOLS.has(u.protocol)) return `protocol:${u.protocol}`;
   if (u.protocol !== "http:" && u.protocol !== "https:") return `non-web:${u.protocol}`;
-  if (SKIP_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith("." + h))) return `host:${u.hostname}`;
+  if (SKIP_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith("." + h)))
+    return `host:${u.hostname}`;
   return null;
 }
 
@@ -51,19 +72,27 @@ export function reasonForSkip(url) {
  * the `window.__kedayamLoaded` guard inside content.js.
  */
 export class InjectionRegistry {
-  constructor() { this.tabs = new Map(); /* tabId -> { url, at } */ }
+  constructor() {
+    this.tabs = new Map(); /* tabId -> { url, at } */
+  }
 
   has(tabId, url) {
     const e = this.tabs.get(tabId);
     return !!e && e.url === url;
   }
-  mark(tabId, url) { this.tabs.set(tabId, { url, at: Date.now() }); }
-  clear(tabId) { this.tabs.delete(tabId); }
+  mark(tabId, url) {
+    this.tabs.set(tabId, { url, at: Date.now() });
+  }
+  clear(tabId) {
+    this.tabs.delete(tabId);
+  }
   prune(maxAgeMs = 30 * 60 * 1000) {
     const cutoff = Date.now() - maxAgeMs;
     for (const [id, e] of this.tabs) if (e.at < cutoff) this.tabs.delete(id);
   }
-  size() { return this.tabs.size; }
+  size() {
+    return this.tabs.size;
+  }
 }
 
 /**

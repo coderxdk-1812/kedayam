@@ -4,19 +4,31 @@ import { buildArbitrationTrace } from "../../extension/lib/arbitrationTrace.js";
 describe("arbitrationTrace", () => {
   it("groups escalations, caps and informational rules", () => {
     const t = buildArbitrationTrace({
-      score: 18, baselineScore: 65,
+      score: 18,
+      baselineScore: 65,
       arbitration: {
-        forceStatus: "dangerous", cap: 20, trustFloor: null,
+        forceStatus: "dangerous",
+        cap: 20,
+        trustFloor: null,
         rules: [
           { id: "external-post", force: "dangerous", cap: 20, reason: "off-domain post" },
-          { id: "clone-soft",                       cap: 55, reason: "soft clone" },
-          { id: "auth-keyword",                     reason: "hostname keyword" },
+          { id: "clone-soft", cap: 55, reason: "soft clone" },
+          { id: "auth-keyword", reason: "hostname keyword" },
         ],
       },
-      decay: { delta: 30, anomalies: [{ id: "external-credential-post", points: 60, explain: "off-dom" }] },
-      suspicion: { level: "dangerous", modal: "hard", blockingUx: true,
-        popupBanner: true, badgeTint: "red" },
-      trustedRoot: true, behavioralEvidence: true,
+      decay: {
+        delta: 30,
+        anomalies: [{ id: "external-credential-post", points: 60, explain: "off-dom" }],
+      },
+      suspicion: {
+        level: "dangerous",
+        modal: "hard",
+        blockingUx: true,
+        popupBanner: true,
+        badgeTint: "red",
+      },
+      trustedRoot: true,
+      behavioralEvidence: true,
     });
     expect(t.escalations.length).toBe(1);
     expect(t.caps.length).toBe(1);

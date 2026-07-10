@@ -4,7 +4,10 @@ import { Logger, redact } from "../../extension/lib/logger.js";
 describe("Logger", () => {
   it("respects min level", () => {
     const l = new Logger({ level: "warn" });
-    l.debug("d"); l.info("i"); l.warn("w"); l.error("e");
+    l.debug("d");
+    l.info("i");
+    l.warn("w");
+    l.error("e");
     const recent = l.recent();
     expect(recent.map((r) => r.level)).toEqual(["warn", "error"]);
   });

@@ -11,13 +11,13 @@
 // before the final score clamp.
 
 const ANOMALY_WEIGHTS = Object.freeze({
-  "external-credential-post":  60,
-  "cross-origin-cred-iframe":  35,
-  "oauth-relay-mismatch":      30,
-  "hidden-login-overlay":      15,
-  "csp-weakening":             10,
-  "abnormal-redirect-chain":   12,
-  "auth-flow-mutation":        18,
+  "external-credential-post": 60,
+  "cross-origin-cred-iframe": 35,
+  "oauth-relay-mismatch": 30,
+  "hidden-login-overlay": 15,
+  "csp-weakening": 10,
+  "abnormal-redirect-chain": 12,
+  "auth-flow-mutation": 18,
 });
 
 /**
@@ -36,7 +36,7 @@ export function trustDecay(ctx = {}) {
 
   const phish = ctx.phishing || {};
   const sigs = phish.signals || [];
-  const has  = (id) => sigs.some((s) => s.id === id);
+  const has = (id) => sigs.some((s) => s.id === id);
   const flow = ctx.authFlow || {};
   const flowAnoms = Array.isArray(flow.anomalies) ? flow.anomalies : [];
   const flowHas = (id) => flowAnoms.some((a) => a.id === id);
@@ -48,33 +48,25 @@ export function trustDecay(ctx = {}) {
   }
 
   if (phish.externalFormPost) {
-    fire("external-credential-post",
-      "Trusted root is posting credentials off-domain.");
+    fire("external-credential-post", "Trusted root is posting credentials off-domain.");
   }
-  if (has("iframe-credential-form") || has("iframe-login") ||
-      flowHas("iframe-origin-swap")) {
-    fire("cross-origin-cred-iframe",
-      "Credential field lives inside a foreign-origin iframe.");
+  if (has("iframe-credential-form") || has("iframe-login") || flowHas("iframe-origin-swap")) {
+    fire("cross-origin-cred-iframe", "Credential field lives inside a foreign-origin iframe.");
   }
   if (flowHas("oauth-token-drift") || phish.oauthSpoof) {
-    fire("oauth-relay-mismatch",
-      "OAuth continuation lands on an unexpected origin.");
+    fire("oauth-relay-mismatch", "OAuth continuation lands on an unexpected origin.");
   }
   if (ctx.hiddenLoginOverlay) {
-    fire("hidden-login-overlay",
-      "A login overlay was revealed dynamically on a trusted root.");
+    fire("hidden-login-overlay", "A login overlay was revealed dynamically on a trusted root.");
   }
   if (ctx.cspWeakened) {
-    fire("csp-weakening",
-      "Content-Security-Policy was relaxed unexpectedly.");
+    fire("csp-weakening", "Content-Security-Policy was relaxed unexpectedly.");
   }
   if (flowHas("redirect-storm")) {
-    fire("abnormal-redirect-chain",
-      "Authentication crossed an unusual number of origins.");
+    fire("abnormal-redirect-chain", "Authentication crossed an unusual number of origins.");
   }
   if (flowHas("mfa-origin-split")) {
-    fire("auth-flow-mutation",
-      "Password and MFA collected on different origins.");
+    fire("auth-flow-mutation", "Password and MFA collected on different origins.");
   }
 
   // When decay is substantial on a trusted root, lower the effective floor.

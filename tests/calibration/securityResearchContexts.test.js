@@ -19,9 +19,18 @@ function researchPage({ title, text, withForm = false }) {
     title,
     visibleText: text,
     forms: withForm
-      ? [{ action: "/submit", method: "post", hasPassword: false,
-          hasEmailLike: true, hasOtp: false, hiddenCount: 0,
-          fieldsCount: 1, insideIframe: false }]
+      ? [
+          {
+            action: "/submit",
+            method: "post",
+            hasPassword: false,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 1,
+            insideIframe: false,
+          },
+        ]
       : [],
     hasPasswordField: false,
   };
@@ -32,9 +41,18 @@ function credentialFormPage({ origin, action }) {
     pageOrigin: origin,
     title: "Sign in to your Microsoft account",
     visibleText: "outlook office 365 sign in to your account",
-    forms: [{ action, method: "post",
-      hasPassword: true, hasEmailLike: true, hasOtp: false,
-      hiddenCount: 0, fieldsCount: 2, insideIframe: false }],
+    forms: [
+      {
+        action,
+        method: "post",
+        hasPassword: true,
+        hasEmailLike: true,
+        hasOtp: false,
+        hiddenCount: 0,
+        fieldsCount: 2,
+        insideIframe: false,
+      },
+    ],
     hasPasswordField: true,
   };
 }
@@ -48,7 +66,8 @@ describe("analyzeSecurityContext — scoring buckets", () => {
       path: "/gui/url/abc/detection",
       pageContext: {
         title: "URL analysis report — VirusTotal",
-        visibleText: "URL scan submitted url analysis indicators of compromise " +
+        visibleText:
+          "URL scan submitted url analysis indicators of compromise " +
           "malware sample sandbox analysis threat intelligence",
       },
     });
@@ -61,7 +80,8 @@ describe("analyzeSecurityContext — scoring buckets", () => {
       path: "/docs/connect/oauth-reference",
       pageContext: {
         title: "OAuth 2.0 reference",
-        visibleText: "OAuth 2.0 authorization code flow PKCE redirect_uri " +
+        visibleText:
+          "OAuth 2.0 authorization code flow PKCE redirect_uri " +
           "client_id access token tutorial example getting started",
       },
     });
@@ -98,7 +118,8 @@ describe("calibration — security/research pages without behavioral evidence", 
       settings,
       pageContext: researchPage({
         title: "PhishTank — Suspected Phishing URL Submission",
-        text: "phishing url indicators of compromise threat intelligence " +
+        text:
+          "phishing url indicators of compromise threat intelligence " +
           "submitted url analysis report scan report ioc abuse.ch",
       }),
     });
@@ -110,7 +131,8 @@ describe("calibration — security/research pages without behavioral evidence", 
       settings,
       pageContext: researchPage({
         title: "URL analysis report — VirusTotal",
-        text: "url scan submitted url analysis indicators of compromise " +
+        text:
+          "url scan submitted url analysis indicators of compromise " +
           "malware sample sandbox analysis threat intelligence virustotal",
       }),
     });
@@ -122,7 +144,8 @@ describe("calibration — security/research pages without behavioral evidence", 
       settings,
       pageContext: researchPage({
         title: "urlscan.io — Scan report",
-        text: "url scan submission report indicators of compromise threat " +
+        text:
+          "url scan submission report indicators of compromise threat " +
           "intelligence ioc urlscan",
       }),
     });
@@ -134,7 +157,8 @@ describe("calibration — security/research pages without behavioral evidence", 
       settings,
       pageContext: researchPage({
         title: "ANY.RUN sandbox analysis",
-        text: "sandbox analysis malware sample detonation indicators of " +
+        text:
+          "sandbox analysis malware sample detonation indicators of " +
           "compromise threat intelligence any.run",
       }),
     });
@@ -146,7 +170,8 @@ describe("calibration — security/research pages without behavioral evidence", 
       settings,
       pageContext: researchPage({
         title: "oauth-demo — sample app",
-        text: "tutorial example demo getting started OAuth 2.0 " +
+        text:
+          "tutorial example demo getting started OAuth 2.0 " +
           "authorization code flow redirect_uri client_id access token",
       }),
     });
@@ -158,7 +183,8 @@ describe("calibration — security/research pages without behavioral evidence", 
       settings,
       pageContext: researchPage({
         title: "OAuth 2.0 — Stripe Documentation",
-        text: "documentation reference tutorial example OAuth 2.0 " +
+        text:
+          "documentation reference tutorial example OAuth 2.0 " +
           "authorization code flow PKCE redirect_uri client_id access token",
       }),
     });
@@ -170,7 +196,8 @@ describe("calibration — security/research pages without behavioral evidence", 
       settings,
       pageContext: researchPage({
         title: "Phishing awareness training — lesson 3",
-        text: "phishing awareness security training tutorial demo example " +
+        text:
+          "phishing awareness security training tutorial demo example " +
           "phishing campaign indicators of compromise simulation exercise",
       }),
     });
@@ -187,10 +214,13 @@ describe("calibration — behavioral evidence still escalates research-flavored 
       action: "https://collector.tld/grab",
     });
     ctx.title = "Phishing awareness training login";
-    ctx.visibleText = "phishing awareness security training tutorial example " +
-      "sign in to your account " + ctx.visibleText;
+    ctx.visibleText =
+      "phishing awareness security training tutorial example " +
+      "sign in to your account " +
+      ctx.visibleText;
     const r = await evaluateUrl("https://phishing-awareness-portal.tld/login", {
-      settings, pageContext: ctx,
+      settings,
+      pageContext: ctx,
     });
     expect(r.status).toBe("dangerous");
   });
@@ -201,15 +231,23 @@ describe("calibration — behavioral evidence still escalates research-flavored 
       pageContext: {
         pageOrigin: "https://security-research-portal.tld",
         title: "OAuth tutorial — sign in",
-        visibleText: "tutorial demo example OAuth 2.0 authorization code flow " +
-          "sign in to continue",
-        forms: [{ action: "/login", method: "post",
-          hasPassword: true, hasEmailLike: true, hasOtp: false,
-          hiddenCount: 0, fieldsCount: 2, insideIframe: true,
-          frameOriginCrossDomain: true }],
+        visibleText:
+          "tutorial demo example OAuth 2.0 authorization code flow " + "sign in to continue",
+        forms: [
+          {
+            action: "/login",
+            method: "post",
+            hasPassword: true,
+            hasEmailLike: true,
+            hasOtp: false,
+            hiddenCount: 0,
+            fieldsCount: 2,
+            insideIframe: true,
+            frameOriginCrossDomain: true,
+          },
+        ],
         hasPasswordField: true,
-        iframes: [{ origin: "https://collector.tld", hasPassword: true,
-          crossOrigin: true }],
+        iframes: [{ origin: "https://collector.tld", hasPassword: true, crossOrigin: true }],
       },
     });
     expect(r.status).toBe("dangerous");

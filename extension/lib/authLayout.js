@@ -15,30 +15,54 @@
 // real sign-in pages. Each entry's `signature` is the canonical ordered tuple
 // of "zones" we expect, plus an `oauthRow` flag and `hiddenRatio` band.
 export const PROVIDER_TEMPLATES = [
-  { id: "microsoft", root: "login.microsoftonline.com",
+  {
+    id: "microsoft",
+    root: "login.microsoftonline.com",
     signature: ["logo", "heading", "email", "next"],
-    oauthRow: false, hiddenRatioBand: [0.3, 0.6],
-    keywords: ["sign in", "use your microsoft account", "no account"] },
-  { id: "google", root: "accounts.google.com",
+    oauthRow: false,
+    hiddenRatioBand: [0.3, 0.6],
+    keywords: ["sign in", "use your microsoft account", "no account"],
+  },
+  {
+    id: "google",
+    root: "accounts.google.com",
     signature: ["logo", "heading", "email", "next"],
-    oauthRow: false, hiddenRatioBand: [0.2, 0.55],
-    keywords: ["sign in", "use your google account", "forgot email"] },
-  { id: "apple", root: "appleid.apple.com",
+    oauthRow: false,
+    hiddenRatioBand: [0.2, 0.55],
+    keywords: ["sign in", "use your google account", "forgot email"],
+  },
+  {
+    id: "apple",
+    root: "appleid.apple.com",
     signature: ["logo", "heading", "appleid", "next"],
-    oauthRow: false, hiddenRatioBand: [0.1, 0.4],
-    keywords: ["apple id", "sign in"] },
-  { id: "okta", root: "okta.com",
+    oauthRow: false,
+    hiddenRatioBand: [0.1, 0.4],
+    keywords: ["apple id", "sign in"],
+  },
+  {
+    id: "okta",
+    root: "okta.com",
     signature: ["logo", "heading", "email", "password", "submit"],
-    oauthRow: true, hiddenRatioBand: [0.2, 0.5],
-    keywords: ["sign in", "okta"] },
-  { id: "coinbase", root: "coinbase.com",
+    oauthRow: true,
+    hiddenRatioBand: [0.2, 0.5],
+    keywords: ["sign in", "okta"],
+  },
+  {
+    id: "coinbase",
+    root: "coinbase.com",
     signature: ["logo", "heading", "email", "password", "submit"],
-    oauthRow: false, hiddenRatioBand: [0.1, 0.4],
-    keywords: ["sign in", "coinbase"] },
-  { id: "generic-bank", root: "*bank*",
+    oauthRow: false,
+    hiddenRatioBand: [0.1, 0.4],
+    keywords: ["sign in", "coinbase"],
+  },
+  {
+    id: "generic-bank",
+    root: "*bank*",
     signature: ["logo", "heading", "username", "password", "submit"],
-    oauthRow: false, hiddenRatioBand: [0.0, 0.5],
-    keywords: ["online banking", "secure sign on", "account number"] },
+    oauthRow: false,
+    hiddenRatioBand: [0.0, 0.5],
+    keywords: ["online banking", "secure sign on", "account number"],
+  },
 ];
 
 /**
@@ -55,8 +79,13 @@ export const PROVIDER_TEMPLATES = [
  * }} ctx
  */
 export function fingerprintAuthLayout(ctx) {
-  const fp = { signature: [], oauthRow: false, hiddenRatio: 0, fieldCount: 0,
-    hasPasswordSplit: false };
+  const fp = {
+    signature: [],
+    oauthRow: false,
+    hiddenRatio: 0,
+    fieldCount: 0,
+    hasPasswordSplit: false,
+  };
   if (!ctx) return fp;
 
   if (ctx.hasLogoImage) fp.signature.push("logo");
@@ -66,15 +95,15 @@ export function fingerprintAuthLayout(ctx) {
   if (loginForm) {
     if (loginForm.hasEmailLike) fp.signature.push(ctx.firstFieldKind || "email");
     if (!loginForm.hasPassword && loginForm.hasEmailLike) {
-      fp.signature.push("next"); fp.hasPasswordSplit = true;
+      fp.signature.push("next");
+      fp.hasPasswordSplit = true;
     }
     if (loginForm.hasPassword) fp.signature.push("password");
     if (loginForm.hasOtp) fp.signature.push("otp");
     if (loginForm.hasPassword || loginForm.hasOtp) fp.signature.push("submit");
 
     fp.fieldCount = loginForm.fieldsCount || 0;
-    fp.hiddenRatio = loginForm.fieldsCount
-      ? loginForm.hiddenCount / loginForm.fieldsCount : 0;
+    fp.hiddenRatio = loginForm.fieldsCount ? loginForm.hiddenCount / loginForm.fieldsCount : 0;
   }
   fp.oauthRow = !!(ctx.oauthButtons && ctx.oauthButtons.length);
   return fp;
@@ -91,8 +120,7 @@ export function matchAuthTemplate(fingerprint, ctx = {}) {
   if (!fingerprint || !fingerprint.signature.length) {
     return { template: null, confidence: 0, reasons: [] };
   }
-  const text = (ctx.visibleText || "").toLowerCase() + " " +
-    (ctx.title || "").toLowerCase();
+  const text = (ctx.visibleText || "").toLowerCase() + " " + (ctx.title || "").toLowerCase();
 
   let best = { template: null, confidence: 0, reasons: [] };
   for (const tpl of PROVIDER_TEMPLATES) {
@@ -141,7 +169,8 @@ export function analyzeAuthLayout(ctx) {
 // Levenshtein-ratio style ordered similarity in [0,1].
 function sequenceSimilarity(a, b) {
   if (!a.length && !b.length) return 1;
-  const n = a.length, m = b.length;
+  const n = a.length,
+    m = b.length;
   const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
   for (let i = 0; i <= n; i++) dp[i][0] = i;
   for (let j = 0; j <= m; j++) dp[0][j] = j;
@@ -154,4 +183,6 @@ function sequenceSimilarity(a, b) {
   const maxLen = Math.max(n, m);
   return 1 - dp[n][m] / maxLen;
 }
-function round2(n) { return Math.round(n * 100) / 100; }
+function round2(n) {
+  return Math.round(n * 100) / 100;
+}

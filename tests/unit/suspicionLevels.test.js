@@ -16,8 +16,7 @@ describe("progressive suspicion model", () => {
   });
 
   it("dangerous WITH behavioral evidence escalates to hard modal", () => {
-    const s = deriveSuspicion({ score: 15, status: "dangerous",
-      behavioralEvidence: true });
+    const s = deriveSuspicion({ score: 15, status: "dangerous", behavioralEvidence: true });
     expect(s.level).toBe("dangerous");
     expect(s.modal).toBe("hard");
     expect(s.blockingUx).toBe(true);
@@ -30,14 +29,17 @@ describe("progressive suspicion model", () => {
   });
 
   it("trusted root with mild anomaly delta moves to contextual", () => {
-    const s = deriveSuspicion({ score: 90, status: "safe", trustedRoot: true,
-      anomalyDelta: 10 });
+    const s = deriveSuspicion({ score: 90, status: "safe", trustedRoot: true, anomalyDelta: 10 });
     expect(s.level).toBe("contextual");
   });
 
   it("trusted root without behavioral evidence cannot go to hard modal", () => {
-    const s = deriveSuspicion({ score: 30, status: "dangerous",
-      trustedRoot: true, behavioralEvidence: false });
+    const s = deriveSuspicion({
+      score: 30,
+      status: "dangerous",
+      trustedRoot: true,
+      behavioralEvidence: false,
+    });
     // would normally be highRisk; trustedRoot downgrades it.
     expect(["suspicious", "contextual", "highRisk"].includes(s.level)).toBe(true);
     expect(s.modal).not.toBe("hard");

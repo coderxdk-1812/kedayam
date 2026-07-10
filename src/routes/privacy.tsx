@@ -41,10 +41,10 @@ const sections = [
     body: (
       <p>
         To stop "ClickFix" malware, Kedayam inspects text a web page writes to your clipboard to
-        detect smuggled system commands. This check is purely in-memory and local: the page
-        already possesses anything it copied, so nothing is exfiltrated. The clipboard text is
-        classified and discarded — never stored, logged, or transmitted. Only a short, redacted
-        preview appears in the warning prompt.
+        detect smuggled system commands. This check is purely in-memory and local: the page already
+        possesses anything it copied, so nothing is exfiltrated. The clipboard text is classified
+        and discarded — never stored, logged, or transmitted. Only a short, redacted preview appears
+        in the warning prompt.
       </p>
     ),
   },
@@ -52,11 +52,11 @@ const sections = [
     title: "Optional threat-feed refresh — off by default",
     body: (
       <p>
-        You can opt in to refreshing the local blocklist from free public feeds (URLhaus,
-        Phishing Army, OpenPhish). When enabled, Kedayam downloads the public feed files only —
-        the request carries no information about you or the pages you visit. Matching against
-        your actual URL still happens locally. This is disabled by default and can be turned off
-        any time in Options.
+        You can opt in to refreshing the local blocklist from free public feeds (URLhaus, Phishing
+        Army, OpenPhish). When enabled, Kedayam downloads the public feed files only — the request
+        carries no information about you or the pages you visit. Matching against your actual URL
+        still happens locally. This is disabled by default and can be turned off any time in
+        Options.
       </p>
     ),
   },
@@ -64,10 +64,10 @@ const sections = [
     title: "Optional third-party lookups",
     body: (
       <p>
-        Kedayam can call Google Safe Browsing or VirusTotal only if you supply your own API key
-        in Options. In that case, only the URL or a URL hash is sent for that lookup, and the
-        third party's own privacy policy applies to that request. Both lookups are disabled out
-        of the box — the default install makes zero outbound network requests.
+        Kedayam can call Google Safe Browsing or VirusTotal only if you supply your own API key in
+        Options. In that case, only the URL or a URL hash is sent for that lookup, and the third
+        party's own privacy policy applies to that request. Both lookups are disabled out of the box
+        — the default install makes zero outbound network requests.
       </p>
     ),
   },
@@ -85,9 +85,9 @@ const sections = [
     title: "Diagnostics — off by default",
     body: (
       <p>
-        A local-only debug buffer is available for development. It is off by default, held in
-        memory only and wiped on extension restart, redacts URLs/tokens/emails before display,
-        and is never written to storage or sent over the network.
+        A local-only debug buffer is available for development. It is off by default, held in memory
+        only and wiped on extension restart, redacts URLs/tokens/emails before display, and is never
+        written to storage or sent over the network.
       </p>
     ),
   },
@@ -95,8 +95,8 @@ const sections = [
     title: "Permissions",
     body: (
       <p>
-        Every permission Kedayam requests, and why, is documented in{" "}
-        <code>PERMISSIONS.md</code> in the project repository.
+        Every permission Kedayam requests, and why, is documented in <code>PERMISSIONS.md</code> in
+        the project repository.
       </p>
     ),
   },
@@ -123,9 +123,9 @@ function Privacy() {
           <h1 className="text-3xl font-semibold tracking-normal md:text-4xl">Privacy Policy</h1>
         </div>
         <p className="mt-4 text-base leading-7 text-muted-foreground">
-          Kedayam is a local-only browser security extension. It does not collect, transmit,
-          sell, or share personal information. Kedayam contains no analytics SDK, no telemetry
-          endpoint, and no background fetch to maintainer-controlled servers.
+          Kedayam is a local-only browser security extension. It does not collect, transmit, sell,
+          or share personal information. Kedayam contains no analytics SDK, no telemetry endpoint,
+          and no background fetch to maintainer-controlled servers.
         </p>
         <p className="mt-3 text-sm text-muted-foreground">Last updated: 2026-06-22</p>
 

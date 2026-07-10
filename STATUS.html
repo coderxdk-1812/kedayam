@@ -6,66 +6,495 @@
     <title>Kedayam Browser Shield — Status</title>
     <style>
       :root {
-        --bg: #0a0e17; --panel: #111827; --ink: #e8eef7; --muted: #93a1b5;
-        --line: #1d2940; --green: #2ed3a3; --amber: #f5b13d; --blue: #5fa8ff;
+        --bg: #0a0e17;
+        --panel: #111827;
+        --panel2: #0e1422;
+        --ink: #e8eef7;
+        --muted: #93a1b5;
+        --line: #1d2940;
+        --green: #2ed3a3;
+        --amber: #f5b13d;
+        --red: #f0556a;
+        --blue: #5fa8ff;
+        --violet: #a98bff;
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
-        margin: 0; background: var(--bg); color: var(--ink);
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
         font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
-      .wrap { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
-      h1 { font-size: 24px; margin: 0 0 4px; }
-      .sub { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
-      h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.4px;
-        color: var(--muted); border-bottom: 1px solid var(--line);
-        padding-bottom: 8px; margin: 34px 0 14px; }
-      ul { margin: 0; padding-left: 20px; }
-      li { padding: 3px 0; color: #cdd8e6; }
-      code { background: #070b12; padding: 1px 6px; border-radius: 5px;
-        color: #8fd0ff; font-size: 12.5px; }
-      .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
-        margin-right: 8px; }
-      .g { background: var(--green); } .a { background: var(--amber); }
-      .b { background: var(--blue); }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 24px 90px;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 22px;
+      }
+      h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1.4px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+        margin: 38px 0 14px;
+      }
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+      li {
+        padding: 3px 0;
+        color: #cdd8e6;
+      }
+      code {
+        background: #070b12;
+        padding: 1px 6px;
+        border-radius: 5px;
+        color: #8fd0ff;
+        font-size: 12.5px;
+      }
+      .dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+      .g {
+        background: var(--green);
+      }
+      .a {
+        background: var(--amber);
+      }
+      .b {
+        background: var(--blue);
+      }
+      .callout {
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--blue);
+        background: linear-gradient(135deg, #101d2e, #111827);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin: 14px 0;
+      }
+      .callout.honest {
+        border-left-color: var(--amber);
+      }
+      .callout h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+      .callout p {
+        margin: 6px 0;
+        font-size: 13.5px;
+        color: #cdd9e8;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 8px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: var(--panel2);
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      td.k {
+        color: #fff;
+        font-weight: 600;
+      }
+      .yes {
+        color: var(--green);
+        font-weight: 700;
+      }
+      .no {
+        color: var(--red);
+      }
+      .part {
+        color: var(--amber);
+      }
+      .cap {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .rating {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 1px 7px;
+        border-radius: 5px;
+        margin-left: 6px;
+      }
+      .r-high {
+        background: rgba(46, 211, 163, 0.14);
+        color: var(--green);
+      }
+      .r-med {
+        background: rgba(245, 177, 61, 0.14);
+        color: var(--amber);
+      }
+      .r-low {
+        background: rgba(240, 85, 106, 0.14);
+        color: var(--red);
+      }
+      .tier {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: var(--violet);
+        text-transform: uppercase;
+        margin: 16px 0 4px;
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <h1>🛡️ Kedayam Browser Shield — Status</h1>
-      <div class="sub">Last updated: 2026-07-10 · MV3 freeware, key-less, local-only · artifact <code>public/kedayam.zip</code></div>
+      <h1>🛡️ Kedayam Browser Shield — Status &amp; Reality Check</h1>
+      <div class="sub">
+        Last updated: 2026-07-10 · MV3 freeware, key-less, local-only · artifact
+        <code>public/kedayam.zip</code> · 657 tests green · CI green
+      </div>
 
+      <!-- ============================ REALITY CHECK ============================ -->
+      <h2>How useful is this really? (honest assessment)</h2>
+
+      <div class="callout honest">
+        <h3>⚖️ The one-line truth</h3>
+        <p>
+          Every Chrome user already has <strong>Google Safe Browsing</strong> — a huge, always-updated
+          cloud backend. So Kedayam's real worth is <strong>what it adds on top of that</strong>, as a
+          <strong>defense-in-depth second layer</strong> — not as a replacement. Judged that way it is
+          <strong>genuinely valuable in a few specific gaps</strong>, and <strong>redundant</strong> for
+          plain known-phishing URL blocking.
+        </p>
+      </div>
+
+      <p style="font-size: 13.5px; color: #cdd9e8">
+        <strong>Where it adds real, differentiated security (uplift over a stock Chrome + Safe Browsing setup):</strong>
+      </p>
+      <ul>
+        <li>
+          <strong>ClickFix / fake-CAPTCHA clipboard malware</strong>
+          <span class="rating r-high">HIGH uplift</span> — the dominant 2024–25 delivery trick. AV and
+          Safe Browsing largely miss it because the <em>user</em> runs the payload. Kedayam intercepting
+          the copied command is rare and genuinely protective.
+        </li>
+        <li>
+          <strong>Accidental sensitive-data leaks</strong> (paste/file/form guard)
+          <span class="rating r-high">HIGH uplift</span> — stops pasting a password / API key / card /
+          PII into a phishing form or the wrong site. Nothing in the baseline does this.
+        </li>
+        <li>
+          <strong>Homoglyph / IDN visual spoofs</strong> (<code>аpple.com</code>)
+          <span class="rating r-med">MED uplift</span> — catches zero-day Unicode look-alikes the human
+          eye can't distinguish.
+        </li>
+        <li>
+          <strong>Privacy &amp; transparency</strong> <span class="rating r-med">MED uplift</span> — 100%
+          on-device, zero telemetry, on-page <em>explainable</em> warnings (says <em>why</em>). A real
+          differentiator vs. cloud tools that upload your browsing.
+        </li>
+        <li>
+          <strong>Brand-in-subdomain / abused-TLD / open-redirect</strong>
+          <span class="rating r-med">MED uplift</span> — solid supplementary URL-shape signals.
+        </li>
+      </ul>
+
+      <p style="font-size: 13.5px; color: #cdd9e8"><strong>Where it is weaker than incumbents / honest limits:</strong></p>
+      <ul>
+        <li>
+          <strong>Blocklist scale</strong> — ~12k baked hosts vs. <em>millions</em> in commercial cloud
+          feeds. Without the opt-in refresh, pure URL-reputation coverage is thin and goes stale.
+        </li>
+        <li>
+          <strong>No cloud intelligence by default</strong> — can't see brand-new global campaigns the
+          way a cloud backend (Safe Browsing) can within minutes.
+        </li>
+        <li>
+          <strong>The classifier is a hand-tuned heuristic, not a trained/validated model.</strong> Its
+          real-world <em>recall/false-negative rate is not yet measured</em> on a labeled phishing corpus.
+          The <code>0.95</code> recall in the release cert is a <strong>placeholder, not a measurement</strong>.
+        </li>
+        <li>
+          <strong>Overlap</strong> — for blocking already-known phishing URLs it is largely redundant with
+          Safe Browsing.
+        </li>
+      </ul>
+
+      <div class="callout">
+        <h3>👤 Who benefits most, and rough uplift</h3>
+        <p>
+          <strong>Big benefit:</strong> users targeted by ClickFix / fake-captcha lures; anyone who
+          handles secrets or PII (developers, finance, support staff); privacy-conscious users who won't
+          run cloud AV extensions.
+        </p>
+        <p>
+          <strong>Modest benefit:</strong> a careful user already on Safe Browsing “Enhanced” + a password
+          manager — the marginal gain is small for plain phishing, but the ClickFix and data-leak guards
+          still cover gaps nothing else does.
+        </p>
+        <p class="cap">
+          Rough, <em>unvalidated</em> estimate: near-zero → strong coverage on ClickFix &amp; accidental
+          data-leaks (little/no baseline), +a modest slice of the long-tail phishing Safe Browsing misses.
+          These are engineering estimates, <strong>not</strong> a measured benchmark — see “What next”.
+        </p>
+      </div>
+
+      <!-- ============================ COMPARISON MATRIX ============================ -->
+      <h2>Comparison vs. nearest tools</h2>
+      <table>
+        <tr>
+          <th>Capability</th>
+          <th>Kedayam</th>
+          <th>Chrome Safe&nbsp;Browsing (built-in)</th>
+          <th>Netcraft</th>
+          <th>Bitdefender TrafficLight</th>
+          <th>Malwarebytes Browser Guard</th>
+          <th>Guardio (paid)</th>
+        </tr>
+        <tr>
+          <td class="k">Known-phishing URL blocking</td>
+          <td class="part">Heuristic + 12k + opt-in feeds</td>
+          <td class="yes">Cloud (huge)</td>
+          <td class="yes">Cloud</td>
+          <td class="yes">Cloud</td>
+          <td class="yes">Cloud + lists</td>
+          <td class="yes">Cloud</td>
+        </tr>
+        <tr>
+          <td class="k">Zero-day structural phishing (no brand keyword)</td>
+          <td class="part">Local classifier (heuristic)</td>
+          <td class="part">Some (cloud ML)</td>
+          <td class="part">Some</td>
+          <td class="part">Some</td>
+          <td class="no">Limited</td>
+          <td class="yes">Cloud ML</td>
+        </tr>
+        <tr>
+          <td class="k">ClickFix / clipboard-command malware</td>
+          <td class="yes">Yes (rare)</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="part">Partial</td>
+          <td class="part">Partial</td>
+        </tr>
+        <tr>
+          <td class="k">Homoglyph / IDN visual spoof</td>
+          <td class="yes">Yes</td>
+          <td class="part">Partial</td>
+          <td class="yes">Yes</td>
+          <td class="part">Partial</td>
+          <td class="part">Partial</td>
+          <td class="yes">Yes</td>
+        </tr>
+        <tr>
+          <td class="k">Sensitive-data paste / PII-leak guard</td>
+          <td class="yes">Yes</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="part">Some (identity)</td>
+        </tr>
+        <tr>
+          <td class="k">100% local · zero telemetry</td>
+          <td class="yes">Yes</td>
+          <td class="no">No (sends to Google)</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+        </tr>
+        <tr>
+          <td class="k">No account / key · free</td>
+          <td class="yes">Yes, free</td>
+          <td class="yes">Built-in</td>
+          <td class="yes">Free</td>
+          <td class="yes">Free</td>
+          <td class="part">Free tier</td>
+          <td class="no">Paid</td>
+        </tr>
+        <tr>
+          <td class="k">Explainable on-page warnings</td>
+          <td class="yes">Yes (0–100 + reasons)</td>
+          <td class="part">Block page</td>
+          <td class="part">Some</td>
+          <td class="part">Some</td>
+          <td class="part">Some</td>
+          <td class="part">Some</td>
+        </tr>
+        <tr>
+          <td class="k">Blocklist / feed scale</td>
+          <td class="no">Small (12k + opt-in)</td>
+          <td class="yes">Massive</td>
+          <td class="yes">Large</td>
+          <td class="yes">Large</td>
+          <td class="yes">Large</td>
+          <td class="yes">Large</td>
+        </tr>
+        <tr>
+          <td class="k">Ad / tracker blocking</td>
+          <td class="no">No (by design)</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="part">Some</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+        </tr>
+        <tr>
+          <td class="k">Cross-browser</td>
+          <td class="part">Chrome/Edge (FF pending)</td>
+          <td class="no">Chrome only</td>
+          <td class="yes">Multi</td>
+          <td class="yes">Multi</td>
+          <td class="yes">Multi</td>
+          <td class="yes">Multi</td>
+        </tr>
+      </table>
+      <p class="cap">
+        <span class="yes">Green</span> = strong · <span class="part">amber</span> = partial/limited ·
+        <span class="no">red</span> = absent. Competitor rows reflect publicly documented behaviour and may
+        change; this is a positioning guide, not a benchmark. <strong>Kedayam's edge:</strong> privacy,
+        ClickFix defense, data-leak guard, explainability. <strong>Its gap:</strong> feed scale &amp; cloud
+        reach.
+      </p>
+
+      <!-- ============================ WHAT NEXT ============================ -->
+      <h2>What next — to make it better &amp; best</h2>
+
+      <div class="tier">Tier 1 — biggest security ROI (do first)</div>
+      <ul>
+        <li>
+          <strong>Measure &amp; train the classifier for real.</strong> Build a labeled corpus (PhishTank /
+          OpenPhish positives + Tranco top-sites negatives), replace the hand weights with fitted ones, and
+          <strong>publish measured precision / recall / FP</strong>. Turns “ML” from a heuristic into a
+          validated model and replaces the placeholder recall in the cert.
+        </li>
+        <li>
+          <strong>Harden ClickFix (the crown jewel).</strong> Catch the deferred/on-click clipboard-write
+          variant, add one-click “clear my clipboard,” and detect the “press Win+R / paste” lure text in
+          more languages.
+        </li>
+        <li>
+          <strong>Bigger, signed, delta-updated blocklist</strong> baked per release + auto-refresh
+          default-on using <strong>privacy-preserving hash-prefix (k-anonymity) lookups</strong> — cloud-grade
+          coverage without sending full URLs.
+        </li>
+        <li><strong>Redirect-chain resolution</strong> for shorteners — score the true landing before render.</li>
+      </ul>
+
+      <div class="tier">Tier 2 — coverage &amp; UX</div>
+      <ul>
+        <li>
+          <strong>Optional privacy-preserving cloud reputation</strong> (Safe-Browsing-v4-style hash prefixes)
+          to close the “no cloud intelligence” gap while staying private.
+        </li>
+        <li><strong>AiTM / reverse-proxy phishing (evilginx-style) detection</strong> — the modern MFA-bypass kits.</li>
+        <li>Punycode decoded-host banner; community false-positive loop (local per-domain trust floor).</li>
+        <li>i18n of warning copy (<code>_locales/</code>, Hindi/EU); a11y / colorblind / reduced-motion pass.</li>
+        <li>Firefox runtime validation (<code>web-ext lint</code> + load the generated Firefox zip).</li>
+      </ul>
+
+      <div class="tier">Tier 3 — credibility to be “best in class”</div>
+      <ul>
+        <li>
+          <strong>Published, reproducible benchmark</strong> vs. Safe Browsing / Netcraft on a shared
+          phishing test set (precision/recall/FP) — turn claims into numbers.
+        </li>
+        <li>Independent security audit + reproducible-build attestation (SLSA-style provenance).</li>
+        <li>Malicious-extension / supply-chain awareness; enterprise managed-policy profile.</li>
+        <li>Tighten permissions (justify or narrow <code>&lt;all_urls&gt;</code> + <code>webRequest</code>) to ease Web-Store review.</li>
+      </ul>
+
+      <!-- ============================ SHIPPED / STATE ============================ -->
       <h2><span class="dot g"></span>Shipped</h2>
       <ul>
-        <li>Detection engine v1.1.0: blocklist, lookalike/homoglyph, IDN mixed-script, URL reputation, open-redirect, clone/phishing DOM, auth-flow arbitration, explainable 0–100 verdict.</li>
-        <li><strong>On-device phishing classifier</strong>: bundled logistic model over URL/DOM structure — catches zero-day kits with no brand keyword; local, explainable, FP-safe.</li>
-        <li><strong>Build-time threat-feed snapshot</strong>: ~12k known-bad hosts baked in (URLhaus + Phishing Army), safelist-filtered.</li>
-        <li><strong>Cross-browser packaging</strong>: deterministic Chrome / Edge / Firefox zips; Edge byte-identical to Chrome, Firefox via a unit-tested Gecko manifest transform.</li>
+        <li>
+          Detection engine v1.1.0: blocklist, lookalike/homoglyph, IDN mixed-script, URL reputation,
+          open-redirect, clone/phishing DOM, auth-flow arbitration, explainable 0–100 verdict.
+        </li>
+        <li>
+          <strong>On-device phishing classifier</strong>: bundled logistic model over URL/DOM structure —
+          flags zero-day kits with no brand keyword; local, explainable, FP-safe (trusted roots short-circuit).
+        </li>
+        <li>
+          <strong>Build-time threat-feed snapshot</strong>: ~12k known-bad hosts baked in (URLhaus +
+          Phishing Army), safelist-filtered so no legit root ships as blocked.
+        </li>
+        <li>
+          <strong>Cross-browser packaging</strong>: deterministic Chrome / Edge / Firefox zips; Edge
+          byte-identical to Chrome, Firefox via a unit-tested Gecko manifest transform.
+        </li>
         <li>Page-runtime guards: paste/file/permission, ClickFix clipboard, download, scareware.</li>
-        <li><strong>657 tests green</strong>; ESLint/prettier clean; validator clean.</li>
-        <li><strong>Byte-reproducible build</strong>: committed-source icons; deterministic zip (fixed mtimes + sorted + <code>-X</code>); cert is a pure function of source.</li>
-        <li><strong>CI</strong> (<code>release-verify.yml</code>): lint → validate:extension → tests → e2e → build → certify → drift gate.</li>
-        <li><strong>E2E</strong> loads MV3 extension via <code>channel:"chromium"</code>; 2/2 green, wired into CI.</li>
+        <li><strong>657 tests green</strong>; ESLint/prettier clean; validator clean; <strong>CI green</strong>.</li>
+        <li>
+          <strong>Reproducible pipeline</strong>: committed-source icons; deterministic zip; cert is a pure
+          function of source; CI verifies the committed zip's <em>contents</em> match source.
+        </li>
+        <li>
+          <strong>CI</strong> (<code>release-verify.yml</code>): lint → validate → tests → e2e → verify-artifact → certify.
+        </li>
       </ul>
 
-      <h2><span class="dot b"></span>In progress</h2>
+      <h2><span class="dot a"></span>Pending / Backlog (store + features)</h2>
       <ul>
-        <li>Rebuild + commit the release artifact (drifted from source; rebuilt in working tree, awaiting commit).</li>
-      </ul>
-
-      <h2><span class="dot a"></span>Pending / Backlog</h2>
-      <ul>
-        <li>Store logistics: hosted Privacy Policy URL (page exists, must deploy), 1280×800 screenshot + 440×280 promo tile (none yet), dev account ($5 + ID), data-handling disclosures, broad-permission justification.</li>
-        <li>Firefox runtime validation (<code>web-ext lint</code> + load the generated Firefox zip).</li>
-        <li>i18n of warning copy (<code>_locales/</code>) — not started.</li>
-        <li>Community false-positive loop, redirect-chain expansion, punycode banner — not started.</li>
+        <li>
+          Store logistics: hosted Privacy Policy URL (page exists, must deploy), 1280×800 screenshot +
+          440×280 promo tile (none yet), dev account ($5 + ID), data-handling disclosures,
+          broad-permission justification.
+        </li>
+        <li>Firefox runtime validation; i18n; community FP loop; redirect-chain expansion; punycode banner.</li>
+        <li>Refresh the feed snapshot per release (<code>bun run feeds:snapshot</code> → commit).</li>
       </ul>
 
       <h2>Known gaps &amp; caveats</h2>
       <ul>
-        <li>Broad <code>host_permissions</code> + <code>webRequest</code> + <code>tabs</code> → Web Store extended review; needs a tight single-purpose justification.</li>
-        <li>Zip determinism verified macOS-local; cross-platform relies on Info-ZIP <code>zip</code> behaving identically on Linux CI (<code>-X</code> strips platform extra fields).</li>
-        <li>E2E is a load/runtime + popup smoke; engine scoring stays in unit tests (dynamic <code>import()</code> is disallowed inside a running service worker).</li>
+        <li>
+          Broad <code>host_permissions</code> + <code>webRequest</code> + <code>tabs</code> → Web Store
+          extended review; needs a tight single-purpose justification.
+        </li>
+        <li>
+          Classifier recall is <strong>not yet independently measured</strong>; the cert's phishing-recall
+          figure is a placeholder until the Tier-1 benchmark lands.
+        </li>
+        <li>
+          The committed zip is a checked-in binary built on macOS; the <code>zip</code> CLI is not
+          byte-identical across OSes, so CI verifies the zip's <em>contents</em> match source
+          (<code>scripts/verify-artifact.mjs</code>) rather than a byte-for-byte rebuild. The cert stays
+          byte-reproducible.
+        </li>
       </ul>
     </div>
   </body>

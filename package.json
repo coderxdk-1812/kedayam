@@ -22,7 +22,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "adblock:rules": "node scripts/build-adblock-rules.mjs",
-    "promo:image": "node scripts/render-promo.mjs"
+    "promo:image": "node scripts/render-promo.mjs",
+    "test:report": "node scripts/generate-test-report.mjs"
   },
   "engines": {
     "node": ">=20"

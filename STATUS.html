@@ -183,7 +183,8 @@
       <h1>🛡️ Kedayam Browser Shield — Status &amp; Reality Check</h1>
       <div class="sub">
         Last updated: 2026-07-10 · MV3 freeware, key-less, local-only · artifact
-        <code>public/kedayam.zip</code> · 657 tests green · CI green
+        <code>public/kedayam.zip</code> · <a href="test.html"><strong>680 tests green ↗</strong></a> ·
+        CI green
       </div>
 
       <!-- ============================ REALITY CHECK ============================ -->
@@ -234,7 +235,7 @@
       <p style="font-size: 13.5px; color: #cdd9e8"><strong>Where it is weaker than incumbents / honest limits:</strong></p>
       <ul>
         <li>
-          <strong>Blocklist scale</strong> — ~12k baked hosts vs. <em>millions</em> in commercial cloud
+          <strong>Blocklist scale</strong> — ~20k baked hosts vs. <em>millions</em> in commercial cloud
           feeds. Without the opt-in refresh, pure URL-reputation coverage is thin and goes stale.
         </li>
         <li>
@@ -287,7 +288,7 @@
         </tr>
         <tr>
           <td class="k">Known-phishing URL blocking</td>
-          <td class="part">Heuristic + 12k + opt-in feeds</td>
+          <td class="part">Heuristic + 20k + opt-in feeds</td>
           <td class="yes">Cloud (huge)</td>
           <td class="yes">Cloud</td>
           <td class="yes">Cloud</td>
@@ -412,11 +413,6 @@
           "Clear my clipboard", and broadens command/lure signatures.
         </li>
         <li>
-          <strong>Harden ClickFix (the crown jewel).</strong> Catch the deferred/on-click clipboard-write
-          variant, add one-click “clear my clipboard,” and detect the “press Win+R / paste” lure text in
-          more languages.
-        </li>
-        <li>
           <strong>Bigger, signed, delta-updated blocklist</strong> baked per release + auto-refresh
           default-on using <strong>privacy-preserving hash-prefix (k-anonymity) lookups</strong> — cloud-grade
           coverage without sending full URLs.
@@ -465,8 +461,8 @@
           model; local, explainable, FP-safe. Measured recall now in the release cert.
         </li>
         <li>
-          <strong>Build-time threat-feed snapshot</strong>: ~12k known-bad hosts baked in (URLhaus +
-          Phishing Army), safelist-filtered so no legit root ships as blocked.
+          <strong>Build-time threat-feed snapshot</strong>: ~20k known-bad hosts baked in (URLhaus +
+          Phishing Army, PhishTank optional), safelist-filtered so no legit root ships as blocked.
         </li>
         <li>
           <strong>Cross-browser packaging</strong>: deterministic Chrome / Edge / Firefox zips; Edge
@@ -481,7 +477,10 @@
           Threat blocklist widened to <strong>~20k baked hosts</strong> (PhishTank optional) + a
           <strong>shareable promo image</strong> (<code>public/kedayam-promo.png</code>).
         </li>
-        <li><strong>657 tests green</strong>; ESLint/prettier clean; validator clean; <strong>CI green</strong>.</li>
+        <li>
+          <strong><a href="test.html">680 tests green ↗</a></strong> (full per-file results);
+          ESLint/prettier clean; validator clean; <strong>CI green</strong>.
+        </li>
         <li>
           <strong>Reproducible pipeline</strong>: committed-source icons; deterministic zip; cert is a pure
           function of source; CI verifies the committed zip's <em>contents</em> match source.

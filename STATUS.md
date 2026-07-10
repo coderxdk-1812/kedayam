@@ -70,7 +70,9 @@ replacement.
 - Page-runtime guards: paste/file/permission, **hardened ClickFix clipboard**
   (deferred `clipboard.write`/`setData` hooks + one-click "clear clipboard" +
   broader command/lure signatures), download, scareware.
-- **657 unit/redteam/compat tests green**; ESLint/prettier clean; validator clean.
+- **680 unit/redteam/compat tests green** (full per-file results in
+  [`test.html`](test.html), regenerate with `bun run test:report`); ESLint/prettier
+  clean; validator clean.
 - **Byte-reproducible build**: icons are committed source; zip is deterministic
   (fixed mtimes + sorted + `-X`); release cert is a pure function of source.
 - **CI** (`release-verify.yml`, **green**): lint → validate:extension → tests →

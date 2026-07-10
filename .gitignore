@@ -48,3 +48,6 @@ public/kedayam-firefox.zip
 
 # Chrome-generated DNR ruleset index (created when loading unpacked ext)
 extension/_metadata/
+
+# vitest JSON report (temp, produced by test:report)
+.vitest-report.json

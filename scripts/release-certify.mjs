@@ -35,6 +35,7 @@ const allowedPerms = new Set([
   "notifications",
   "webNavigation",
   "webRequest",
+  "declarativeNetRequest",
 ]);
 const permissionsMinimal =
   Array.isArray(manifest.permissions) && manifest.permissions.every((p) => allowedPerms.has(p));

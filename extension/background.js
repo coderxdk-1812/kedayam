@@ -37,8 +37,9 @@ const health = new HealthMonitor();
 const nonces = new NonceCache(512);
 
 chrome.runtime.onInstalled.addListener(async () => {
-  await getSettings(); // ensure defaults
+  const s = await getSettings(); // ensure defaults
   log.info("installed", { version: chrome.runtime.getManifest().version });
+  void applyAdblockRuleset(s);
   void loadBlocklistCache();
   void maybeRefreshThreatFeed();
   // Re-inject into already-open tabs (declarative script only fires on
@@ -68,6 +69,22 @@ try {
 try {
   chrome.alarms?.create?.("kedayam:feedRefresh", { periodInMinutes: 360 });
 } catch {}
+
+// Ad/tracker blocker: enable or disable the bundled declarativeNetRequest static
+// ruleset to match the user's setting. Blocking is 100% local (Chrome enforces
+// the rules) — no browsing data leaves the device.
+async function applyAdblockRuleset(settings) {
+  try {
+    if (!chrome.declarativeNetRequest?.updateEnabledRulesets) return;
+    const on = settings?.detection?.adTrackerBlocker !== false;
+    await chrome.declarativeNetRequest.updateEnabledRulesets({
+      enableRulesetIds: on ? ["kedayam_adblock"] : [],
+      disableRulesetIds: on ? [] : ["kedayam_adblock"],
+    });
+  } catch (e) {
+    health.recordError(e, "adblock:apply");
+  }
+}
 
 // Load the opt-in feed cache from storage into memory (no network).
 async function loadBlocklistCache() {
@@ -222,9 +239,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         case "getSettings":
           sendResponse(await getSettings());
           break;
-        case "saveSettings":
-          sendResponse(await saveSettings(data.patch));
+        case "saveSettings": {
+          const saved = await saveSettings(data.patch);
+          void applyAdblockRuleset(saved);
+          sendResponse(saved);
           break;
+        }
         case "getActivity":
           sendResponse(await getActivity());
           break;

@@ -57,8 +57,13 @@ replacement.
   Measured @warn: **precision 0.98, recall 0.62, FP 1.4%**; @block: P 0.99, R 0.52,
   FP 0.5%. Replaced the old placeholder recall in the cert. Local, explainable,
   FP-safe (trusted roots short-circuit; high-precision operating points).
-- **Build-time threat-feed snapshot**: ~12k known-bad hosts baked in from URLhaus +
-  Phishing Army (`bun run feeds:snapshot`), safelist-filtered.
+- **Build-time threat-feed snapshot**: ~20k known-bad hosts baked in from URLhaus +
+  Phishing Army (`bun run feeds:snapshot`, PhishTank optional), safelist-filtered.
+- **Ad & tracker blocker** (`declarativeNetRequest`, default on, toggleable):
+  ~3.5k ad/tracker domains blocked locally (`bun run adblock:rules`), safelist-
+  filtered, sub-resources only. First new permission since launch.
+- **Shareable promo image**: `public/kedayam-promo.png` (1080×1350) via
+  `bun run promo:image` — colorful feature/benefit poster for social circulation.
 - **Cross-browser packaging**: deterministic Chrome / Edge / Firefox zips
   (`bun run build:crossbrowser`); Edge byte-identical to Chrome, Firefox via a
   unit-tested Gecko manifest transform.

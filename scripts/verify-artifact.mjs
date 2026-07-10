@@ -42,7 +42,8 @@ const rel = (base) => {
   const acc = [];
   const rec = (d) => {
     for (const name of readdirSync(d)) {
-      if (name === ".DS_Store") continue;
+      // _metadata is a Chrome-generated DNR index (dev/e2e), never shipped.
+      if (name === ".DS_Store" || name === "_metadata") continue;
       const abs = join(d, name);
       if (statSync(abs).isDirectory()) rec(abs);
       else acc.push(relative(base, abs).split(sep).join("/"));

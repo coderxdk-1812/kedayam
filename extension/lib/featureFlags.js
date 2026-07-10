@@ -19,6 +19,7 @@ export const FEATURE_FLAGS = Object.freeze({
   clickFixGuard: true, // ClickFix / FakeCaptcha clipboard defense
   downloadGuard: true, // executable-download warning on low-trust pages
   scarewareGuard: true, // tech-support-scam / scareware page warning
+  adTrackerBlocker: true, // block ads/trackers via declarativeNetRequest (local)
   threatFeedAutoUpdate: false, // OPT-IN free public feed refresh (network)
   // UX
   cooldownEnabled: true,

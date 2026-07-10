@@ -12,9 +12,19 @@
     "tabs",
     "notifications",
     "webNavigation",
-    "webRequest"
+    "webRequest",
+    "declarativeNetRequest"
   ],
   "host_permissions": ["http://*/*", "https://*/*"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "kedayam_adblock",
+        "enabled": true,
+        "path": "rules/adblock-rules.json"
+      }
+    ]
+  },
   "background": { "service_worker": "background.js", "type": "module" },
   "content_scripts": [
     {

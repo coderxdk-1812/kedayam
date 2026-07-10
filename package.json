@@ -20,7 +20,9 @@
     "test:e2e": "playwright test",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "adblock:rules": "node scripts/build-adblock-rules.mjs",
+    "promo:image": "node scripts/render-promo.mjs"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Kedayam — promo</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap");
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+      }
+      .poster {
+        width: 1080px;
+        height: 1350px;
+        position: relative;
+        overflow: hidden;
+        color: #eaf2ff;
+        background:
+          radial-gradient(900px 600px at 82% -8%, rgba(46, 211, 163, 0.28), transparent 60%),
+          radial-gradient(760px 620px at -8% 12%, rgba(95, 168, 255, 0.26), transparent 58%),
+          radial-gradient(900px 700px at 60% 118%, rgba(169, 139, 255, 0.24), transparent 60%),
+          linear-gradient(160deg, #0a0e17 0%, #0b1220 55%, #0a0e17 100%);
+        padding: 50px 56px;
+        display: flex;
+        flex-direction: column;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .shield {
+        width: 92px;
+        height: 92px;
+        border-radius: 22px;
+        background: radial-gradient(circle at 32% 26%, #4ff0c0, #0f766e 72%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 50px;
+        box-shadow:
+          0 16px 44px rgba(46, 211, 163, 0.4),
+          inset 0 2px 10px rgba(255, 255, 255, 0.4);
+      }
+      .brand h1 {
+        font-family: "Sora", sans-serif;
+        font-size: 46px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        line-height: 1;
+      }
+      .brand .tag {
+        font-size: 20px;
+        color: #9fb2cc;
+        margin-top: 7px;
+        font-weight: 500;
+      }
+      .free {
+        margin-left: auto;
+        background: linear-gradient(135deg, #2ed3a3, #1aa37a);
+        color: #06231b;
+        font-family: "Sora", sans-serif;
+        font-weight: 800;
+        font-size: 22px;
+        padding: 11px 20px;
+        border-radius: 999px;
+        box-shadow: 0 10px 26px rgba(46, 211, 163, 0.4);
+        transform: rotate(3deg);
+      }
+      .hero {
+        margin-top: 34px;
+      }
+      .hero h2 {
+        font-family: "Sora", sans-serif;
+        font-size: 52px;
+        font-weight: 800;
+        line-height: 1.06;
+        letter-spacing: -1px;
+      }
+      .hero h2 .g {
+        background: linear-gradient(120deg, #5ff0c0, #5fa8ff 60%, #a98bff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p {
+        margin-top: 16px;
+        font-size: 22px;
+        line-height: 1.48;
+        color: #c5d3e8;
+        max-width: 940px;
+      }
+      .grid {
+        margin-top: 26px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 18px;
+        padding: 18px 22px;
+        backdrop-filter: blur(6px);
+      }
+      .card .ic {
+        font-size: 34px;
+        line-height: 1;
+      }
+      .card h3 {
+        font-family: "Sora", sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+        margin: 11px 0 6px;
+      }
+      .card p {
+        font-size: 18px;
+        color: #a9bad2;
+        line-height: 1.38;
+      }
+      .card.hot {
+        border-color: rgba(46, 211, 163, 0.5);
+        background: linear-gradient(150deg, rgba(46, 211, 163, 0.14), rgba(255, 255, 255, 0.04));
+      }
+      .card .badge {
+        display: inline-block;
+        font-size: 14px;
+        font-weight: 700;
+        color: #2ed3a3;
+        background: rgba(46, 211, 163, 0.14);
+        border: 1px solid rgba(46, 211, 163, 0.4);
+        padding: 2px 9px;
+        border-radius: 8px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      .chips {
+        margin-top: 22px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .chip {
+        font-family: "Sora", sans-serif;
+        font-size: 20px;
+        font-weight: 600;
+        padding: 11px 20px;
+        border-radius: 999px;
+        background: rgba(95, 168, 255, 0.12);
+        border: 1px solid rgba(95, 168, 255, 0.32);
+        color: #d8e6ff;
+      }
+      .stats {
+        margin-top: auto;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        padding-top: 24px;
+      }
+      .stat {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 18px 12px;
+      }
+      .stat b {
+        display: block;
+        font-family: "Sora", sans-serif;
+        font-size: 38px;
+        font-weight: 800;
+        background: linear-gradient(120deg, #5ff0c0, #5fa8ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .stat span {
+        font-size: 17px;
+        color: #9fb2cc;
+      }
+      .foot {
+        margin-top: 22px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 21px;
+        color: #b9c8de;
+      }
+      .foot .cta {
+        font-family: "Sora", sans-serif;
+        font-weight: 700;
+        color: #eaf2ff;
+      }
+      .foot .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #2ed3a3;
+        box-shadow: 0 0 12px #2ed3a3;
+        flex: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="poster">
+      <div class="top">
+        <div class="shield">🛡️</div>
+        <div class="brand">
+          <h1>Kedayam</h1>
+          <div class="tag">Browser Shield · phishing · malware · privacy</div>
+        </div>
+        <div class="free">100% FREE</div>
+      </div>
+
+      <div class="hero">
+        <h2>Stops the threats <span class="g">antivirus misses.</span></h2>
+        <p>
+          A free browser guard that blocks modern phishing, clipboard-injection malware, scams, ads
+          &amp; trackers — and stops you leaking passwords &amp; personal data. Everything runs
+          <b>on your device</b>. No account, no API key, zero tracking of you.
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="card hot">
+          <div class="ic">🪤</div>
+          <h3>ClickFix malware guard<span class="badge">RARE</span></h3>
+          <p>Blocks the #1 2025 trick: fake "verify you're human" pages that copy a virus command to your clipboard.</p>
+        </div>
+        <div class="card">
+          <div class="ic">🎣</div>
+          <h3>Phishing &amp; look-alikes</h3>
+          <p>Catches fake login sites, homoglyph/Unicode spoofs (аpple.com) and 20,000+ known bad sites — offline.</p>
+        </div>
+        <div class="card hot">
+          <div class="ic">🔐</div>
+          <h3>Data-leak shield</h3>
+          <p>Warns before you paste or upload a password, card, or personal ID into the wrong place.</p>
+        </div>
+        <div class="card">
+          <div class="ic">🧠</div>
+          <h3>On-device AI classifier</h3>
+          <p>A local model spots brand-new phishing kits by their structure — 98% precision, nothing sent to a cloud.</p>
+        </div>
+        <div class="card">
+          <div class="ic">🚫</div>
+          <h3>Ad &amp; tracker blocker</h3>
+          <p>Blocks thousands of ad/tracker domains for a faster, cleaner, more private web.</p>
+        </div>
+        <div class="card">
+          <div class="ic">💡</div>
+          <h3>Tells you why</h3>
+          <p>Clear, honest on-page warnings with a 0–100 trust score — you stay in control, always.</p>
+        </div>
+      </div>
+
+      <div class="chips">
+        <div class="chip">🔒 100% on-device</div>
+        <div class="chip">🙈 Zero telemetry</div>
+        <div class="chip">🆓 No account</div>
+        <div class="chip">🔑 No API key</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b>20,000+</b><span>bad sites blocked offline</span></div>
+        <div class="stat"><b>98%</b><span>AI phishing precision</span></div>
+        <div class="stat"><b>0</b><span>data sent about you</span></div>
+      </div>
+
+      <div class="foot">
+        <span class="dot"></span>
+        <span class="cta">Add it free on the Chrome Web Store</span>
+        <span>— protect yourself &amp; your family.</span>
+      </div>
+    </div>
+  </body>
+</html>

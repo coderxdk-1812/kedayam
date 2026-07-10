@@ -65,6 +65,19 @@ test("popup HTML renders without errors", async () => {
   }
 });
 
+test("ad/tracker DNR ruleset ships enabled", async () => {
+  const ctx = await launchWithExtension();
+  try {
+    const sw = await waitForWorker(ctx);
+    const enabled = await sw.evaluate(async () => {
+      return chrome.declarativeNetRequest.getEnabledRulesets();
+    });
+    expect(enabled).toContain("kedayam_adblock");
+  } finally {
+    await ctx.close();
+  }
+});
+
 test("options Transparency panel renders the protection catalog", async () => {
   const ctx = await launchWithExtension();
   try {

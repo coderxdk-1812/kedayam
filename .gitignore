@@ -45,3 +45,6 @@ public/kedayam-security-report.json
 public/kedayam-chrome.zip
 public/kedayam-edge.zip
 public/kedayam-firefox.zip
+
+# Chrome-generated DNR ruleset index (created when loading unpacked ext)
+extension/_metadata/

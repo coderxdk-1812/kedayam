@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS = {
     downloadGuard: true, // warn on executable downloads from low-trust pages
     urlReputation: true, // abused TLD / shortener / brand-subdomain
     scarewareGuard: true, // tech-support-scam / scareware page warning
+    adTrackerBlocker: true, // block ads/trackers via declarativeNetRequest (local)
     threatFeedAutoUpdate: false, // OPT-IN: refresh free public feeds (network)
   },
   privacy: {

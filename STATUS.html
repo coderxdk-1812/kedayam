@@ -359,7 +359,7 @@
         </tr>
         <tr>
           <td class="k">Blocklist / feed scale</td>
-          <td class="no">Small (12k + opt-in)</td>
+          <td class="part">20k baked + opt-in feeds</td>
           <td class="yes">Massive</td>
           <td class="yes">Large</td>
           <td class="yes">Large</td>
@@ -368,7 +368,7 @@
         </tr>
         <tr>
           <td class="k">Ad / tracker blocking</td>
-          <td class="no">No (by design)</td>
+          <td class="yes">Yes (DNR, ~3.5k domains)</td>
           <td class="no">No</td>
           <td class="no">No</td>
           <td class="part">Some</td>
@@ -473,6 +473,14 @@
           byte-identical to Chrome, Firefox via a unit-tested Gecko manifest transform.
         </li>
         <li>Page-runtime guards: paste/file/permission, ClickFix clipboard, download, scareware.</li>
+        <li>
+          <strong>Ad &amp; tracker blocker</strong> (declarativeNetRequest, default on): ~3.5k
+          ad/tracker domains blocked locally; safelist-filtered, sub-resources only.
+        </li>
+        <li>
+          Threat blocklist widened to <strong>~20k baked hosts</strong> (PhishTank optional) + a
+          <strong>shareable promo image</strong> (<code>public/kedayam-promo.png</code>).
+        </li>
         <li><strong>657 tests green</strong>; ESLint/prettier clean; validator clean; <strong>CI green</strong>.</li>
         <li>
           <strong>Reproducible pipeline</strong>: committed-source icons; deterministic zip; cert is a pure

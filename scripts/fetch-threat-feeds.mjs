@@ -40,8 +40,25 @@ function isNeverBlock(host) {
 
 // Keep the bundled snapshot bounded so the zip stays small and load stays fast.
 // The opt-in runtime refresh (threatFeed.js) layers the full lists on top later.
-const MAX_SNAPSHOT = Number(process.env.KEDAYAM_SNAPSHOT_MAX || 12000);
+const MAX_SNAPSHOT = Number(process.env.KEDAYAM_SNAPSHOT_MAX || 20000);
 const OUT = "extension/lib/rules/blocklistSnapshot.js";
+
+// Build-time sources = the runtime FREE_FEEDS plus PhishTank. PhishTank's bulk
+// feed needs a registered app key (set PHISHTANK_APP_KEY); without one we try the
+// keyless mirror and skip gracefully if it is unavailable/rate-limited. Either
+// way this is a BUILD-time bake — nothing about any user's browsing is involved.
+const PHISHTANK_KEY = process.env.PHISHTANK_APP_KEY || "";
+const BUILD_FEEDS = [
+  ...FREE_FEEDS,
+  {
+    id: "phishtank",
+    name: "PhishTank (verified)",
+    kind: "url",
+    url: PHISHTANK_KEY
+      ? `https://data.phishtank.com/data/${PHISHTANK_KEY}/online-valid.csv`
+      : "https://data.phishtank.com/data/online-valid.csv",
+  },
+];
 
 async function pull(feed) {
   try {
@@ -66,7 +83,7 @@ async function pull(feed) {
 const seed = new Set(BLOCKLIST_SEED);
 const merged = new Set();
 const sources = [];
-for (const feed of FREE_FEEDS) {
+for (const feed of BUILD_FEEDS) {
   const set = await pull(feed);
   if (set.size) sources.push({ id: feed.id, count: set.size });
   for (const h of set) {

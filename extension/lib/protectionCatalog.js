@@ -71,7 +71,7 @@ export const PROTECTION_CATALOG = Object.freeze([
   {
     id: "blocklist",
     title: "Threat blocklist",
-    what: "Matches the host against ~12k known phishing/malware hosts baked in offline (no keys, no network).",
+    what: "Matches the host against ~20k known phishing/malware hosts baked in offline (no keys, no network).",
     upliftRating: "MED",
     category: "Reputation",
     settingsPath: "detection.localBlocklist",
@@ -108,6 +108,17 @@ export const PROTECTION_CATALOG = Object.freeze([
     settingsPath: "detection.downloadGuard",
     defaultOn: true,
     limit: "Gated to low-trust pages to avoid nagging; a trusted-looking host is not flagged.",
+  },
+  {
+    id: "adtracker",
+    title: "Ad & tracker blocker",
+    what: "Blocks network requests to thousands of known ad/tracker domains (declarativeNetRequest, enforced by Chrome).",
+    upliftRating: "MED",
+    category: "Privacy",
+    settingsPath: "detection.adTrackerBlocker",
+    defaultOn: true,
+    limit:
+      "Domain-based (a curated free list) — not a full ad blocker; some ads on first-party domains and cosmetic elements are not removed.",
   },
   {
     id: "permissions",

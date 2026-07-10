@@ -12,7 +12,8 @@
     "tabs",
     "notifications",
     "webNavigation",
-    "webRequest"
+    "webRequest",
+    "declarativeNetRequest"
   ],
   "hostPermissions": [
     "http://*/*",
@@ -60,14 +61,14 @@
   "memoryLeakDetected": false,
   "docsComplete": true,
   "tests": {
-    "passed": 674,
+    "passed": 680,
     "failed": 0,
-    "files": 228
+    "files": 232
   },
   "artifact": {
     "path": "public/kedayam.zip",
-    "bytes": 257074,
-    "sha256": "bc20047c35121b0100b4c339e613bee621d667ada01e15e2378ca23faa9c2ed0"
+    "bytes": 336684,
+    "sha256": "d9925fdf5ecf6ff4b83d9a72c88147b6f4b37135fbbe1805f9da3ebb1e961eb0"
   },
   "browserStoreReady": true
 }

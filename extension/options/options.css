@@ -62,3 +62,23 @@ button.ghost { background: rgba(148,163,184,0.08); color: var(--text); border: 1
 
 .toast { position: fixed; bottom: 24px; right: 24px; background: rgba(15,23,42,0.95); border: 1px solid var(--cyan); color: var(--text); padding: 10px 14px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .toast.show { opacity: 1; }
+
+/* Protection / transparency panel */
+.protection-list { display: flex; flex-direction: column; gap: 10px; }
+.protection-item { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.protection-item.dim { opacity: 0.55; }
+.pi-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pi-title { font-weight: 600; margin-right: 2px; }
+.pi-what { color: #cbd5e1; font-size: 12.5px; margin-top: 6px; }
+.pi-limit { color: var(--muted); font-size: 12px; margin-top: 5px; }
+.pi-limit strong { color: #b7c2d4; font-weight: 600; }
+.uplift { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 6px; text-transform: none; }
+.uplift.u-HIGH { background: rgba(46,211,163,0.14); color: #2ed3a3; }
+.uplift.u-MED { background: rgba(245,177,61,0.14); color: #f5b13d; }
+.uplift.u-LOW { background: rgba(148,163,184,0.14); color: #94a3b8; }
+.pill { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-left: auto; }
+.pill.on { background: rgba(46,211,163,0.12); color: #2ed3a3; }
+.pill.off { background: rgba(240,85,106,0.14); color: #f0556a; }
+.pill.core { background: rgba(34,211,238,0.10); color: var(--cyan); }
+.limits { margin: 8px 0 0; padding-left: 18px; }
+.limits li { font-size: 12px; color: #cbd5e1; padding: 2px 0; }

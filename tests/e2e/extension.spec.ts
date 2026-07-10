@@ -64,3 +64,29 @@ test("popup HTML renders without errors", async () => {
     await ctx.close();
   }
 });
+
+test("options Transparency panel renders the protection catalog", async () => {
+  const ctx = await launchWithExtension();
+  try {
+    const sw = await waitForWorker(ctx);
+    const extensionId = sw.url().split("/")[2];
+    const page = await ctx.newPage();
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.goto(`chrome-extension://${extensionId}/options/options.html`);
+
+    // Wait for the catalog (imported module + settings message + render) to populate.
+    await expect(page.locator("#protection-overview .protection-item").first()).toBeVisible();
+    const count = await page.locator("#protection-overview .protection-item").count();
+    expect(count).toBeGreaterThanOrEqual(8);
+
+    // Flagship layers + honest ratings/limits are surfaced to the user.
+    await expect(page.locator(".pi-title", { hasText: "ClickFix" })).toBeVisible();
+    await expect(page.locator(".uplift.u-HIGH").first()).toBeVisible();
+    await expect(page.locator("#protection-limits li").first()).toBeVisible();
+    await expect(page.locator("#protection-summary")).toContainText("layers active");
+    expect(errors).toEqual([]);
+  } finally {
+    await ctx.close();
+  }
+});

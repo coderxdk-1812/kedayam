@@ -16,7 +16,8 @@
           </div>
         </div>
         <nav>
-          <a href="#detection" class="active">Detection</a>
+          <a href="#transparency" class="active">Protection</a>
+          <a href="#detection">Detection</a>
           <a href="#threatfeed">Threat feed</a>
           <a href="#regions">PII regions</a>
           <a href="#api">API keys</a>
@@ -32,6 +33,21 @@
           <h1>Configure your shield</h1>
           <p>Tune what Kedayam watches for, where it focuses, and which APIs it consults.</p>
         </header>
+
+        <section id="transparency" class="card">
+          <h2>What this protects you from — an honest view</h2>
+          <p class="muted">
+            Kedayam is a defense-in-depth <strong>second layer</strong> on top of Chrome's built-in
+            Safe Browsing. Below is a candid rating of how much each layer adds, whether it's active
+            right now, and its honest limits. Everything runs locally on your device.
+          </p>
+          <p class="muted" id="protection-summary"></p>
+          <div id="protection-overview" class="protection-list"></div>
+          <div class="callout" style="margin-top: 14px">
+            <strong>Honest limits</strong>
+            <ul id="protection-limits" class="limits"></ul>
+          </div>
+        </section>
 
         <section id="detection" class="card">
           <h2>Detection</h2>

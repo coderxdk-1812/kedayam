@@ -1,3 +1,9 @@
+import {
+  getProtectionOverview,
+  protectionSummary,
+  PROTECTION_LIMITS,
+} from "../lib/protectionCatalog.js";
+
 const send = (msg) => new Promise((resolve) => chrome.runtime.sendMessage(msg, resolve));
 let settings = null;
 
@@ -37,6 +43,8 @@ async function init() {
   document
     .getElementById("vt")
     .addEventListener("change", (e) => save({ apiKeys: { virusTotal: e.target.value.trim() } }));
+
+  renderProtectionOverview();
 
   renderAllowlist();
   document.getElementById("allow-add").addEventListener("click", addAllow);
@@ -91,6 +99,7 @@ function nestedPatch(path, val) {
 
 async function save(patch) {
   settings = await send({ type: "saveSettings", patch });
+  renderProtectionOverview(); // keep the live on/off state in sync
   toast("Saved");
 }
 
@@ -109,6 +118,40 @@ async function addAllow() {
   settings = await send({ type: "saveSettings", patch: { allowlist: next } });
   input.value = "";
   renderAllowlist();
+}
+
+function renderProtectionOverview() {
+  const host = document.getElementById("protection-overview");
+  if (!host) return;
+  const rows = getProtectionOverview(settings);
+  host.innerHTML = rows
+    .map((r) => {
+      const state = r.enabled
+        ? '<span class="pill on">On</span>'
+        : '<span class="pill off">Off</span>';
+      const core = r.core ? '<span class="pill core">Always on</span>' : "";
+      return `<div class="protection-item ${r.enabled ? "" : "dim"}">
+        <div class="pi-head">
+          <span class="pi-title">${escapeHtml(r.title)}</span>
+          <span class="uplift u-${r.upliftRating}">${r.upliftRating} uplift</span>
+          ${r.core ? core : state}
+        </div>
+        <div class="pi-what">${escapeHtml(r.what)}</div>
+        <div class="pi-limit"><strong>Limit:</strong> ${escapeHtml(r.limit)}</div>
+      </div>`;
+    })
+    .join("");
+
+  const s = protectionSummary(settings);
+  const summary = document.getElementById("protection-summary");
+  if (summary) {
+    summary.textContent = `${s.active} of ${s.total} layers active · ${s.highActive} rated HIGH uplift.`;
+  }
+
+  const limits = document.getElementById("protection-limits");
+  if (limits) {
+    limits.innerHTML = PROTECTION_LIMITS.map((l) => `<li>${escapeHtml(l)}</li>`).join("");
+  }
 }
 
 function renderAllowlist() {

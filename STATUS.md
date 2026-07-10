@@ -43,6 +43,10 @@ replacement.
 - Detection engine v1.1.0: threat blocklist, lookalike/homoglyph, IDN mixed-script,
   URL reputation (abused TLD / shortener / brand-subdomain / TLD-swap), open-redirect,
   clone/phishing DOM, auth-flow arbitration, explainable 0–100 verdict.
+- **In-product Transparency panel** (`lib/protectionCatalog.js` → Options
+  "Protection" tab): shows every layer with a plain-English description, an honest
+  HIGH/MED/LOW uplift rating, live on/off state, and its honest limit — plus the
+  product-wide limits. Same candid assessment users see and devs do. e2e-verified.
 - **On-device phishing classifier** (`lib/phishingClassifier.js`): bundled logistic
   model over URL/DOM structure — catches zero-day kits with no brand keyword. Local,
   explainable, FP-safe (trusted roots short-circuit).

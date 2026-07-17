@@ -315,15 +315,40 @@ export function arbitrate(ctx) {
       reason: "Page mentions a major brand it does not belong to.",
     });
   }
-  if (credentialHarvest && isUnknown) {
-    apply({ id: "unknown-login", cap: 60, reason: "Credential form on an unverified domain." });
+  // Corroboration gate (login false-positive fix).
+  // "Unknown until trust is earned" must not mean "every sign-in page is
+  // suspicious". A login/auth workflow on an unlisted domain only warrants a
+  // cap when an INDEPENDENT risk signal agrees. A clean, same-origin HTTPS
+  // sign-in form with no other cue stays in the safe band — matching how
+  // mainstream browsers treat unlisted bank / SaaS / SSO logins. Every strong
+  // attack pattern (external POST, lookalike, IDN, clone, brand spoof,
+  // blocklist, threat-intel) already fired its own lower cap above, so this
+  // gate never suppresses real evidence — it only silences the bare fact of
+  // "unknown domain + password field".
+  const corroborated =
+    behavioralEvidence ||
+    lookalikeConf > 0.5 ||
+    cloneConf >= 0.4 ||
+    phishConf >= 0.4 ||
+    !!ctx.abusedTld ||
+    !!ctx.newDomain ||
+    !!ctx.insecureTransport ||
+    hiddenOverlay ||
+    emailFirst;
+  if (credentialHarvest && isUnknown && corroborated) {
+    apply({
+      id: "unknown-login",
+      cap: C.CAP_UNKNOWN_LOGIN,
+      reason: "Credential form on an unverified domain alongside a corroborating risk signal.",
+    });
     if (phishConf >= 0.5) out.forceStatus = out.forceStatus || "suspicious";
   }
-  if (ctx.hasAuthWorkflow && !credentialHarvest && isUnknown) {
+  if (ctx.hasAuthWorkflow && !credentialHarvest && isUnknown && corroborated) {
     apply({
       id: "unknown-auth",
       cap: C.CAP_UNKNOWN_AUTH,
-      reason: "Authentication workflow on an unverified domain.",
+      reason:
+        "Authentication workflow on an unverified domain alongside a corroborating risk signal.",
     });
   }
   // Abused / free TLD that is ALSO presenting an auth workflow on an unknown

@@ -123,12 +123,38 @@ describe("analyzePhishing", () => {
     expect(r.signals.some((s) => s.id === "form-javascript")).toBe(true);
   });
 
-  it("flags brand impersonation even without a password field", () => {
+  it("does NOT flag brand impersonation for a bare brand mention with no credential capture", () => {
+    // A page that merely talks about a brand — a forum post, a news article, a
+    // scam-warning page — is not impersonation and must not be penalized.
+    // (Regression guard for the news/blog/forum false-positive class.)
     const r = analyzePhishing({
       pageOrigin: "https://random-domain.tld",
       title: "PayPal account update",
       visibleText: "Confirm your PayPal account or it will be suspended.",
       forms: [],
+    });
+    expect(r.brandImpersonation).toBe(null);
+    expect(r.signals.some((s) => s.id === "brand-impersonation")).toBe(false);
+  });
+
+  it("flags brand impersonation when brand text is paired with a credential prompt", () => {
+    const r = analyzePhishing({
+      pageOrigin: "https://random-domain.tld",
+      title: "PayPal account update",
+      visibleText: "Confirm your PayPal account password or it will be suspended.",
+      hasPasswordField: true,
+      forms: [
+        {
+          action: "/steal",
+          method: "post",
+          hasPassword: true,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 0,
+          fieldsCount: 2,
+          insideIframe: false,
+        },
+      ],
     });
     expect(r.brandImpersonation?.brand).toBe("paypal.com");
     expect(r.cap).toBeLessThanOrEqual(50);

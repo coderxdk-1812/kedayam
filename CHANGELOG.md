@@ -1,5 +1,38 @@
 # Changelog
 
+## [Unreleased] — 2026-07-17 — Trust-score false-positive fix (legit sites read "safe")
+
+### Fixed — the "every good site scores ~65 / suspicious" false-positive
+Root-caused after loading the extension in a real browser and scoring live
+pages. Three compounding causes, all corrected; real-DOM scores after the fix:
+BBC News, Hacker News, StackOverflow, Reddit, gov.uk → **77 safe**; Wikipedia,
+GitHub → **100 safe**. All phishing corpora still score **0/dangerous**.
+
+- **Baseline too low** (`trustEngine.js`): `BASELINE` 50 → **62**. A clean
+  HTTPS site with zero risk signals now lands in the safe band (≥71) instead of
+  65/suspicious. Being *unknown* is a ranking, not a warning — reputable roots
+  still reach ~100 and outrank unknown-but-clean sites.
+- **Blanket login soft-cap removed** (`trustEngine.js`): the unconditional
+  `min(score, 65)` on any unknown auth page is gone. Whether a sign-in page is
+  capped is now owned solely by the corroboration-gated arbitration rules.
+- **Arbitration `unknown-login` / `unknown-auth` now require corroboration**
+  (`arbitration.js`): a clean, same-origin HTTPS login (a bank, unlisted SaaS,
+  company SSO) stays safe; the cap fires only when an independent risk cue
+  agrees (external POST, lookalike, IDN, clone, new domain, insecure transport,
+  abused TLD, hidden overlay, email-first).
+- **`brand-impersonation` no longer fires on a bare brand mention**
+  (`phishingHeuristics.js`): merely mentioning/linking to a brand (news, blogs,
+  forums, aggregators like Hacker News) is not impersonation. It now requires an
+  actual credential prompt (password / OTP / OAuth) on a non-brand domain.
+- **`unknown-auth-workflow` requires a real auth-form element**
+  (`phishingHeuristics.js`): a "Sign in" link in a site header (auth *text*
+  only) no longer penalizes the page; an OTP/OAuth credential element is needed.
+- **Docs/UI:** `PERMISSIONS.md` now correctly documents `declarativeNetRequest`
+  (was still listed under "we do NOT request"); popup footer version reads from
+  the manifest instead of a hardcoded `v1.0.0`.
+- Tests: recalibrated 2 expectations to the new posture, added 2 guard tests;
+  **681 passing**. Release artifact + cross-browser zips rebuilt and re-certified.
+
 ## [Unreleased] — 2026-07-10 — Ad/tracker blocker + wider phishing bake + promo asset
 
 ### Added — ad & tracker blocker (first new permission)

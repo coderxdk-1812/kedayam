@@ -93,12 +93,15 @@ describe("arbitrate (deterministic precedence)", () => {
 describe("trust calibration (earn-trust model)", () => {
   const settings = { detection: { sensitivity: "balanced" }, apiKeys: {}, allowlist: [] };
 
-  it("unknown HTTPS site lands in informational band, not 100", async () => {
+  it("clean unknown HTTPS site is safe but earns less trust than a reputable root", async () => {
     // A plain, clean unknown host (no digit-heavy / hyphenated phishy shape, which
-    // the measured classifier legitimately penalizes) — checks the earn-trust band.
+    // the measured classifier legitimately penalizes). Being unknown is NOT
+    // suspicious — a clean HTTPS site with zero risk signals lands in the safe
+    // band. It must still score clearly below a reputable root (which reaches
+    // ~100), so "unknown until trust is earned" holds as a *ranking*, not a warning.
     const r = await evaluateUrl("https://myunknownblog.tld/", { settings });
-    expect(r.score).toBeGreaterThanOrEqual(50);
-    expect(r.score).toBeLessThan(75);
+    expect(r.score).toBeGreaterThanOrEqual(71); // safe band
+    expect(r.score).toBeLessThan(90); // below reputable roots
   });
 
   it("unknown auth page never enters safe band", async () => {

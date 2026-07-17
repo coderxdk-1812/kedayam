@@ -575,7 +575,15 @@ export async function evaluateUrl(url, ctx = {}) {
   });
   for (const sig of classifier.signals) fire(sig);
 
-  const BASELINE = 50;
+  // Neutral baseline for an unknown-but-clean site. "Unknown until trust is
+  // earned" governs how far a site can RISE (reputable roots, allowlist, and
+  // learned-safe history add on top) and how hard risk signals pull it DOWN —
+  // it must NOT mean "every unlisted site is suspicious". A clean HTTPS page
+  // with zero risk signals lands in the safe band (baseline + HTTPS ≥ 71);
+  // penalties and arbitration caps are what move a site into suspicious /
+  // dangerous. Chosen so bbc.co.uk / gov.uk / a local business site read as
+  // safe while a lookalike or credential-exfil page still scores low.
+  const BASELINE = 62;
   if (parsed.protocol === "https:") {
     addTrust({ id: "https-trust", title: "Encrypted connection (HTTPS)", points: 10 });
   }
@@ -622,11 +630,12 @@ export async function evaluateUrl(url, ctx = {}) {
   const penalty = fired.reduce((acc, s) => acc + s.contribution, 0); // negative
   let score = BASELINE + trustGain + penalty;
 
-  // Soft pre-cap: an unknown root presenting an auth workflow can never
-  // accidentally cross into "safe" without strong corroboration.
-  if (hasAuthWorkflow && !isReputableRoot && !allowlistRoot && !isTrustedProvider) {
-    score = Math.min(score, 65);
-  }
+  // A sign-in workflow on an unlisted domain is NOT suspicious on its own — a
+  // clean, same-origin HTTPS login (a bank, an unlisted SaaS, a company SSO)
+  // must read as safe. Whether such a page is capped into "suspicious" is
+  // owned solely by the corroboration-gated `unknown-login` / `unknown-auth`
+  // rules in arbitration below, which fire only when an independent risk cue
+  // agrees. We therefore no longer apply a blanket soft pre-cap here.
 
   score = Math.max(0, Math.min(100, score));
   if (trustFloor) score = Math.max(score, trustFloor);
@@ -758,6 +767,14 @@ export async function evaluateUrl(url, ctx = {}) {
     urlBrandSpoof: !!urlRep.brandSubdomain,
     tldSwap: !!urlRep.tldSwap,
     abusedTld: urlRep.abusedTld,
+    // Corroboration inputs for the unknown-login / unknown-auth gate: a
+    // sign-in page on an unlisted domain is only "suspicious" when paired with
+    // an independent risk cue. Insecure transport and a freshly registered
+    // domain both qualify (a clean same-origin HTTPS login on an established
+    // domain does not).
+    insecureTransport: parsed.protocol !== "https:",
+    newDomain:
+      typeof domainAgeDays === "number" && domainAgeDays >= 0 && domainAgeDays < NEW_DOMAIN_DAYS,
   });
   // Apply arbitration caps unconditionally. The allowlist primitive raises
   // the floor and silences weak heuristics inside arbitrate(), but it MUST

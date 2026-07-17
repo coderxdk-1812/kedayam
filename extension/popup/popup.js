@@ -26,6 +26,9 @@ let currentResult = null;
 
 async function init() {
   try {
+    // Keep the footer version in sync with the manifest so it never drifts.
+    const verEl = document.getElementById("ext-version");
+    if (verEl) verEl.textContent = `v${chrome.runtime.getManifest().version}`;
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     currentTab = tab;
     if (!tab?.url || !/^https?:/.test(tab.url)) {

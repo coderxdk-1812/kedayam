@@ -1,6 +1,6 @@
 # Kedayam Browser Shield — Status
 
-Last updated: 2026-07-10
+Last updated: 2026-07-17
 
 MV3 Chrome extension (`extension/`) — freeware, key-less, local-only phishing +
 malware + data-leak protection. Shippable artifact: `public/kedayam.zip`.
@@ -44,6 +44,14 @@ replacement.
 
 ## Shipped
 
+- **Trust-score false-positive fix (2026-07-17)**: legit sites no longer read
+  "suspicious ~65". Raised `BASELINE` 50→62, removed the blanket unknown-login
+  soft-cap, gated arbitration `unknown-login`/`unknown-auth` on corroboration,
+  and stopped `brand-impersonation` / `unknown-auth-workflow` from firing on
+  bare brand mentions or header "Sign in" links. Real-DOM after fix: BBC / HN /
+  StackOverflow / Reddit / gov.uk → **77 safe**, Wikipedia / GitHub → **100
+  safe**; all phishing corpora still **0/dangerous**. Verified by loading the
+  live extension in a real browser.
 - Detection engine v1.1.0: threat blocklist, lookalike/homoglyph, IDN mixed-script,
   URL reputation (abused TLD / shortener / brand-subdomain / TLD-swap), open-redirect,
   clone/phishing DOM, auth-flow arbitration, explainable 0–100 verdict.
@@ -70,7 +78,7 @@ replacement.
 - Page-runtime guards: paste/file/permission, **hardened ClickFix clipboard**
   (deferred `clipboard.write`/`setData` hooks + one-click "clear clipboard" +
   broader command/lure signatures), download, scareware.
-- **680 unit/redteam/compat tests green** (full per-file results in
+- **681 unit/redteam/compat tests green** (full per-file results in
   [`test.html`](test.html), regenerate with `bun run test:report`); ESLint/prettier
   clean; validator clean.
 - **Byte-reproducible build**: icons are committed source; zip is deterministic
@@ -82,9 +90,10 @@ replacement.
 
 ## Pending / Backlog
 
-- Store logistics: hosted Privacy Policy URL (page exists, must deploy),
-  1280×800 screenshot + 440×280 promo tile (none yet), dev account ($5 + ID),
-  data-handling disclosures, broad-permission justification.
+- Store logistics: Privacy Policy URL **live** (https://kedayam.lovable.app/privacy),
+  440×280 promo tile + permission justification + data-handling disclosures
+  **done** (per submitter 2026-07-17); still need a **1280×800 screenshot**
+  (Chrome Web Store requires ≥1) and the dev account ($5 + ID verification).
 - **Firefox runtime validation**: `web-ext lint` + load the generated
   `kedayam-firefox.zip` (background-ESM support varies by FF version).
 - **i18n** of warning copy (`_locales/`, Hindi/EU langs) — not started.

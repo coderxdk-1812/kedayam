@@ -214,6 +214,17 @@ export function analyzePhishing(ctx = {}) {
   const hasIdnSpoof = lookalike.match?.kind === "punycode" || /(^|\.)xn--/i.test(pageHost);
 
   // ---- Brand impersonation (text/title vs domain) ----
+  // A brand mention is only impersonation when the page is ALSO trying to
+  // collect credentials for that brand. Merely mentioning or linking to a
+  // brand — news articles, blogs, forums, review sites, aggregators such as
+  // Hacker News, docs — is normal and must NOT penalize the page. Real brand
+  // phishing pairs the brand name with an actual credential prompt (password,
+  // OTP, or an OAuth button) on a non-brand domain. A bare "login" link in a
+  // header is not credential entry and does not qualify.
+  const brandCredIntent =
+    !!ctx.hasPasswordField ||
+    (ctx.forms || []).some((f) => f.hasPassword || f.hasOtp) ||
+    !!ctx.oauthButtons?.length;
   let brandHit = null;
   for (const b of BRAND_KEYWORDS) {
     if (b.kw.some((k) => text.includes(k))) {
@@ -224,7 +235,7 @@ export function analyzePhishing(ctx = {}) {
       }
     }
   }
-  if (brandHit) {
+  if (brandHit && brandCredIntent) {
     out.brandImpersonation = {
       brand: brandHit.root,
       evidence: brandHit.kw.find((k) => text.includes(k)) || brandHit.root,
@@ -234,7 +245,7 @@ export function analyzePhishing(ctx = {}) {
       category: "identity",
       severity: "high",
       title: `Page mentions ${brandHit.root} but is not on that domain`,
-      detail: `Found "${out.brandImpersonation.evidence}" in page text on ${pageRoot}.`,
+      detail: `Found "${out.brandImpersonation.evidence}" in page text on ${pageRoot}, which is collecting credentials.`,
       weight: 50,
       confidence: 0.85,
     });
@@ -289,7 +300,13 @@ export function analyzePhishing(ctx = {}) {
     });
   }
 
-  if (hasAuthWorkflow && !hasPwd && !trusted) {
+  // A real credential-entry element must be present for this to fire — an
+  // OTP/email login form or an OAuth button. Merely matching sign-in TEXT
+  // (a "Log in" / "Sign in" link in a site header, ubiquitous on news sites,
+  // blogs, and forums) is NOT a credential workflow and must not penalize the
+  // page. Password-bearing forms are handled by `credential-form` above.
+  const hasAuthFormElement = loginForms.length > 0 || !!ctx.oauthButtons?.length;
+  if (hasAuthFormElement && !hasPwd && !trusted) {
     out.authRisk = "medium";
     out.signals.push({
       id: "unknown-auth-workflow",

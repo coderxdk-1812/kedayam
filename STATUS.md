@@ -2,6 +2,12 @@
 
 Last updated: 2026-07-28
 
+> **2026-07-28 (v1.1.1) — "scan not visible / UNAVAILABLE" fixed:** root cause was
+> `scan.tabId` validation bounded at `< 1e7`; Chrome tab ids exceed 10M on
+> long-lived profiles, so the popup's scan was rejected (`invalid:scan.tabId`).
+> Now accepts any safe-integer id + URL-only popup fallback. This is the real fix
+> for the "trust score doesn't load" report.
+>
 > **2026-07-28 — tester-reported fixes shipped:** DOM-context login false
 > positives fixed (ungated `phishing.cap=60` removed; `credential-form` →
 > informational; benign "sign in" no longer "urgent"; `auth-keyword` gated to the
@@ -9,7 +15,7 @@ Last updated: 2026-07-28
 > unchanged. Warning modals gained a working **"Leave this page"** button. Popup:
 > cold-SW retry + clearer non-scannable copy + richer explanation. New **local**
 > "threats prevented" counters (popup Activity tab; zero telemetry) + Cloudflare
-> metrics guide (`CLOUDFLARE_METRICS.md`). **691 tests green** (+9 regressions).
+> metrics guide (`CLOUDFLARE_METRICS.md`). **693 tests green** (+9 regressions).
 
 MV3 Chrome extension (`extension/`) — freeware, key-less, local-only phishing +
 malware + data-leak protection. Shippable artifact: `public/kedayam.zip`.

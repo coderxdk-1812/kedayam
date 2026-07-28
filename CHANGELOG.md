@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.1.1] — 2026-07-28 — Fix "scan not visible / UNAVAILABLE" (invalid:scan.tabId)
+
+**Root cause found from a tester screenshot** showing the popup stuck on
+"UNAVAILABLE" with the error `invalid:scan.tabId`. The message-schema validator
+bounded `scan.tabId` with `isInt` (`< 1e7`), but **Chrome tab ids increment
+across the whole browser lifetime** and on a long-lived profile easily exceed 10
+million. A legitimate large tab id was rejected, so the popup's scan message
+never ran and the trust score never loaded. (Earlier in-browser testing used a
+fresh profile with small ids, which is why it wasn't caught then.)
+
+- `lib/messageSchemas.js`: `scan.tabId` now validates with `isBrowserId`
+  (`Number.isSafeInteger(v) && v >= 0`) — accepts real tab ids, still rejects
+  negatives / non-integers / unsafe values.
+- `popup/popup.js`: added a URL-only fallback scan (no tabId) so any future
+  validation hiccup degrades to a working score instead of "UNAVAILABLE".
+- Bumped extension **version 1.1.0 → 1.1.1** so the fixed build is visibly
+  identifiable (the reported screenshot showed a stale v1.0.0 footer).
+- Verified in a real Chromium build with a large stubbed tab id (987654321):
+  popup now loads **100 / Safe**. 693 tests (+2 tabId regressions).
+
 ## [Unreleased] — 2026-07-28 — Tester-reported fixes (FP calibration, popup, warning buttons, metrics)
 
 Addressed five issues a tester reported. Verified in a real Chromium build via

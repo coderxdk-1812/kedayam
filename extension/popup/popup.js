@@ -62,6 +62,11 @@ async function refresh(force) {
     await new Promise((r) => setTimeout(r, 250));
     result = await send({ type: "scan", url: currentTab.url, tabId: currentTab.id, force });
   }
+  // Belt-and-suspenders: if the tabId is ever rejected by validation, fall back
+  // to a URL-only scan so the score still loads instead of reading "UNAVAILABLE".
+  if (!result || result.ok === false) {
+    result = await send({ type: "scan", url: currentTab.url, force });
+  }
   if (!result || result.ok === false) {
     showError(result?.error || "Unable to contact the Kedayam service worker.");
     return;

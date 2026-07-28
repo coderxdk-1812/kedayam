@@ -18,6 +18,16 @@ Last updated: 2026-07-28
 - **Refresh the feed snapshot per release**: `bun run feeds:snapshot` && commit
   `lib/rules/blocklistSnapshot.js` (currently ~12k hosts, pulled 2026-07-10).
 
+### Done 2026-07-28 (v1.1.1 — "scan not visible / UNAVAILABLE" root cause)
+- Tester screenshot showed the popup stuck on **UNAVAILABLE** with
+  `invalid:scan.tabId`. Root cause: `messageSchemas.js` bounded `scan.tabId` at
+  `< 1e7`, but Chrome tab ids exceed 10M on long-lived profiles → the scan
+  message was rejected and the score never loaded. Fixed with `isBrowserId`
+  (`Number.isSafeInteger`); added a URL-only popup fallback; bumped to **v1.1.1**
+  so the fixed build is identifiable. Verified in-browser with a large tab id
+  (987654321) → popup loads 100/Safe. This is the actual fix for the earlier
+  "trust score doesn't load in popup" report (issue #2).
+
 ### Done 2026-07-28 (tester-reported fixes — FP calibration, popup, buttons, metrics)
 - **Login-page false positives (issue #1)**: the July fix handled URL-only
   scoring but DOM-context logins still read "suspicious". Root cause found by

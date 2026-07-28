@@ -31,7 +31,13 @@ const isUrl = (v) => {
 };
 const isDomain = (v) => isStr(v, MAX_DOMAIN) && /^[a-z0-9.\-_:]+$/i.test(v);
 const isBool = (v) => typeof v === "boolean";
-const isInt = (v) => Number.isInteger(v) && v >= 0 && v < 1e7;
+// Browser-assigned identifiers (tab/window ids) are NOT bounded by a small
+// constant — Chrome increments them across the whole browser lifetime, so on a
+// long-lived profile a legitimate tab id easily exceeds 10 million. An earlier
+// `< 1e7` bound rejected such ids with `invalid:scan.tabId`, which killed the
+// popup's scan message and left the trust score stuck on "UNAVAILABLE". Accept
+// any non-negative safe integer instead. (NEW-05.)
+const isBrowserId = (v) => Number.isSafeInteger(v) && v >= 0;
 
 function tooManyKeys(obj) {
   return obj && typeof obj === "object" && Object.keys(obj).length > MAX_PAYLOAD_KEYS;
@@ -131,7 +137,7 @@ export function sanitizePageContext(ctx) {
 export const SCHEMAS = Object.freeze({
   scan: (m) => {
     if (!isUrl(m?.url)) return { ok: false, error: "scan.url" };
-    if (m.tabId != null && !isInt(m.tabId)) return { ok: false, error: "scan.tabId" };
+    if (m.tabId != null && !isBrowserId(m.tabId)) return { ok: false, error: "scan.tabId" };
     if (m.force != null && !isBool(m.force)) return { ok: false, error: "scan.force" };
     return { ok: true, value: { url: m.url, tabId: m.tabId ?? null, force: !!m.force } };
   },

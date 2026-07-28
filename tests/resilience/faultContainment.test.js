@@ -69,6 +69,27 @@ describe("R1 — malformed pageContext sanitization", () => {
     expect(v.ok).toBe(false);
   });
 
+  it("scan validator accepts a large real-world tab id (NEW-05)", () => {
+    // Chrome increments tab ids across the whole browser lifetime; a long-lived
+    // profile easily exceeds 10 million. Such ids MUST validate, or the popup's
+    // scan is rejected (`invalid:scan.tabId`) and the score stays "UNAVAILABLE".
+    const v = validateMessage({
+      type: "scan",
+      url: "https://try-zenith.lovable.app/",
+      tabId: 123456789, // > 1e7
+      force: true,
+    });
+    expect(v.ok).toBe(true);
+    expect(v.value.tabId).toBe(123456789);
+  });
+
+  it("scan validator still rejects a non-integer / negative tab id", () => {
+    expect(validateMessage({ type: "scan", url: "https://x.test/", tabId: -1 }).ok).toBe(false);
+    expect(validateMessage({ type: "scan", url: "https://x.test/", tabId: 1.5 }).ok).toBe(false);
+    // …but a null/absent tabId is fine (URL-only scan).
+    expect(validateMessage({ type: "scan", url: "https://x.test/" }).ok).toBe(true);
+  });
+
   it("downstream consumers do NOT throw on sanitized malformed input", () => {
     for (const { ctx } of malformedShapes) {
       const clean = sanitizePageContext(ctx);

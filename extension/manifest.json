@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Kedayam Browser Shield",
   "short_name": "Kedayam",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Free real-time protection from phishing, ClickFix malware, fake-CAPTCHA scams and data leaks — no account or API key needed.",
   "minimum_chrome_version": "114",
   "permissions": [

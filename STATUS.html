@@ -182,9 +182,24 @@
     <div class="wrap">
       <h1>🛡️ Kedayam Browser Shield — Status &amp; Reality Check</h1>
       <div class="sub">
-        Last updated: 2026-07-28 · MV3 freeware, key-less, local-only · artifact
-        <code>public/kedayam.zip</code> · <a href="test.html"><strong>693 tests green ↗</strong></a> ·
+        Last updated: 2026-07-28 · v1.1.2 · MV3 freeware, key-less, local-only · artifact
+        <code>public/kedayam.zip</code> · <a href="test.html"><strong>695 tests green ↗</strong></a> ·
         CI green
+      </div>
+
+      <div class="callout" style="border-left:4px solid #4fc3f7;background:#12233a;padding:12px 16px;margin:14px 0;border-radius:8px">
+        <strong>2026-07-28 (v1.1.2) — genuine HDFC / multi-domain-bank false positive fixed.</strong>
+        A tester screenshot showed the real HDFC NetBanking login
+        (<code>now.hdfc.bank.in</code>) flagged <strong>MEDIUM RISK · 20/100</strong> as
+        brand-impersonation ("mentions hdfcbank.com but is not on that domain"). Two
+        compounding bugs: (1) <code>bank.in</code> was missing from the public-suffix
+        list, so <code>now.hdfc.bank.in</code> collapsed to <code>bank.in</code> instead
+        of the real root <code>hdfc.bank.in</code>; (2) HDFC's brand entry only
+        whitelisted <code>hdfcbank.com</code>, so referencing it from HDFC's own
+        <code>.bank.in</code> domain looked off-domain. Added <code>bank.in</code>
+        (IDRBT/RBI registry) as a public suffix plus the <code>&lt;bank&gt;.bank.in</code>
+        aliases for HDFC/ICICI/Axis/Kotak/SBI. Genuine bank logins now <strong>safe</strong>;
+        off-domain lookalikes still <strong>dangerous</strong>. 695 tests green (+2 regressions).
       </div>
 
       <!-- ============================ REALITY CHECK ============================ -->

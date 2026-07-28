@@ -219,6 +219,9 @@ const PSL_TWO_LEVEL = new Set([
   "ind.in",
   "ac.in",
   "gov.in",
+  // IDRBT/RBI-managed registry: every Indian bank gets <bank>.bank.in
+  // (e.g. hdfc.bank.in, icici.bank.in), so bank.in is a public suffix.
+  "bank.in",
   // Australia
   "com.au",
   "net.au",

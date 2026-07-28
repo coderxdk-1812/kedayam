@@ -95,6 +95,35 @@ describe("legit login pages are safe (NEW-04)", () => {
   });
 });
 
+// A brand can legitimately run on more than one registrable domain. HDFC's
+// live NetBanking realm is served from `<bank>.bank.in` (IDRBT/RBI registry)
+// while the page still references its better-known `hdfcbank.com`. Two bugs
+// combined to flag this genuine page as brand-impersonation:
+//   1. `bank.in` was missing from the public-suffix list, so `now.hdfc.bank.in`
+//      collapsed to `bank.in` instead of the real root `hdfc.bank.in`.
+//   2. HDFC's brand entry only whitelisted `hdfcbank.com`, so mentioning it
+//      from `hdfc.bank.in` looked off-domain.
+describe("multi-domain banks (.bank.in) are not brand-impersonation (NEW-06)", () => {
+  it("genuine HDFC NetBanking on now.hdfc.bank.in reads safe", async () => {
+    const r = await scoreOf("now.hdfc.bank.in", {
+      title: "HDFC Bank NetBanking",
+      text: "Welcome to HDFC Bank NetBanking. Beware of account misuse fraud. Visit hdfcbank.com. Customer ID Password Continue",
+    });
+    expect(r.status).toBe("safe");
+    expect((r.signals || []).some((s) => s.id === "brand-impersonation")).toBe(false);
+  });
+
+  it("a .bank.in lookalike that is NOT the bank's own subdomain still escalates", async () => {
+    // `hdfc-secure.example` mentions HDFC + hdfcbank.com off any HDFC domain.
+    const r = await scoreOf("hdfc-secure-login.example", {
+      title: "HDFC Bank Login",
+      text: "HDFC Bank NetBanking. Enter Customer ID Password. hdfcbank.com",
+    });
+    expect(r.status).toBe("dangerous");
+    expect((r.signals || []).some((s) => s.id === "brand-impersonation")).toBe(true);
+  });
+});
+
 describe("real phishing tells still escalate (NEW-04 must not weaken detection)", () => {
   it("off-domain credential POST is dangerous", async () => {
     const r = await scoreOf("secure-portal.example", {

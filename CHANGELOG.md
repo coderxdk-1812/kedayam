@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.1.2] — 2026-07-28 — Fix genuine HDFC / multi-domain-bank false positive
+
+A tester screenshot showed the **real** HDFC NetBanking login page
+(`now.hdfc.bank.in`) flagged as **MEDIUM RISK · 20/100** with the signal
+"Page mentions hdfcbank.com but is not on that domain — Authentication risk:
+critical". HDFC legitimately operates on two registrable domains
+(`hdfcbank.com` and, for its live Keycloak NetBanking realm, `hdfc.bank.in`),
+and two compounding bugs turned that into a brand-impersonation hit:
+
+1. **`bank.in` was missing from the public-suffix list** (`lib/lookalike.js`).
+   `rootDomain("now.hdfc.bank.in")` collapsed to `bank.in` instead of the real
+   registrable root `hdfc.bank.in`. `.bank.in` is an IDRBT/RBI-managed registry —
+   every Indian bank gets a name under it — so it is a public suffix.
+2. **HDFC's brand entry only whitelisted `hdfcbank.com`**
+   (`lib/phishingHeuristics.js`). Referencing that brand from HDFC's own
+   `.bank.in` domain read as off-domain, and with a password field present the
+   `brand-impersonation` signal (weight 50, authRisk critical) fired.
+
+Changes:
+- `lib/lookalike.js`: added `bank.in` to `PSL_TWO_LEVEL`.
+- `lib/phishingHeuristics.js`: added `<bank>.bank.in` to `TRUSTED_LOGIN_PROVIDERS`
+  and to the `BRAND_KEYWORDS` aliases for HDFC / ICICI / Axis / Kotak / SBI.
+- `tests/calibration/loginPageFalsePositives.test.js`: +2 regressions — genuine
+  `now.hdfc.bank.in` reads **safe**; an off-domain `.bank.in`-style lookalike
+  (`hdfc-secure-login.example`) still reads **dangerous** with `brand-impersonation`.
+- Bumped manifest + popup footer to **v1.1.2**; rebuilt `public/kedayam.zip`
+  (sha `2889adf1…`) + cross-browser zips; release-cert + drift gate re-verified.
+- **695 tests green** (was 693), lint clean.
+
 ## [1.1.1] — 2026-07-28 — Fix "scan not visible / UNAVAILABLE" (invalid:scan.tabId)
 
 **Root cause found from a tester screenshot** showing the popup stuck on

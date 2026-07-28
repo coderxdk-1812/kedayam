@@ -2,6 +2,18 @@
 
 Last updated: 2026-07-28
 
+> **2026-07-28 (v1.1.2) — genuine HDFC / multi-domain-bank false positive fixed:**
+> a tester screenshot showed the real HDFC NetBanking login
+> (`now.hdfc.bank.in`) flagged **MEDIUM RISK · 20/100** as brand-impersonation
+> ("mentions hdfcbank.com but is not on that domain"). Two compounding bugs:
+> (1) `bank.in` was missing from the public-suffix list, so `now.hdfc.bank.in`
+> collapsed to `bank.in` instead of the real root `hdfc.bank.in`; (2) HDFC's
+> brand entry only whitelisted `hdfcbank.com`, so referencing it from HDFC's own
+> `.bank.in` domain looked off-domain. Added `bank.in` (IDRBT/RBI registry) as a
+> public suffix and the `<bank>.bank.in` aliases for HDFC/ICICI/Axis/Kotak/SBI.
+> Genuine bank logins now **safe**; off-domain lookalikes still **dangerous**.
+> **695 tests green** (+2 regressions).
+>
 > **2026-07-28 (v1.1.1) — "scan not visible / UNAVAILABLE" fixed:** root cause was
 > `scan.tabId` validation bounded at `< 1e7`; Chrome tab ids exceed 10M on
 > long-lived profiles, so the popup's scan was rejected (`invalid:scan.tabId`).

@@ -18,6 +18,18 @@ Last updated: 2026-07-28
 - **Refresh the feed snapshot per release**: `bun run feeds:snapshot` && commit
   `lib/rules/blocklistSnapshot.js` (currently ~12k hosts, pulled 2026-07-10).
 
+### Done 2026-07-28 (v1.1.2 — genuine HDFC / multi-domain-bank false positive)
+- Tester screenshot: real HDFC NetBanking login (`now.hdfc.bank.in`) flagged
+  **MEDIUM RISK 20/100** as brand-impersonation ("mentions hdfcbank.com but is
+  not on that domain"). Root cause = two bugs: (1) `bank.in` missing from the
+  public-suffix list, so `rootDomain("now.hdfc.bank.in")` = `bank.in` not
+  `hdfc.bank.in`; (2) HDFC brand entry only whitelisted `hdfcbank.com`. Added
+  `bank.in` (IDRBT/RBI registry) to `PSL_TWO_LEVEL` and `<bank>.bank.in` aliases
+  for HDFC/ICICI/Axis/Kotak/SBI. Genuine bank logins → **safe**; off-domain
+  lookalikes still **dangerous**. Bumped to v1.1.2, rebuilt artifacts, drift gate
+  re-verified, **695 tests green** (+2 regressions in
+  `tests/calibration/loginPageFalsePositives.test.js`).
+
 ### Done 2026-07-28 (v1.1.1 — "scan not visible / UNAVAILABLE" root cause)
 - Tester screenshot showed the popup stuck on **UNAVAILABLE** with
   `invalid:scan.tabId`. Root cause: `messageSchemas.js` bounded `scan.tabId` at

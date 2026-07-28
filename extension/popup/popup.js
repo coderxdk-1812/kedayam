@@ -32,9 +32,13 @@ async function init() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     currentTab = tab;
     if (!tab?.url || !/^https?:/.test(tab.url)) {
-      setHero({ score: "—", status: "loading", host: tab?.url || "Unsupported page" });
-      $("#status-label").textContent = "Private";
-      $("#status-sub").textContent = "Kedayam scans http and https pages.";
+      // Browser-internal pages (chrome://, the new-tab page, the web store, PDF
+      // viewer, local files) can't be scanned by design — there's nothing to
+      // phish. Say so plainly so an empty score doesn't read as "broken".
+      setHero({ score: "—", status: "loading", host: hostLabel(tab?.url) });
+      $("#status-label").textContent = "Not scannable";
+      $("#status-sub").textContent =
+        "Open a normal website (a page starting with http:// or https://) and Kedayam will score it here.";
       renderSignals(null);
       renderDetails(null);
       await renderActivity();
@@ -50,7 +54,14 @@ async function init() {
 
 async function refresh(force) {
   setHero({ status: "loading" });
-  const result = await send({ type: "scan", url: currentTab.url, tabId: currentTab.id, force });
+  // The MV3 service worker may be asleep when the popup opens; the first
+  // message wakes it, but a cold start can occasionally miss. Retry once
+  // before surfacing an error so a transient wake-up never reads as "no score".
+  let result = await send({ type: "scan", url: currentTab.url, tabId: currentTab.id, force });
+  if (!result || result.ok === false) {
+    await new Promise((r) => setTimeout(r, 250));
+    result = await send({ type: "scan", url: currentTab.url, tabId: currentTab.id, force });
+  }
   if (!result || result.ok === false) {
     showError(result?.error || "Unable to contact the Kedayam service worker.");
     return;
@@ -59,6 +70,23 @@ async function refresh(force) {
   setHero({ score: result.score, status: result.status, host: result.host });
   renderSignals(result);
   renderDetails(result);
+}
+
+// Friendly label for a non-scannable page (chrome://, new tab, files, store).
+function hostLabel(url) {
+  if (!url) return "This page";
+  try {
+    if (url.startsWith("chrome://") || url.startsWith("edge://") || url.startsWith("about:"))
+      return "Browser page";
+    if (url.startsWith("chrome-extension://") || url.startsWith("moz-extension://"))
+      return "Extension page";
+    if (url.startsWith("file:")) return "Local file";
+    if (/chrome\.google\.com\/webstore|chromewebstore\.google\.com/.test(url))
+      return "Chrome Web Store";
+    return new URL(url).host || "This page";
+  } catch {
+    return "This page";
+  }
 }
 
 function setHero({ score, status, host }) {
@@ -217,16 +245,30 @@ function renderDetails(result) {
 }
 
 async function renderActivity() {
-  const list = (await send({ type: "getActivity" })) || [];
+  const [list, metrics] = await Promise.all([
+    send({ type: "getActivity" }),
+    send({ type: "getMetrics" }),
+  ]);
   const root = $("#panel-activity");
+  const m = metrics && metrics.ok !== false ? metrics : {};
+  // Local, on-device tally — nothing here is ever uploaded.
+  const statsHtml = `
+    <div class="stats-row">
+      <div class="stat"><div class="stat-num">${m.threatsPrevented || 0}</div><div class="stat-lbl">Threats blocked</div></div>
+      <div class="stat"><div class="stat-num">${m.pastesBlocked || 0}</div><div class="stat-lbl">Pastes protected</div></div>
+      <div class="stat"><div class="stat-num">${m.clickfixBlocked || 0}</div><div class="stat-lbl">ClickFix stopped</div></div>
+    </div>
+    <div class="stats-note">Counted locally on this device. Nothing is uploaded.</div>`;
   if (!Array.isArray(list) || !list.length) {
-    root.innerHTML = `<div class="empty">No activity yet.</div>`;
+    root.innerHTML = statsHtml + `<div class="empty">No recent activity.</div>`;
     return;
   }
-  root.innerHTML = list
-    .slice(0, 20)
-    .map(
-      (e) => `
+  root.innerHTML =
+    statsHtml +
+    list
+      .slice(0, 20)
+      .map(
+        (e) => `
     <article class="activity-item">
       <div>
         <div>${escapeHtml(label(e))}</div>
@@ -234,8 +276,8 @@ async function renderActivity() {
       </div>
       <div class="when">${ago(e.at)}</div>
     </article>`,
-    )
-    .join("");
+      )
+      .join("");
 }
 
 function apiLabel(api) {

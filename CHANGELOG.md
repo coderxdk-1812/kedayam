@@ -1,5 +1,64 @@
 # Changelog
 
+## [Unreleased] — 2026-07-28 — Tester-reported fixes (FP calibration, popup, warning buttons, metrics)
+
+Addressed five issues a tester reported. Verified in a real Chromium build via
+Playwright (`channel: "chromium"`) and 691 unit tests (was 682; +9 regressions).
+
+### Fixed — legit sites still reading medium-risk (issue #1, "NEW-04")
+The 2026-07-17 pass fixed URL-only scoring but **DOM-context** login pages still
+fell into "suspicious". Root-caused by scoring live/synthetic login pages:
+
+- **Ungated `phishing.cap = 60`** (`phishingHeuristics.js`): a hard 60-cap was
+  applied to **any** credential form, bypassing the corroboration gate added in
+  July. Now the bare-credential-form branch caps only when the page's own
+  heuristic stack is independently confident (≥0.6); escalation is otherwise
+  owned by arbitration's corroboration gate. *This was the primary cause.*
+- **`credential-form` penalty → informational** (`phishingHeuristics.js`): the
+  mere presence of a password form on an unlisted domain dropped from weight 25
+  (−21) to **weight 0** (informational). The `credentialHarvest` flag that drives
+  arbitration is unchanged, so phishing detection is untouched.
+- **Benign login copy no longer "urgent"** (`phishingHeuristics.js`): split out
+  `URGENT_AUTH_PHRASES` (coercive only — "verify your account", "unusual
+  activity", "account suspended"). Plain "sign in"/"log in"/"login" no longer
+  fires the `auth-phrasing` penalty.
+- **`auth-keyword` gated to the registrable label** (`trustEngine.js`): `login`/
+  `secure`/`account`/`verify` in a **subdomain** (`login.company.com`,
+  `secure.bank.com`) no longer penalizes — only when baked into the registrable
+  domain itself (`paypal-login.com`, `verify-portal.tld`).
+- **Latent bug fixed**: `hidden-login-fields` read `hiddenCount`/`fieldsCount`
+  but the sanitized pipeline uses `hiddenFields`/`fieldCount` — it never fired in
+  production. Now reads both spellings and fires on a high hidden **ratio** too.
+
+Result (real-DOM): unlisted bank / company SSO / unlisted SaaS logins →
+**72–77 safe**; off-domain POST, lookalike, brand-impersonation, coercive
+phrasing → still **0–37 dangerous**. All phishing corpora unchanged.
+
+### Fixed — warning-modal action buttons did nothing useful (issue #4)
+`content/content.js`: buttons fired (verified), but "Go back" only dismissed the
+modal, leaving the user on the hostile page — so it read as broken. Added a real
+**"Leave this page"** action (`onLeave` → `leaveToSafety()`: `history.back()`
+with an `about:blank` hard-replace fallback) wired into both the hard and soft
+trust modals. Delegation now uses `closest("[data-act]")` so a click on any
+child node still registers. Paste/file/permission modals keep "Go back" = cancel.
+
+### Improved — popup trust score & explanation (issues #2, #3)
+- `popup/popup.js`: retry the scan once on a cold service worker before showing
+  an error; clearer copy for non-scannable pages (chrome://, new tab, files,
+  store) so an empty score no longer reads as "broken". (The popup already loads
+  the score correctly on real http(s) tabs — confirmed in-browser.)
+- `lib/explanation.js`: every verdict now lists the concrete contributing
+  factors — for safe pages it cites the positive signals (encrypted connection,
+  known-reputable domain, prior safe use) instead of a bare "looks safe".
+
+### Added — local, privacy-safe metrics (issue #5, "threats prevented")
+- `lib/storage.js` `bumpMetric()`/`getMetrics()`: on-device counters
+  (`threatsPrevented`, `pastesBlocked`, `clickfixBlocked`) — no URLs, no PII,
+  nothing uploaded. Bumped in `background.js`; shown in the popup Activity tab.
+- `CLOUDFLARE_METRICS.md`: guidance for the tester — local counters (recommended),
+  Chrome Web Store install stats, Cloudflare Web Analytics + Full(strict) SSL for
+  site downloads, and a ready-to-deploy opt-in aggregate Worker (KV) if wanted.
+
 ## [Unreleased] — 2026-07-17 — Trust-score false-positive fix (legit sites read "safe")
 
 ### Fixed — the "every good site scores ~65 / suspicious" false-positive

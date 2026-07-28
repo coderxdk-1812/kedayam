@@ -145,6 +145,41 @@ export async function getActivity() {
   return pruned;
 }
 
+// ---------------------------------------------------------------------------
+// Local, privacy-preserving metrics counters.
+//
+// These are simple monotonic tallies kept ENTIRELY on the user's device — no
+// URLs, no timestamps per event, no PII, and nothing is ever sent off-device.
+// They exist so the popup / options page can show the user how much Kedayam has
+// done for them ("threats prevented"), and so a future OPT-IN aggregate export
+// (see CLOUDFLARE_METRICS.md) has a clean, minimal source of truth. Keeping the
+// tally local is what preserves the "no telemetry endpoint" privacy promise.
+// ---------------------------------------------------------------------------
+const METRIC_KEYS = new Set([
+  "threatsPrevented", // dangerous/suspicious verdicts surfaced to the user
+  "pastesBlocked", // sensitive-data pastes withheld
+  "clickfixBlocked", // ClickFix / fake-CAPTCHA clipboard attacks defused
+]);
+
+export async function bumpMetric(name, by = 1) {
+  if (!METRIC_KEYS.has(name)) return;
+  const key = `${NS}:metrics`;
+  const { [key]: m = {} } = await chrome.storage.local.get(key);
+  m[name] = Math.max(0, (m[name] || 0) + by);
+  await chrome.storage.local.set({ [key]: m });
+  return m;
+}
+
+export async function getMetrics() {
+  const key = `${NS}:metrics`;
+  const { [key]: m = {} } = await chrome.storage.local.get(key);
+  return {
+    threatsPrevented: m.threatsPrevented || 0,
+    pastesBlocked: m.pastesBlocked || 0,
+    clickfixBlocked: m.clickfixBlocked || 0,
+  };
+}
+
 /** Periodic cleanup hook — call from the background heartbeat. */
 export async function sweepExpiredActivity() {
   const key = `${NS}:activity`;

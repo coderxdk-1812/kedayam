@@ -156,7 +156,9 @@ export function explainVerdict(verdict) {
   const headline = clamp(buildHeadline(verdict, contributingRisks));
   const summary = clamp(buildSummary(verdict, contributingRisks));
   const recommendation = clamp(buildRecommendation(verdict));
-  const bullets = buildBullets(verdict, contributingRisks, rules).map(clamp).filter(Boolean);
+  const bullets = buildBullets(verdict, contributingRisks, rules, contributingTrust)
+    .map(clamp)
+    .filter(Boolean);
 
   return {
     verdict: verdict.status,
@@ -211,24 +213,31 @@ function buildRecommendation(v) {
   return "You can continue normally. Still, only share information you'd be comfortable sharing.";
 }
 
-function buildBullets(v, risks, rules) {
+function buildBullets(v, risks, rules, trust) {
   const out = [];
   const seen = new Set();
-  for (const r of risks.slice(0, 3)) {
-    const text = r.plain;
-    if (text && !seen.has(text)) {
+  const add = (text) => {
+    if (text && !seen.has(text) && out.length < 4) {
       out.push(text);
       seen.add(text);
     }
-  }
+  };
+  for (const r of risks.slice(0, 3)) add(r.plain);
   for (const r of rules) {
-    if (out.length >= 4) break;
     // Never fall back to the raw rule id — only a curated phrase or a
     // sanitized .reason that doesn't read like internal jargon.
-    const text = PLAIN_BY_RULE_ID[r.id] || friendlyPhrase(null, r.reason);
-    if (text && !seen.has(text)) {
-      out.push(text);
-      seen.add(text);
+    add(PLAIN_BY_RULE_ID[r.id] || friendlyPhrase(null, r.reason));
+  }
+  // Every score should have a visible "why". When there are no risk bullets,
+  // cite the concrete POSITIVE factors that produced the score (encrypted
+  // connection, known-reputable domain, prior safe use…) instead of a bare
+  // "looks safe" — this is what makes the verdict explainable to users. Only
+  // use curated plain-language phrases so a verbose raw signal title never
+  // leaks into the bullet list.
+  if (out.length < 2 && Array.isArray(trust)) {
+    for (const t of trust) {
+      const curated = PLAIN_BY_SIGNAL_ID[t.id];
+      if (curated) add(curated);
     }
   }
   if (!out.length && v.status === "safe") {

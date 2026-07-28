@@ -1,6 +1,15 @@
 # Kedayam Browser Shield — Status
 
-Last updated: 2026-07-17
+Last updated: 2026-07-28
+
+> **2026-07-28 — tester-reported fixes shipped:** DOM-context login false
+> positives fixed (ungated `phishing.cap=60` removed; `credential-form` →
+> informational; benign "sign in" no longer "urgent"; `auth-keyword` gated to the
+> registrable label) → unlisted bank/SSO/SaaS logins now **safe**, phishing
+> unchanged. Warning modals gained a working **"Leave this page"** button. Popup:
+> cold-SW retry + clearer non-scannable copy + richer explanation. New **local**
+> "threats prevented" counters (popup Activity tab; zero telemetry) + Cloudflare
+> metrics guide (`CLOUDFLARE_METRICS.md`). **691 tests green** (+9 regressions).
 
 MV3 Chrome extension (`extension/`) — freeware, key-less, local-only phishing +
 malware + data-leak protection. Shippable artifact: `public/kedayam.zip`.

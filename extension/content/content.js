@@ -416,6 +416,28 @@
     setTimeout(() => toast?.remove(), result.status === "safe" ? 2200 : 5200);
   }
 
+  // Navigate the tab away from a dangerous page. Prefer stepping back to
+  // wherever the user came from; if this is the first entry in the tab's
+  // history (opened straight from a link in mail/chat), replace it with a
+  // blank page so the hostile content is gone either way. Runs in the page's
+  // own window via the shared location/history, so it actually unloads.
+  function leaveToSafety() {
+    try {
+      if (window.history.length > 1) {
+        window.history.back();
+        // If back() didn't unload quickly (pushState/SPA history traps), fall
+        // back to a hard replace so "Leave" is never a dead button.
+        setTimeout(() => {
+          try {
+            window.location.replace("about:blank");
+          } catch {}
+        }, 500);
+      } else {
+        window.location.replace("about:blank");
+      }
+    } catch {}
+  }
+
   function showWarningModal({
     title,
     body,
@@ -424,6 +446,7 @@
     onContinue,
     onTrust,
     onClearClipboard,
+    onLeave,
   }) {
     return new Promise((resolve) => {
       const r = root();
@@ -448,7 +471,11 @@
               : ""
           }
           <div class="ked-actions">
-            <button class="ked-btn-secondary" data-act="cancel">Go back</button>
+            ${
+              onLeave
+                ? `<button class="ked-btn-danger" data-act="leave">Leave this page</button>`
+                : `<button class="ked-btn-secondary" data-act="cancel">Go back</button>`
+            }
             ${onClearClipboard ? `<button class="ked-btn-primary" data-act="clearclip">Clear my clipboard</button>` : ""}
             ${onTrust ? `<button class="ked-btn-secondary" data-act="trust">Trust this site for the session</button>` : ""}
             <button class="ked-btn-${severity === "critical" || severity === "high" ? "danger" : "primary"}" data-act="continue">Continue anyway</button>
@@ -467,21 +494,37 @@
       };
       document.addEventListener("keydown", onKey);
       backdrop.addEventListener("click", (e) => {
-        const act = e.target?.dataset?.act;
+        // Resolve the action from the nearest [data-act] ancestor so a click on
+        // any child node inside a button still registers (robust delegation).
+        const target = e.target?.closest?.("[data-act]");
+        const act = target?.dataset?.act;
         if (!act) return;
         // Clearing the clipboard needs the user gesture this click provides, so it
         // reliably overwrites the planted command. Keep the modal open + confirm.
         if (act === "clearclip") {
           if (onClearClipboard) onClearClipboard();
-          e.target.textContent = "Clipboard cleared ✓";
-          e.target.disabled = true;
+          target.textContent = "Clipboard cleared ✓";
+          target.disabled = true;
           return;
         }
         if (act === "trust" && onTrust) onTrust();
         if (act === "continue" && onContinue) onContinue();
+        // "Leave this page" actually navigates the tab away from the hostile
+        // page — the button is a real escape hatch, not just a dismiss.
+        if (act === "leave") {
+          close(act);
+          if (onLeave) onLeave();
+          else leaveToSafety();
+          return;
+        }
         close(act);
       });
-      backdrop.querySelector("button[data-act='cancel']").focus();
+      // Focus the safest default action available.
+      (
+        backdrop.querySelector("button[data-act='leave']") ||
+        backdrop.querySelector("button[data-act='cancel']") ||
+        backdrop.querySelector("button[data-act='continue']")
+      )?.focus();
     });
   }
 
@@ -1394,6 +1437,7 @@
           .filter((s) => s.severity !== "info")
           .slice(0, 5)
           .map((s) => ({ label: s.title, value: s.severity })),
+        onLeave: () => leaveToSafety(),
         onTrust: () => sessionTrusted.add(location.hostname),
       });
     } else if (susp.modal === "soft" && !sessionTrusted.has(location.hostname)) {
@@ -1405,6 +1449,7 @@
           .filter((s) => s.severity !== "info")
           .slice(0, 4)
           .map((s) => ({ label: s.title, value: s.severity })),
+        onLeave: () => leaveToSafety(),
         onContinue: () => sessionTrusted.add(location.hostname),
         onTrust: () => sessionTrusted.add(location.hostname),
       });

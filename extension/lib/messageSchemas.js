@@ -154,6 +154,7 @@ export const SCHEMAS = Object.freeze({
     return { ok: true, value: { patch: m.patch } };
   },
   getActivity: () => ({ ok: true, value: {} }),
+  getMetrics: () => ({ ok: true, value: {} }),
   getHealth: () => ({ ok: true, value: {} }),
   clearCaches: () => ({ ok: true, value: {} }),
   logEvent: (m) => {

@@ -51,8 +51,40 @@ describe("analyzePhishing", () => {
       ],
       hasPasswordField: true,
     });
+    // A bare, same-origin credential form on an unlisted domain is recognized
+    // (credentialHarvest flag drives arbitration's corroboration gate) but is
+    // NOT itself capped into "suspicious" — unlisted banks/SaaS/SSO run their
+    // own clean HTTPS logins. An unconditional cap here was the false positive
+    // testers reported. Escalation is owned by the arbitrator when an
+    // independent risk cue agrees. (NEW-04.)
     expect(r.credentialHarvest).toBe(true);
-    expect(r.cap).toBeLessThanOrEqual(70);
+    expect(r.cap).toBeNull();
+    expect(r.forceStatus).toBeNull();
+  });
+
+  it("escalates a credential form when a second phishing tell is present", () => {
+    const r = analyzePhishing({
+      pageOrigin: "https://office-verify.tld",
+      title: "Verify your account",
+      visibleText: "unusual activity detected — verify your account to avoid suspension",
+      forms: [
+        {
+          action: "https://collector.evil.tld/post",
+          method: "post",
+          hasPassword: true,
+          hasEmailLike: true,
+          hasOtp: false,
+          hiddenCount: 0,
+          fieldsCount: 2,
+          insideIframe: false,
+        },
+      ],
+      hasPasswordField: true,
+    });
+    // External POST + coercive phrasing → dangerous, hard cap.
+    expect(r.credentialHarvest).toBe(true);
+    expect(r.externalFormPost).toBe(true);
+    expect(r.cap).toBeLessThanOrEqual(20);
   });
 
   it("escalates to dangerous when impersonating Microsoft", () => {

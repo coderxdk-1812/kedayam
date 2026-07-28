@@ -13,6 +13,8 @@ import {
   getSafeDomainStats,
   bumpSafeDomain,
   sweepExpiredActivity,
+  bumpMetric,
+  getMetrics,
 } from "./lib/storage.js";
 import { rootDomain } from "./lib/lookalike.js";
 import { loadStoredBlocklist, refreshThreatFeed } from "./lib/threatFeed.js";
@@ -248,6 +250,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         case "getActivity":
           sendResponse(await getActivity());
           break;
+        case "getMetrics":
+          sendResponse(await getMetrics());
+          break;
         case "getHealth":
           sendResponse({
             ok: true,
@@ -262,6 +267,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break;
         case "logEvent":
           await appendActivity(data.entry);
+          // Roll content-script protective actions into the local tally.
+          try {
+            if (data.entry?.kind === "paste-blocked") await bumpMetric("pastesBlocked");
+            else if (data.entry?.kind === "clickfix-blocked") await bumpMetric("clickfixBlocked");
+          } catch {}
           sendResponse({ ok: true });
           break;
         case "trustForSession":
@@ -352,6 +362,14 @@ async function scan(url, tabId, notify, force = false) {
         score: result.score,
         status: result.status,
       });
+      // Local, privacy-safe tally shown to the user. Only a fresh (cache-miss)
+      // dangerous verdict counts as a "threat prevented" — re-scans hit the
+      // cache and never reach here, so this doesn't inflate on SPA navigations.
+      if (result.status === "dangerous") {
+        try {
+          await bumpMetric("threatsPrevented");
+        } catch {}
+      }
     }
     maybeBadge(tabId, result);
     if (notify && result.status === "dangerous") {

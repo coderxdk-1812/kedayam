@@ -38,8 +38,14 @@ describe("red team — CSS evasion", () => {
       ],
       hasPasswordField: true,
     });
-    // Heavy hidden-input ratio is a known kit signal.
-    expect(r.confidence).toBeGreaterThan(0.3);
+    // Contract (see file header): a visually-suppressed credential form must
+    // never read as "no risk". The bare presence of a password field is now
+    // informational (weight 0) — but the credential-harvest FLAG and the auth
+    // risk it drives must still be recognized so arbitration can escalate when
+    // corroborated. (Hidden-field ratio adds an explicit kit signal when the
+    // form also declares an off-domain action; this fixture has none.)
+    expect(r.credentialHarvest).toBe(true);
+    expect(r.authRisk).not.toBe("none");
   });
 
   it("invisible iframe credential capture flagged via insideIframe", () => {

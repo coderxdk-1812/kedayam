@@ -263,11 +263,17 @@ export async function evaluateUrl(url, ctx = {}) {
       confidence: Math.min(1, (host.length - 40) / 30),
     });
   }
-  // Only flag auth keywords in the *hostname* of unknown roots — legitimate
-  // providers like accounts.google.com naturally contain these words.
+  // Only flag auth keywords baked into the REGISTRABLE domain label itself
+  // (e.g. "paypal-login.com", "secure-verify.tld") — NOT when the keyword is a
+  // normal subdomain of an ordinary domain ("login.company.com",
+  // "secure.bank.com", "account.example.org"), which is how the overwhelming
+  // majority of legitimate sign-in portals are structured. Firing on the whole
+  // hostname penalized every login.* / secure.* subdomain and was a major
+  // false-positive source. (FP fix — NEW-04.)
   const _earlyReputable = KNOWN_REPUTABLE_ROOTS.has(root) || TRUSTED_LOGIN_PROVIDERS.has(root);
+  const _registrableLabel = (root || host).split(".")[0] || "";
   if (
-    /(login|verify|secure|account|update|wallet|signin)/i.test(host) &&
+    /(login|verify|secure|account|update|wallet|signin)/i.test(_registrableLabel) &&
     !lookalike.match &&
     !_earlyReputable
   ) {

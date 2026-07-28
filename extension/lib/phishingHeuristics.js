@@ -149,6 +149,13 @@ const AUTH_PHRASES =
 // carry NO brand keywords (so brand-impersonation never fires).
 const ENTERPRISE_SSO_PHRASES =
   /\b(continue to (your )?(organization|organisation|company|tenant|workspace)|device (verification|registration|trust)|approve (this )?sign[- ]?in request|sso (sign|log) ?in|enterprise (sign|log) ?in|use your (work|corporate|organization|company) account|verify it'?s you|complete sign[- ]?in on (another|your) device|your organization requires)\b/i;
+// Genuinely COERCIVE / urgency phrasing — the kind phishing pages use to rush a
+// victim. Deliberately excludes benign, ubiquitous login copy ("sign in",
+// "log in", "forgot password", "two-factor", "otp") which appears on every
+// legitimate login page and must NOT be treated as a risk cue. Only these
+// pressure phrases fire the `auth-phrasing` penalty. (FP fix — see NEW-04.)
+const URGENT_AUTH_PHRASES =
+  /\b(verify your (account|identity)|confirm your (account|identity)|account (has been |is |was )?(suspended|locked|disabled|limited|restricted|on hold)|unusual (activity|sign[- ]?in|login)|suspicious (activity|sign[- ]?in|login)|(re[- ]?)?verify (your|the) (account|identity|information) (to|before)|to (avoid|prevent) (suspension|closure|termination)|within \d+ ?(hours|hrs|minutes|days) or|failure to (verify|confirm|respond)|action required)\b/i;
 
 function isTrustedLoginHost(host) {
   if (!host) return false;
@@ -276,15 +283,24 @@ export function analyzePhishing(ctx = {}) {
     hasPwd || loginForms.length > 0 || AUTH_PHRASES.test(text) || !!ctx.oauthButtons?.length;
 
   if (hasPwd && !trusted) {
+    // The `credentialHarvest` flag still drives the corroboration-gated
+    // `unknown-login` cap in arbitration and every "credentialHarvest + X"
+    // dangerous rule below — so real phishing detection is untouched.
     out.credentialHarvest = true;
-    out.authRisk = "high";
+    out.authRisk = "medium";
     out.signals.push({
       id: "credential-form",
       category: "behavior",
-      severity: "high",
-      title: "Login / credential form on an unverified domain",
-      detail: `${pageRoot} is not a known sign-in provider but is collecting a password.`,
-      weight: 25,
+      // Informational, weight 0: the bare presence of a password form on an
+      // unlisted domain is normal (unlisted banks, SaaS, company SSO all
+      // collect passwords over clean same-origin HTTPS) and must keep the page
+      // in the safe band. Penalizing it here pushed every unlisted login into
+      // "suspicious" — the false positive testers reported. Escalation is owned
+      // by arbitration's corroboration gate, not by this signal. (NEW-04.)
+      severity: "info",
+      title: "Login form on an unverified domain",
+      detail: `${pageRoot} is not on Kedayam's list of well-known sign-in providers. That alone is not a risk — many legitimate sites run their own login.`,
+      weight: 0,
       confidence: 0.85,
     });
   } else if (hasPwd && trusted) {
@@ -314,7 +330,10 @@ export function analyzePhishing(ctx = {}) {
       severity: "medium",
       title: "Authentication workflow on an unverified domain",
       detail: `${pageRoot} shows sign-in or verification behavior without strong trust evidence.`,
-      weight: 18,
+      // Mild nudge only — an email-first or OAuth-button flow on an unlisted
+      // domain is normal. Escalation is owned by the corroboration-gated
+      // `unknown-auth` / `email-first` caps in arbitration. (NEW-04.)
+      weight: 6,
       confidence: 0.7,
     });
   }
@@ -359,7 +378,15 @@ export function analyzePhishing(ctx = {}) {
         confidence: 0.9,
       });
     }
-    if ((f.hiddenCount || 0) >= 4 && (f.fieldsCount || 0) <= 8 && !trusted) {
+    // Accept both the raw extractor spelling (`hiddenCount`/`fieldsCount`) and
+    // the sanitized pageContext spelling (`hiddenFields`/`fieldCount`). The two
+    // had drifted, so in the real pipeline this kit signal never fired. Fire on
+    // an absolute count on a small form OR a high hidden RATIO on a larger one
+    // (8-of-10 hidden is a stronger kit tell than 4-of-8). (NEW-04.)
+    const hiddenCount = f.hiddenCount ?? f.hiddenFields ?? 0;
+    const fieldsCount = f.fieldsCount ?? f.fieldCount ?? 0;
+    const hiddenRatio = fieldsCount > 0 ? hiddenCount / fieldsCount : 0;
+    if (hiddenCount >= 4 && (fieldsCount <= 8 || hiddenRatio >= 0.5) && !trusted) {
       out.signals.push({
         id: "hidden-login-fields",
         category: "behavior",
@@ -367,7 +394,7 @@ export function analyzePhishing(ctx = {}) {
         title: "Auth form contains many hidden fields",
         detail: "Phishing kits often hide routing or victim identifiers inside credential forms.",
         weight: 16,
-        confidence: 0.65,
+        confidence: 0.7,
       });
     }
     if (f.insideIframe && !trusted && (f.hasPassword || f.hasOtp)) {
@@ -400,12 +427,15 @@ export function analyzePhishing(ctx = {}) {
   }
 
   // ---- Auth phrasing ----
-  if (AUTH_PHRASES.test(text) && !trusted && hasPwd) {
+  // Only COERCIVE urgency wording counts. Benign login copy ("sign in",
+  // "forgot password", "two-factor") must never fire this — it appears on
+  // every legitimate login page. (FP fix — NEW-04.)
+  if (URGENT_AUTH_PHRASES.test(text) && !trusted && hasPwd) {
     out.signals.push({
       id: "auth-phrasing",
       category: "behavior",
       severity: "medium",
-      title: "Page uses urgent authentication phrasing",
+      title: "Page uses urgent or coercive authentication phrasing",
       detail: "Phrases like 'verify your account' or 'unusual activity' are common in phishing.",
       weight: 12,
       confidence: 0.6,
@@ -469,9 +499,20 @@ export function analyzePhishing(ctx = {}) {
     out.authRisk = "critical";
     out.cap = 20;
   } else if (out.credentialHarvest) {
-    // Unknown login page with no other phishing tells: never auto-safe.
-    out.cap = 60;
-    if (out.confidence >= 0.5) out.forceStatus = "suspicious";
+    // A bare credential form on an unlisted domain is NOT suspicious on its
+    // own — unlisted banks, SaaS, and company SSO all collect passwords over
+    // clean same-origin HTTPS. Whether such a page is capped into "suspicious"
+    // is owned solely by the corroboration-gated `unknown-login` rule in the
+    // arbitrator, which fires only when an INDEPENDENT risk cue agrees (new
+    // domain, insecure transport, abused TLD, lookalike, clone, external POST,
+    // threat-intel). Setting an unconditional cap here bypassed that gate and
+    // pulled every unlisted login into the suspicious band — the exact
+    // false-positive testers reported. We now cap ONLY when the page's own
+    // heuristic stack is independently confident. (FP fix — NEW-04.)
+    if (out.confidence >= 0.6) {
+      out.cap = 60;
+      out.forceStatus = "suspicious";
+    }
   } else if (out.brandImpersonation) {
     out.cap = 50;
     out.forceStatus = "suspicious";

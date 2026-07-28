@@ -1,6 +1,6 @@
 # Kedayam Browser Shield — Project Context
 
-Last updated: 2026-07-17
+Last updated: 2026-07-28
 
 ## Pending
 
@@ -17,6 +17,28 @@ Last updated: 2026-07-17
 - **Community FP loop / redirect-chain expansion / punycode banner** — not started.
 - **Refresh the feed snapshot per release**: `bun run feeds:snapshot` && commit
   `lib/rules/blocklistSnapshot.js` (currently ~12k hosts, pulled 2026-07-10).
+
+### Done 2026-07-28 (tester-reported fixes — FP calibration, popup, buttons, metrics)
+- **Login-page false positives (issue #1)**: the July fix handled URL-only
+  scoring but DOM-context logins still read "suspicious". Root cause found by
+  scoring real/synthetic login pages: an **ungated `phishing.cap = 60`** in
+  `phishingHeuristics.js` capped every credential form, bypassing arbitration's
+  corroboration gate. Fixed that; made `credential-form` informational (weight
+  0); split `URGENT_AUTH_PHRASES` so benign "sign in/login" isn't "urgent";
+  gated `auth-keyword` to the registrable domain label (not `login.*`/`secure.*`
+  subdomains); fixed a latent `hidden-login-fields` field-name mismatch. Result:
+  unlisted bank/SSO/SaaS logins → **72–77 safe**; all phishing still **dangerous**.
+- **Warning buttons (issue #4)**: added a real **"Leave this page"** action
+  (`leaveToSafety()` → history.back + about:blank fallback) to the trust modals;
+  robust `closest()` delegation. "Go back" on paste/file modals still = cancel.
+- **Popup (issues #2/#3)**: cold-SW retry + clearer non-scannable-page copy;
+  explanation now cites concrete positive factors for safe pages. (Popup loads
+  the score correctly on real http(s) tabs — verified in Chromium.)
+- **Metrics (issue #5)**: local `bumpMetric`/`getMetrics` counters (threats
+  prevented / pastes / ClickFix) shown in the popup Activity tab — no telemetry.
+  `CLOUDFLARE_METRICS.md` documents SSL + optional opt-in aggregate Worker.
+- **691 tests green** (+9 regressions in `tests/calibration/loginPageFalsePositives.test.js`),
+  lint clean, 4 e2e pass. Release + cross-browser artifacts rebuilt.
 
 ### Done 2026-07-17 (trust-score false-positive fix)
 - Root-caused + fixed the "every good site scores ~65/suspicious" complaint by

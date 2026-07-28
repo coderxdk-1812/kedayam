@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kedayam Browser Shield — Loading &amp; Testing Guide (v1.1.2)</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #121d30;
+        --panel2: #17253c;
+        --border: #24374f;
+        --text: #dfe8f4;
+        --muted: #9fb2c8;
+        --accent: #4fc3f7;
+        --green: #47d18b;
+        --amber: #f5c451;
+        --red: #ff6b6b;
+        --code: #0e1830;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: radial-gradient(1200px 600px at 20% -10%, #16233b 0%, var(--bg) 55%) fixed;
+        color: var(--text);
+      }
+      .wrap { max-width: 940px; margin: 0 auto; padding: 40px 22px 90px; }
+      header h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+      header .sub { color: var(--muted); font-size: 14px; }
+      .pill {
+        display: inline-block; padding: 2px 9px; border-radius: 999px;
+        font-size: 12px; font-weight: 600; border: 1px solid var(--border);
+        background: var(--panel2); color: var(--accent); vertical-align: middle;
+      }
+      h2 {
+        margin: 42px 0 14px; font-size: 21px; letter-spacing: -0.01em;
+        padding-bottom: 8px; border-bottom: 1px solid var(--border);
+      }
+      h3 { margin: 26px 0 10px; font-size: 16.5px; }
+      p, li { color: var(--text); }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      code, kbd {
+        font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+        font-size: 12.8px; background: var(--code); border: 1px solid var(--border);
+        border-radius: 5px; padding: 1px 6px; color: #cfe3ff;
+      }
+      kbd { box-shadow: 0 1px 0 #000; }
+      pre {
+        background: var(--code); border: 1px solid var(--border); border-radius: 10px;
+        padding: 14px 16px; overflow-x: auto; font-size: 12.8px; line-height: 1.55;
+        color: #cfe3ff;
+      }
+      pre code { background: none; border: none; padding: 0; }
+      .card {
+        background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+        padding: 20px 22px; margin: 16px 0;
+      }
+      .toc { columns: 2; column-gap: 26px; font-size: 14px; }
+      .toc a { display: block; padding: 3px 0; }
+      table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.6px; }
+      th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--border); vertical-align: top; }
+      th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+      tr:last-child td { border-bottom: none; }
+      .tag { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+      .t-yes { background: #123a28; color: var(--green); border: 1px solid #1e5a40; }
+      .t-no  { background: #3a1720; color: var(--red);   border: 1px solid #5a1e2c; }
+      .t-src { background: #12314a; color: var(--accent); border: 1px solid #1e4a6a; }
+      .callout { border-left: 4px solid var(--accent); background: var(--panel2); padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
+      .callout.warn { border-left-color: var(--amber); background: #2c2410; }
+      .callout.good { border-left-color: var(--green); background: #10281d; }
+      ol.steps { counter-reset: s; list-style: none; padding-left: 0; }
+      ol.steps > li {
+        counter-increment: s; position: relative; padding: 4px 0 12px 42px; margin: 0;
+      }
+      ol.steps > li::before {
+        content: counter(s); position: absolute; left: 0; top: 2px;
+        width: 27px; height: 27px; border-radius: 50%; background: var(--accent);
+        color: #06121f; font-weight: 700; font-size: 13px; display: grid; place-items: center;
+      }
+      .check { list-style: none; padding-left: 0; }
+      .check li { padding: 5px 0 5px 30px; position: relative; }
+      .check li::before {
+        content: "☐"; position: absolute; left: 4px; top: 3px; color: var(--accent); font-size: 16px;
+      }
+      .muted { color: var(--muted); }
+      footer { margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      @media (max-width: 720px) { .toc { columns: 1; } .grid2 { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>🛡️ Kedayam Browser Shield <span class="pill">v1.1.2</span></h1>
+        <div class="sub">How to load &amp; test the extension in every supported browser · MV3 · 100% local, zero telemetry</div>
+      </header>
+
+      <div class="callout good">
+        <strong>TL;DR — fastest path (Chrome/Edge/Brave):</strong> open
+        <code>chrome://extensions</code> → turn on <strong>Developer mode</strong> →
+        <strong>Load unpacked</strong> → select the <code>extension/</code> folder. Done.
+        Jump to <a href="#chrome">Chromium steps</a> or <a href="#firefox">Firefox steps</a>.
+      </div>
+
+      <h2>Contents</h2>
+      <nav class="toc card">
+        <a href="#whats-here">1. What's in the repo (and what to load)</a>
+        <a href="#build">2. Building the packages (if missing)</a>
+        <a href="#chrome">3. Load in Chrome / Edge / Brave / Opera / Arc</a>
+        <a href="#firefox">4. Load in Firefox</a>
+        <a href="#verify">5. Verify it loaded correctly</a>
+        <a href="#test">6. Functional test checklist</a>
+        <a href="#reload">7. Reloading after code changes</a>
+        <a href="#trouble">8. Troubleshooting</a>
+      </nav>
+
+      <h2 id="whats-here">1. What's in the repo (and what to load)</h2>
+      <p>
+        For day-to-day testing you load the <strong>unpacked source folder</strong>
+        (<code>extension/</code>) — you do <em>not</em> need any zip. The zips exist
+        only for store submission and for testing the exact packaged bytes.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Artifact</th><th>What it is</th><th>In git?</th><th>Load it for…</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>extension/</code></td>
+            <td>Unpacked MV3 source — the real extension</td>
+            <td><span class="tag t-src">tracked</span></td>
+            <td>All Chromium browsers (dev testing) — <strong>use this</strong></td>
+          </tr>
+          <tr>
+            <td><code>public/kedayam.zip</code></td>
+            <td>Packaged Chrome / Web-Store artifact</td>
+            <td><span class="tag t-yes">committed</span></td>
+            <td>Testing the exact store bytes</td>
+          </tr>
+          <tr>
+            <td><code>public/kedayam-chrome.zip</code></td>
+            <td>Chrome build (identical to store zip)</td>
+            <td><span class="tag t-no">build output</span></td>
+            <td>Chrome Web Store upload</td>
+          </tr>
+          <tr>
+            <td><code>public/kedayam-edge.zip</code></td>
+            <td>Microsoft Edge build</td>
+            <td><span class="tag t-no">build output</span></td>
+            <td>Edge Add-ons upload</td>
+          </tr>
+          <tr>
+            <td><code>public/kedayam-firefox.zip</code></td>
+            <td>Firefox build (adds <code>browser_specific_settings.gecko</code>)</td>
+            <td><span class="tag t-no">build output</span></td>
+            <td>Firefox AMO upload / <code>about:debugging</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted">
+        The three cross-browser zips are <code>.gitignore</code>d because they're
+        reproducible build outputs. If you just cloned the repo and they aren't in
+        <code>public/</code>, build them — see the next section. (In this working
+        tree they're already present and current at v1.1.2.)
+      </p>
+
+      <h2 id="build">2. Building the packages (if missing)</h2>
+      <p>Requires <strong>Node ≥ 20</strong> and <a href="https://bun.sh">Bun</a>. From the repo root:</p>
+      <pre><code># install deps once
+bun install
+
+# Chrome/Web-Store zip → public/kedayam.zip
+bun run build:extension
+
+# Chrome + Edge + Firefox zips → public/kedayam-{chrome,edge,firefox}.zip
+bun run build:crossbrowser
+
+# (optional) checksum + release cert + drift gate
+node scripts/release-build.mjs && node scripts/release-certify.mjs
+node scripts/verify-artifact.mjs</code></pre>
+      <p class="muted">
+        No build is needed to load the unpacked <code>extension/</code> folder — the
+        source is already runnable. Build only when you want the packaged zips.
+      </p>
+
+      <h2 id="chrome">3. Load in Chrome / Edge / Brave / Opera / Arc / Vivaldi</h2>
+      <p>All Chromium browsers use the same build. The address differs slightly per browser:</p>
+      <table>
+        <thead><tr><th>Browser</th><th>Extensions page</th></tr></thead>
+        <tbody>
+          <tr><td>Chrome</td><td><code>chrome://extensions</code></td></tr>
+          <tr><td>Edge</td><td><code>edge://extensions</code></td></tr>
+          <tr><td>Brave</td><td><code>brave://extensions</code></td></tr>
+          <tr><td>Opera</td><td><code>opera://extensions</code></td></tr>
+          <tr><td>Vivaldi</td><td><code>vivaldi://extensions</code></td></tr>
+          <tr><td>Arc</td><td>Menu → Extensions → Manage Extensions</td></tr>
+        </tbody>
+      </table>
+      <h3>Steps</h3>
+      <ol class="steps">
+        <li>Open the extensions page for your browser (table above).</li>
+        <li>Turn on <strong>Developer mode</strong> — the toggle is in the <strong>top-right corner</strong> (Chrome/Brave/Vivaldi) or the <strong>left sidebar</strong> (Edge).</li>
+        <li>Click <strong>Load unpacked</strong> and select the <code>extension/</code> folder (the one containing <code>manifest.json</code>) — <em>select the folder itself, don't go inside it</em>.</li>
+        <li>Pin it: click the puzzle-piece 🧩 in the toolbar, then the pin next to <strong>Kedayam Browser Shield</strong>.</li>
+      </ol>
+      <div class="callout">
+        Prefer to test the packaged zip instead of the source? Unzip
+        <code>public/kedayam.zip</code> to a folder first, then <strong>Load unpacked</strong>
+        that folder. Chromium can't load a <code>.zip</code> directly in dev mode.
+      </div>
+
+      <h2 id="firefox">4. Load in Firefox</h2>
+      <p>Firefox loads a temporary add-on that lasts until you close the browser.</p>
+      <ol class="steps">
+        <li>Open <code>about:debugging#/runtime/this-firefox</code>.</li>
+        <li>Click <strong>Load Temporary Add-on…</strong></li>
+        <li>Select <code>public/kedayam-firefox.zip</code> <em>(or</em> the <code>manifest.json</code> inside the <code>extension/</code> folder<em>)</em>.</li>
+        <li>The extension appears under "Temporary Extensions". Use the toolbar icon to open the popup.</li>
+      </ol>
+      <div class="callout warn">
+        <strong>Use the Firefox zip, not the Chrome one.</strong> Only
+        <code>kedayam-firefox.zip</code> carries the
+        <code>browser_specific_settings.gecko</code> id Firefox requires. MV3
+        background-ESM support also varies by Firefox version — this build is
+        <strong>packaged but not yet fully runtime-validated on Firefox</strong>; if the
+        background service worker misbehaves, that's the known caveat, not your setup.
+      </div>
+      <p class="muted">Optional lint before AMO submission: <code>npx web-ext lint --source-dir extension</code>.</p>
+
+      <h2 id="verify">5. Verify it loaded correctly</h2>
+      <ul class="check">
+        <li>The card shows <strong>Kedayam Browser Shield — 1.1.2</strong> with <strong>no red "Errors" button</strong>.</li>
+        <li>Toolbar icon is visible (pin it if not).</li>
+        <li>Click the icon on any <code>http(s)</code> page → the popup opens and shows a <strong>trust score</strong> plus an explanation (not "UNAVAILABLE").</li>
+        <li>The popup footer reads <code>v1.1.2</code>.</li>
+      </ul>
+
+      <h2 id="test">6. Functional test checklist</h2>
+      <p>Walk these to confirm the scoring engine and guards behave. Expected results in the right column.</p>
+      <table>
+        <thead><tr><th>What to do</th><th>Expected</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Visit <a href="https://en.wikipedia.org">wikipedia.org</a> / <a href="https://github.com">github.com</a>, open popup</td>
+            <td><span class="tag t-yes">Safe</span> score ~77–100 with concrete positive factors listed</td>
+          </tr>
+          <tr>
+            <td>Visit a real bank login on its <code>.bank.in</code> domain — e.g. HDFC NetBanking <code>now.hdfc.bank.in</code> <span class="muted">(the v1.1.2 fix)</span></td>
+            <td><span class="tag t-yes">Safe</span> — <strong>no</strong> "mentions hdfcbank.com but is not on that domain" warning</td>
+          </tr>
+          <tr>
+            <td>Visit any ordinary SaaS/company login (unlisted domain) with a password field</td>
+            <td><span class="tag t-yes">Safe</span> ~72–77 — credential form is informational, not a penalty</td>
+          </tr>
+          <tr>
+            <td>Trigger a <strong>ClickFix / fake-CAPTCHA</strong> flow (page tries to seed a terminal command into your clipboard)</td>
+            <td>Clipboard write is intercepted; warning modal with a working <strong>"Leave this page"</strong> button</td>
+          </tr>
+          <tr>
+            <td>Paste a password / API key / card number into a form on an untrusted site</td>
+            <td>Sensitive-data <strong>paste guard</strong> warns before the value lands</td>
+          </tr>
+          <tr>
+            <td>Open the popup → <strong>Activity</strong> tab</td>
+            <td>Local counters (threats prevented / pastes / ClickFix) increment — <strong>no data leaves the device</strong></td>
+          </tr>
+          <tr>
+            <td>On a warning modal, click <strong>Leave this page</strong></td>
+            <td>Navigates back / to <code>about:blank</code> (not just a dismiss)</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        Don't visit live malicious URLs to test. Use the automated suite for
+        adversarial coverage — <code>npx vitest run</code> (695 tests, incl. phishing
+        &amp; false-positive calibration) and <code>bun run test:e2e</code> for the
+        Playwright extension-load checks. Open <a href="test.html">test.html</a> for the
+        latest rendered results.
+      </div>
+
+      <h2 id="reload">7. Reloading after code changes</h2>
+      <p>Edited something under <code>extension/</code>? You don't need to remove and re-add it:</p>
+      <ul class="check">
+        <li><strong>Chromium:</strong> go to the extensions page and click the <strong>↻ reload</strong> icon on the Kedayam card (or press <kbd>R</kbd> while the card is focused). Then reload the page you're testing.</li>
+        <li><strong>Firefox:</strong> in <code>about:debugging</code>, click <strong>Reload</strong> next to the temporary add-on.</li>
+        <li>Changed the <strong>manifest</strong>, permissions, or the background worker? A full reload of the extension (not just the page) is required — the reload icon covers this.</li>
+      </ul>
+
+      <h2 id="trouble">8. Troubleshooting</h2>
+      <h3>"Cannot load extension with file or directory name <code>_metadata</code>"</h3>
+      <p>
+        macOS/Chrome sometimes drops a stray <code>_metadata/</code> folder (containing
+        only a <code>.DS_Store</code>) inside the extension dir. Filenames starting with
+        <code>_</code> are reserved, so the load fails. Delete it and reload:
+      </p>
+      <pre><code>rm -f extension/_metadata/.DS_Store &amp;&amp; rmdir extension/_metadata</code></pre>
+
+      <h3>Popup says "UNAVAILABLE" / score won't load</h3>
+      <p>
+        Fixed in v1.1.1 (large Chrome tab-ids were rejected). Confirm the card reads
+        <strong>1.1.2</strong>; if it shows an older version you're loading a stale copy —
+        remove it and load the current <code>extension/</code> folder. The popup only
+        scores <code>http(s)</code> tabs, not <code>chrome://</code> / <code>about:</code>
+        pages (a URL-only fallback is shown there).
+      </p>
+
+      <h3>"Errors" button is red on the card</h3>
+      <p>
+        Click it to read the message, then re-run <code>bun run validate:extension</code>
+        which checks the manifest, CSP, and web-accessible resources. A clean tree passes
+        with "Kedayam extension valid."
+      </p>
+
+      <h3>Developer-mode warning on Chrome restart</h3>
+      <p>Expected for any unpacked extension — just dismiss "Disable developer-mode extensions".</p>
+
+      <h3>Firefox: background worker not running</h3>
+      <p>
+        Known caveat — MV3 background-ESM support varies by Firefox version. The Firefox
+        build is packaged but not yet fully runtime-validated (see <a href="STATUS.html">STATUS.html</a>).
+        Content-script guards still work; the popup may differ.
+      </p>
+
+      <footer>
+        Kedayam Browser Shield v1.1.2 · MV3 · all scanning is local, nothing is uploaded ·
+        See <a href="STATUS.html">STATUS.html</a> for the roadmap &amp; reality check and
+        <a href="test.html">test.html</a> for live test results.
+      </footer>
+    </div>
+  </body>
+</html>

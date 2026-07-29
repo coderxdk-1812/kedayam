@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — 2026-07-29 — Dev-dependency ReDoS advisory + artifact re-verify
+
+- **`brace-expansion` pinned to `^2.0.2`** via a `package.json` `overrides` field
+  (resolves to 2.1.2) to clear the CVE-2025-5889 ReDoS advisory surfaced by
+  `npm audit`. It is a **dev-only transitive** dep (eslint → minimatch →
+  brace-expansion) and is **not present in the shipped extension** — `kedayam.zip`
+  bundles only `extension/` source, no `node_modules`. Fixed out of hygiene for
+  security review. `bun run lint` verified clean with brace-expansion 2.x; did
+  **not** use `npm audit fix --force` (would risk a breaking eslint major and
+  desync from the bun lockfile).
+- **Release artifact re-verified, not stale.** Rebuilt `public/kedayam.zip` via
+  `node scripts/release-build.mjs` (695 tests green) + `release-certify.mjs`; the
+  zip, `.sha256`, and cert reproduced **byte-for-byte identical** to `main`, so
+  the drift gate already passes on HEAD (`[verify-artifact] OK — 69 files`). Any
+  CI "stale artifact" failure was on a branch behind the v1.1.2 fixes, not HEAD.
+
 ## [1.1.2] — 2026-07-28 — Fix genuine HDFC / multi-domain-bank false positive
 
 A tester screenshot showed the **real** HDFC NetBanking login page

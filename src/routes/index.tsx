@@ -32,11 +32,12 @@ const fadeUp = {
   transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
 };
 
-
 const WORKER = "https://kedayam-stats.deeksha-junkdrawer.workers.dev/stats";
 
 function GlobalStats() {
-  const [stats, setStats] = useState<{ downloads: number; threats: number; pastes: number } | null>(null);
+  const [stats, setStats] = useState<{ downloads: number; threats: number; pastes: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -51,10 +52,13 @@ function GlobalStats() {
     }
     load();
     const id = setInterval(load, 30_000);
-    return () => { cancelled = true; clearInterval(id); };
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
-  const fmt = (n?: number) => n == null ? "—" : n.toLocaleString();
+  const fmt = (n?: number) => (n == null ? "—" : n.toLocaleString());
 
   const items = [
     { label: "Downloads", value: fmt(stats?.downloads) },

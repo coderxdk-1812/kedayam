@@ -127,7 +127,7 @@ function Index() {
     {
       icon: Lock,
       title: "Permission monitoring",
-      copy: "Adds calm context when low-trust pages request camera, mic, or location.",
+      copy: "Adds context when low-trust pages request camera, mic, or location.",
     },
     {
       icon: EyeOff,
@@ -273,7 +273,7 @@ function Index() {
               Protect your browsing in real time.
             </p>
             <p className="mt-5 max-w-xl text-base leading-8 text-muted-foreground md:text-lg">
-              A calm Chrome security extension that detects phishing risk, sensitive-data leaks,
+              A Chrome security extension that detects phishing risk, sensitive-data leaks,
               suspicious uploads, and permission abuse before damage happens.
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">

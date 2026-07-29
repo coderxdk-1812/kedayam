@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -30,6 +31,56 @@ const fadeUp = {
   viewport: { once: true, margin: "-80px" },
   transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
 };
+
+
+const WORKER = "https://kedayam-stats.deeksha-junkdrawer.workers.dev/stats";
+
+function GlobalStats() {
+  const [stats, setStats] = useState<{ downloads: number; threats: number; pastes: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(WORKER);
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setStats(data);
+        }
+      } catch {}
+    }
+    load();
+    const id = setInterval(load, 30_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  const fmt = (n?: number) => n == null ? "—" : n.toLocaleString();
+
+  const items = [
+    { label: "Downloads", value: fmt(stats?.downloads) },
+    { label: "Threats blocked", value: fmt(stats?.threats) },
+    { label: "Pastes protected", value: fmt(stats?.pastes) },
+  ];
+
+  return (
+    <div className="mx-auto mt-16 max-w-3xl">
+      <p className="mb-4 text-center text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+        Live · updated every 30 s
+      </p>
+      <div className="grid grid-cols-3 gap-4">
+        {items.map(({ label, value }) => (
+          <div
+            key={label}
+            className="rounded-2xl border border-border bg-surface p-5 text-center backdrop-blur-xl"
+          >
+            <div className="text-3xl font-semibold text-cyber">{value}</div>
+            <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Index() {
   const download = () => {
@@ -237,6 +288,7 @@ function Index() {
             <p className="mt-4 text-sm text-muted-foreground">
               Manifest V3 · Chrome, Edge, Brave, Arc, Opera · v1.0.0
             </p>
+            <GlobalStats />
           </motion.div>
 
           <motion.div {...fadeUp} transition={{ duration: 0.5, delay: 0.08 }} className="relative">

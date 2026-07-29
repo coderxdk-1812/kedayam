@@ -28,6 +28,9 @@
   "engines": {
     "node": ">=20"
   },
+  "overrides": {
+    "brace-expansion": "^2.0.2"
+  },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
     "@hookform/resolvers": "^5.2.2",

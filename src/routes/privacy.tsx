@@ -7,6 +7,18 @@ export const Route = createFileRoute("/privacy")({
 
 const sections = [
   {
+    title: "Anonymous aggregate counters",
+    body: (
+      <p>
+        Kedayam increments three anonymous counters hosted on Cloudflare Workers when: (1) the
+        extension is installed for the first time, (2) a page scores as dangerous and a warning is
+        shown, or (3) a sensitive paste is intercepted. These requests carry no personal data, no
+        URL, no device identifier, and no browsing history — only a counter name. The totals are
+        displayed publicly on the Kedayam website as aggregate statistics.
+      </p>
+    ),
+  },
+  {
     title: "What Kedayam never sends anywhere",
     body: (
       <ul className="list-disc space-y-1 pl-5">

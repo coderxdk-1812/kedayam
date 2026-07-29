@@ -39,7 +39,12 @@ const health = new HealthMonitor();
 const nonces = new NonceCache(512);
 
 chrome.runtime.onInstalled.addListener(async (details) => {
-  if (details.reason === "install") fetch("https://kedayam-stats.deeksha-junkdrawer.workers.dev/increment",{method:"POST",headers:{"Content-Type":"application/json","X-Kedayam-Key":"kedayam-2025"},body:JSON.stringify({counter:"downloads"})}).catch(()=>{});
+  if (details.reason === "install")
+    fetch("https://kedayam-stats.deeksha-junkdrawer.workers.dev/increment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Kedayam-Key": "kedayam-2025" },
+      body: JSON.stringify({ counter: "downloads" }),
+    }).catch(() => {});
   const s = await getSettings(); // ensure defaults
   log.info("installed", { version: chrome.runtime.getManifest().version });
   void applyAdblockRuleset(s);
@@ -270,8 +275,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           await appendActivity(data.entry);
           // Roll content-script protective actions into the local tally.
           try {
-            if (data.entry?.kind === "paste-blocked") { await bumpMetric("pastesBlocked"); fetch("https://kedayam-stats.deeksha-junkdrawer.workers.dev/increment",{method:"POST",headers:{"Content-Type":"application/json","X-Kedayam-Key":"kedayam-2025"},body:JSON.stringify({counter:"pastes"})}).catch(()=>{}); }
-            else if (data.entry?.kind === "clickfix-blocked") await bumpMetric("clickfixBlocked");
+            if (data.entry?.kind === "paste-blocked") {
+              await bumpMetric("pastesBlocked");
+              fetch("https://kedayam-stats.deeksha-junkdrawer.workers.dev/increment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Kedayam-Key": "kedayam-2025" },
+                body: JSON.stringify({ counter: "pastes" }),
+              }).catch(() => {});
+            } else if (data.entry?.kind === "clickfix-blocked") await bumpMetric("clickfixBlocked");
           } catch {}
           sendResponse({ ok: true });
           break;
@@ -369,7 +380,11 @@ async function scan(url, tabId, notify, force = false) {
       if (result.status === "dangerous") {
         try {
           await bumpMetric("threatsPrevented");
-          fetch("https://kedayam-stats.deeksha-junkdrawer.workers.dev/increment",{method:"POST",headers:{"Content-Type":"application/json","X-Kedayam-Key":"kedayam-2025"},body:JSON.stringify({counter:"threats"})}).catch(()=>{});
+          fetch("https://kedayam-stats.deeksha-junkdrawer.workers.dev/increment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Kedayam-Key": "kedayam-2025" },
+            body: JSON.stringify({ counter: "threats" }),
+          }).catch(() => {});
         } catch {}
       }
     }

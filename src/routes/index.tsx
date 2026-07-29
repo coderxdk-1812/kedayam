@@ -48,7 +48,7 @@ function GlobalStats() {
           const data = await res.json();
           if (!cancelled) setStats(data);
         }
-      } catch {}
+      } catch { /* network errors are silent */ }
     }
     load();
     const id = setInterval(load, 30_000);

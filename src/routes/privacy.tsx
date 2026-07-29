@@ -127,7 +127,7 @@ function Privacy() {
           or share personal information. Kedayam contains no analytics SDK, no telemetry endpoint,
           and no background fetch to maintainer-controlled servers.
         </p>
-        <p className="mt-3 text-sm text-muted-foreground">Last updated: 2026-06-22</p>
+        <p className="mt-3 text-sm text-muted-foreground">Last updated: 2026-07-29</p>
 
         <div className="mt-10 space-y-10 border-t border-border pt-10">
           {sections.map((section) => (

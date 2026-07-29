@@ -292,7 +292,7 @@ function Index() {
               </a>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Manifest V3 · Chrome, Edge, Brave, Arc, Opera · v1.0.0
+              Manifest V3 · Chrome, Edge, Brave, Arc, Opera · v1.1.2
             </p>
             <GlobalStats />
           </motion.div>
@@ -577,12 +577,12 @@ function Index() {
         <div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <img src="/icons/icon32.png" alt="Kedayam shield logo" className="h-8 w-8" />
-            <span>Kedayam v1.0.0 · Privacy-first browser security</span>
+            <span>Kedayam v1.1.2 · Privacy-first browser security</span>
           </div>
           <div className="flex gap-5">
             <a
               className="inline-flex items-center gap-2 transition hover:text-foreground"
-              href="https://github.com"
+              href="https://github.com/coderxdk-1812/kedayam"
               target="_blank"
               rel="noreferrer"
             >

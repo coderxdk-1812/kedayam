@@ -14,6 +14,7 @@
 // valid but STILL NEEDS a Firefox runtime pass (web-ext lint / load) before it
 // ships — flagged in STATUS.md.
 
+import { createHash } from "node:crypto";
 import {
   mkdirSync,
   rmSync,
@@ -71,7 +72,13 @@ function build(target, transformManifest) {
   const absZip = join(process.cwd(), "public", `kedayam-${target}.zip`);
   const count = deterministicZip(stage, absZip);
   rmSync(stage, { recursive: true, force: true });
-  console.log(`[crossbrowser] ${target}: public/kedayam-${target}.zip (${count} files)`);
+  // The per-store zips are committed, so each ships a sha256 sidecar in the
+  // same shape as kedayam.zip.sha256 — reviewers can verify the exact upload.
+  const sha = createHash("sha256").update(readFileSync(absZip)).digest("hex");
+  writeFileSync(`${absZip}.sha256`, `${sha}  kedayam-${target}.zip\n`);
+  console.log(
+    `[crossbrowser] ${target}: public/kedayam-${target}.zip (${count} files) ${sha.slice(0, 12)}…`,
+  );
 }
 
 // Validate the extension once up front (reuses the Chrome validator).

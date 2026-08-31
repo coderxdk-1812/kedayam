@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — 2026-08-31 — Per-store packages committed
+
+- **`kedayam-chrome.zip` / `-edge.zip` / `-firefox.zip` are now tracked in git**
+  (previously `.gitignore`d), each with a **`.sha256` sidecar** emitted by
+  `scripts/build-crossbrowser.mjs`, so every release carries the exact bytes
+  uploaded to each store. The builds are byte-deterministic (fixed mtimes,
+  sorted entries, `-X`), verified by rebuilding to identical hashes — they
+  will not churn the diff between releases.
+
 ## [1.1.3] — 2026-08-31 — "Always trust this site" + VirusTotal second opinion
 
 - **Permanent trust from the warning modal.** The flag modals (hard + soft) now

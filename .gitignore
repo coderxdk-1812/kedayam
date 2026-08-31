@@ -40,11 +40,9 @@ playwright-report/
 public/kedayam-profile.json
 public/kedayam-security-report.json
 
-# Per-store cross-browser packages — reproducible build outputs, generated on
-# demand via `bun run build:crossbrowser` at release time.
-public/kedayam-chrome.zip
-public/kedayam-edge.zip
-public/kedayam-firefox.zip
+# Per-store cross-browser packages are COMMITTED (not ignored) from v1.1.3 on,
+# so every release tag carries the exact Chrome/Edge/Firefox uploads. Rebuild
+# them with `bun run build:crossbrowser` whenever extension/ changes.
 
 # Chrome-generated DNR ruleset index (created when loading unpacked ext)
 extension/_metadata/

@@ -15,6 +15,8 @@ Last updated: 2026-07-28
   guards stay on. 703 unit + 6 e2e green (`tests/e2e/permanentTrust.spec.ts` drives the real
   modal in Chromium), lint clean, `validate:extension` OK.
   Bumped to v1.1.3; release + cross-browser artifacts rebuilt and certified.
+  Chrome/Edge/Firefox zips are now **committed** (with `.sha256` sidecars)
+  instead of gitignored.
 
 - **Store-submission logistics** (not code): Privacy Policy URL is now **live**
   (https://kedayam.lovable.app/privacy); 440×280 promo tile, permission

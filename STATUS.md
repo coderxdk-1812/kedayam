@@ -1,7 +1,14 @@
 # Kedayam Browser Shield — Status
 
-Last updated: 2026-07-28
+Last updated: 2026-08-31
 
+> **2026-08-31 (v1.1.3) — "Always trust this site" + VirusTotal second opinion:** flag
+> modals and the popup now offer permanent trust (adds the registrable root to
+> `settings.allowlist` via the new `trustPermanent` message, two-click confirm,
+> removable in Options) and a "Check this domain on VirusTotal" link that passes
+> the origin only, rendered as a full-width CTA; session-only trust removed from
+> the verdict modals. 703 unit + 6 e2e green. Shipped as **v1.1.3** with rebuilt + certified artifacts.
+>
 > **2026-07-28 (v1.1.2) — genuine HDFC / multi-domain-bank false positive fixed:**
 > a tester screenshot showed the real HDFC NetBanking login
 > (`now.hdfc.bank.in`) flagged **MEDIUM RISK · 20/100** as brand-impersonation

@@ -24,6 +24,10 @@ import { HealthMonitor } from "./lib/health.js";
 import { NonceCache, isValidEnvelope } from "./lib/bus.js";
 import { validateMessage, isTrustedSender } from "./lib/messageSchemas.js";
 
+// Upper bound on the user allowlist — a permanently trusted domain disables
+// flagging for that root, so the list stays small enough to review in Options.
+const ALLOWLIST_MAX = 500;
+
 const inflight = new Map();
 const redirectChains = new Map(); // tabId -> string[]
 const lastScanned = new Map(); // tabId -> url (dedupe onCommitted vs onUpdated)
@@ -297,6 +301,35 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           } catch {}
           sendResponse({ ok: true });
           break;
+        // Permanent trust — add the registrable root to the user's allowlist
+        // so this domain stops being flagged (settings.allowlist is a trust
+        // primitive in the engine and is editable/removable in Options).
+        case "trustPermanent": {
+          const host = String(data.domain)
+            .replace(/^www\./, "")
+            .toLowerCase();
+          const root = rootDomain(host) || host;
+          const current = await getSettings();
+          const list = Array.isArray(current.allowlist) ? current.allowlist : [];
+          if (!list.includes(root)) {
+            if (list.length >= ALLOWLIST_MAX) {
+              sendResponse({ ok: false, error: "allowlist-full", root });
+              break;
+            }
+            await saveSettings({ allowlist: [...list, root] });
+          }
+          await setSessionOverride(data.domain, { reason: "user-trusted-permanent" });
+          await appendActivity({ kind: "trust-permanent", host: root, reason: "user allowlist" });
+          // Re-score the tab immediately (force = bypass the cached verdict) so
+          // the badge and any open UI reflect the new trust decision.
+          const tabId = sender.tab?.id ?? null;
+          const url = sender.tab?.url;
+          if (tabId != null && url && isInjectableUrl(url)) {
+            scan(url, tabId, false, true).catch(() => {});
+          }
+          sendResponse({ ok: true, root });
+          break;
+        }
         case "getOverride":
           sendResponse(await getSessionOverride(data.domain));
           break;

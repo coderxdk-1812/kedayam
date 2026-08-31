@@ -112,10 +112,12 @@ describe("H-06 — sender provenance validation", () => {
     expect(TRUST_MUTATION_TYPES.has("clearCaches")).toBe(true);
     expect(TRUST_MUTATION_TYPES.has("logEvent")).toBe(true);
     expect(TRUST_MUTATION_TYPES.has("refreshThreatFeed")).toBe(true);
+    // Permanent trust writes the user allowlist — same provenance class.
+    expect(TRUST_MUTATION_TYPES.has("trustPermanent")).toBe(true);
     // Set itself is mutable, but the export reference is frozen via
     // Object.freeze and the TRUST_MUTATION_TYPES binding is const. The
     // important contract is that the membership matches.
-    expect(TRUST_MUTATION_TYPES.size).toBe(5);
+    expect(TRUST_MUTATION_TYPES.size).toBe(6);
   });
 });
 

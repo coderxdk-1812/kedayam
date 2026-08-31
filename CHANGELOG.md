@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.1.3] — 2026-08-31 — "Always trust this site" + VirusTotal second opinion
+
+- **Permanent trust from the warning modal.** The flag modals (hard + soft) now
+  offer **"Always trust this site"** next to the session-only button. It sends a
+  new `trustPermanent` message; the background derives the *registrable root*
+  (content scripts only ever report their own hostname, so a page can't smuggle
+  an arbitrary root), appends it to `settings.allowlist` (cap 500), sets a
+  session override, logs the decision, and force-rescans the tab so the badge
+  updates immediately. Allowlisted roots are already a trust primitive in the
+  engine, so the domain stops being flagged; it stays removable in
+  **Options → Allowlist**. The button requires a second click to confirm, so one
+  mis-click can't permanently silence the scanner. The content script also
+  suppresses trust banners/modals for allowlisted roots locally — paste, file and
+  clipboard protections (which guard the user's own data, not the site's
+  reputation) stay active.
+- **VirusTotal check, as a full-width CTA.** The modal and the popup both show a
+  **🔎 Check this domain on VirusTotal** button spanning the dialog width, above
+  the decision buttons, so verifying reads as the first move rather than a
+  footnote. Opens in a new tab (`rel="noopener noreferrer"`) at
+  `virustotal.com/gui/search?query=<url>`. Only the **origin** is handed over —
+  never the path or query string, which can carry session tokens or PII.
+- **"Trust this site for the session" removed from the trust-verdict modals.**
+  Leave / verify / always-trust / continue-once are the meaningful choices; a
+  fifth button diluted them. Session trust still exists on the paste, file and
+  ClickFix modals, where it means "stop re-prompting me on this site for this
+  session", and the popup's session-trust button was dropped for the same reason.
+- **Popup** gained the matching **Always trust** button + VirusTotal CTA, both
+  hidden on browser-internal pages that can't be scanned.
+- Tests: `tests/unit/permanentTrust.test.js` (schema validation, allowlisted root
+  no longer flagged, VirusTotal URL shape + no path/query leak);
+  `isolationHardening` updated for the new trust-mutation type. **703 green.**
+
 ## Unreleased — 2026-07-29 — Dev-dependency ReDoS advisory + artifact re-verify
 
 - **`brace-expansion` pinned to `^2.0.2`** via a `package.json` `overrides` field

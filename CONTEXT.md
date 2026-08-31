@@ -4,6 +4,18 @@ Last updated: 2026-07-28
 
 ## Pending
 
+### Done 2026-08-31 (v1.1.3 — permanent trust + VirusTotal link)
+- Flag modals + popup: **"Always trust this site"** (new `trustPermanent`
+  message → root domain appended to `settings.allowlist`, cap 500, two-click
+  confirm, force-rescan, removable in Options) and a **VirusTotal** link
+  (`gui/search?query=<origin>` — origin only, no path/query) rendered as a
+  full-width CTA above the buttons; session-only trust dropped from the
+  trust-verdict modals + popup (kept on paste/file/ClickFix). Content script
+  suppresses trust banners/modals for allowlisted roots; paste/file/clipboard
+  guards stay on. 703 unit + 6 e2e green (`tests/e2e/permanentTrust.spec.ts` drives the real
+  modal in Chromium), lint clean, `validate:extension` OK.
+  Bumped to v1.1.3; release + cross-browser artifacts rebuilt and certified.
+
 - **Store-submission logistics** (not code): Privacy Policy URL is now **live**
   (https://kedayam.lovable.app/privacy); 440×280 promo tile, permission
   justification, and data-handling disclosures are **done** (submitter,

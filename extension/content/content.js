@@ -30,6 +30,48 @@
   };
   const STATE = { settings: DEFAULT_SETTINGS, lastResult: null, settingsLoaded: false };
   const sessionTrusted = new Set();
+  // Domains the user permanently trusted (settings.allowlist, root domains).
+  // Mirrored locally so the page stops surfacing trust modals immediately,
+  // before the background's re-scan verdict arrives.
+  const permanentTrusted = new Set();
+
+  // True when the current host sits under a root the user has permanently
+  // trusted (exact root or any subdomain of it).
+  function isPermanentlyTrusted(host = location.hostname) {
+    const h = String(host || "").toLowerCase();
+    const roots = [...permanentTrusted, ...(STATE.settings?.allowlist || [])];
+    return roots.some((r) => {
+      const root = String(r || "")
+        .toLowerCase()
+        .replace(/^\*?\.?/, "");
+      return !!root && (h === root || h.endsWith(`.${root}`));
+    });
+  }
+
+  // Ask the background to add this page's registrable root to the user
+  // allowlist. The content script never derives the root itself — it only
+  // reports its own hostname, and the background does the public-suffix work.
+  function trustPermanently() {
+    permanentTrusted.add(location.hostname);
+    sessionTrusted.add(location.hostname);
+    try {
+      chrome.runtime.sendMessage({ type: "trustPermanent", domain: location.hostname }, (res) => {
+        void chrome.runtime.lastError;
+        if (res?.root) permanentTrusted.add(res.root);
+      });
+    } catch {}
+  }
+
+  // VirusTotal lookup for the current site. Only the origin is handed over —
+  // never the path or query string, which can carry session tokens or PII.
+  function virusTotalUrl(href = location.href) {
+    try {
+      const u = new URL(href);
+      return `https://www.virustotal.com/gui/search?query=${encodeURIComponent(`${u.origin}/`)}`;
+    } catch {
+      return null;
+    }
+  }
   const DEV = !chrome.runtime.getManifest?.().update_url;
   const debug = (...args) => {
     if (DEV) console.info("[Kedayam]", ...args);
@@ -445,8 +487,10 @@
     items,
     onContinue,
     onTrust,
+    onAlwaysTrust,
     onClearClipboard,
     onLeave,
+    verifyUrl,
   }) {
     return new Promise((resolve) => {
       const r = root();
@@ -470,6 +514,12 @@
                   .join("")}</div>`
               : ""
           }
+          ${
+            verifyUrl
+              ? `<a class="ked-verify-btn" href="${escapeHtml(verifyUrl)}" target="_blank" rel="noopener noreferrer external">🔎 Check this domain on VirusTotal</a>
+                 <div class="ked-tiny ked-verify-note">Opens virustotal.com in a new tab with this site's address only — never the page path or anything you typed.</div>`
+              : ""
+          }
           <div class="ked-actions">
             ${
               onLeave
@@ -478,6 +528,7 @@
             }
             ${onClearClipboard ? `<button class="ked-btn-primary" data-act="clearclip">Clear my clipboard</button>` : ""}
             ${onTrust ? `<button class="ked-btn-secondary" data-act="trust">Trust this site for the session</button>` : ""}
+            ${onAlwaysTrust ? `<button class="ked-btn-secondary" data-act="always-trust">Always trust this site</button>` : ""}
             <button class="ked-btn-${severity === "critical" || severity === "high" ? "danger" : "primary"}" data-act="continue">Continue anyway</button>
           </div>
           <div class="ked-tiny">All scanning happens locally on your device. Nothing is uploaded.</div>
@@ -508,6 +559,16 @@
           return;
         }
         if (act === "trust" && onTrust) onTrust();
+        // "Always trust" is a persistent decision — confirm it inline so a
+        // single mis-click can't permanently silence the scanner.
+        if (act === "always-trust" && onAlwaysTrust) {
+          if (target.dataset.confirm !== "1") {
+            target.dataset.confirm = "1";
+            target.textContent = "Click again to confirm";
+            return;
+          }
+          onAlwaysTrust();
+        }
         if (act === "continue" && onContinue) onContinue();
         // "Leave this page" actually navigates the tab away from the hostile
         // page — the button is a real escape hatch, not just a dismiss.
@@ -1409,6 +1470,11 @@
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg?.type !== "kedayam:trust") return;
     STATE.lastResult = msg.result;
+    // A permanently trusted domain never surfaces trust banners or modals
+    // again — that is exactly what "Always trust this site" promises. Paste,
+    // file and clipboard protections (which guard the user's own data, not
+    // the site's reputation) stay active.
+    if (isPermanentlyTrusted()) return;
     const susp = msg.result.suspicion || {
       level:
         msg.result.status === "dangerous"
@@ -1438,7 +1504,11 @@
           .slice(0, 5)
           .map((s) => ({ label: s.title, value: s.severity })),
         onLeave: () => leaveToSafety(),
-        onTrust: () => sessionTrusted.add(location.hostname),
+        // No session-only trust here: on a trust verdict the meaningful choices
+        // are leave, verify, permanently trust, or continue once. A third
+        // "trust for the session" button only diluted them.
+        onAlwaysTrust: () => trustPermanently(),
+        verifyUrl: virusTotalUrl(),
       });
     } else if (susp.modal === "soft" && !sessionTrusted.has(location.hostname)) {
       showWarningModal({
@@ -1451,7 +1521,8 @@
           .map((s) => ({ label: s.title, value: s.severity })),
         onLeave: () => leaveToSafety(),
         onContinue: () => sessionTrusted.add(location.hostname),
-        onTrust: () => sessionTrusted.add(location.hostname),
+        onAlwaysTrust: () => trustPermanently(),
+        verifyUrl: virusTotalUrl(),
       });
     }
   });

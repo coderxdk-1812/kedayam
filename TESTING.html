@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kedayam Browser Shield — Loading &amp; Testing Guide (v1.1.2)</title>
+    <title>Kedayam Browser Shield — Loading &amp; Testing Guide (v1.1.3)</title>
     <style>
       :root {
         --bg: #0b1220;
@@ -94,7 +94,7 @@
   <body>
     <div class="wrap">
       <header>
-        <h1>🛡️ Kedayam Browser Shield <span class="pill">v1.1.2</span></h1>
+        <h1>🛡️ Kedayam Browser Shield <span class="pill">v1.1.3</span></h1>
         <div class="sub">How to load &amp; test the extension in every supported browser · MV3 · 100% local, zero telemetry</div>
       </header>
 
@@ -164,7 +164,7 @@
         The three cross-browser zips are <code>.gitignore</code>d because they're
         reproducible build outputs. If you just cloned the repo and they aren't in
         <code>public/</code>, build them — see the next section. (In this working
-        tree they're already present and current at v1.1.2.)
+        tree they're already present and current at v1.1.3.)
       </p>
 
       <h2 id="build">2. Building the packages (if missing)</h2>
@@ -232,10 +232,10 @@ node scripts/verify-artifact.mjs</code></pre>
 
       <h2 id="verify">5. Verify it loaded correctly</h2>
       <ul class="check">
-        <li>The card shows <strong>Kedayam Browser Shield — 1.1.2</strong> with <strong>no red "Errors" button</strong>.</li>
+        <li>The card shows <strong>Kedayam Browser Shield — 1.1.3</strong> with <strong>no red "Errors" button</strong>.</li>
         <li>Toolbar icon is visible (pin it if not).</li>
         <li>Click the icon on any <code>http(s)</code> page → the popup opens and shows a <strong>trust score</strong> plus an explanation (not "UNAVAILABLE").</li>
-        <li>The popup footer reads <code>v1.1.2</code>.</li>
+        <li>The popup footer reads <code>v1.1.3</code>.</li>
       </ul>
 
       <h2 id="test">6. Functional test checklist</h2>
@@ -250,6 +250,14 @@ node scripts/verify-artifact.mjs</code></pre>
           <tr>
             <td>Visit a real bank login on its <code>.bank.in</code> domain — e.g. HDFC NetBanking <code>now.hdfc.bank.in</code> <span class="muted">(the v1.1.2 fix)</span></td>
             <td><span class="tag t-yes">Safe</span> — <strong>no</strong> "mentions hdfcbank.com but is not on that domain" warning</td>
+          </tr>
+          <tr>
+            <td>On any flagged page, click <strong>🔎 Check this domain on VirusTotal</strong> <span class="muted">(new in v1.1.3)</span></td>
+            <td>New tab opens <code>virustotal.com/gui/search?query=…</code> containing the site's <strong>origin only</strong> — no page path, no query string</td>
+          </tr>
+          <tr>
+            <td>On a flagged page click <strong>Always trust this site</strong>, then click it again to confirm <span class="muted">(new in v1.1.3)</span></td>
+            <td>Modal closes; the root domain appears in <strong>Options → Allowlist</strong>; reloading the page no longer shows the warning and the badge turns green. Removing it from Options restores flagging.</td>
           </tr>
           <tr>
             <td>Visit any ordinary SaaS/company login (unlisted domain) with a password field</td>
@@ -301,7 +309,7 @@ node scripts/verify-artifact.mjs</code></pre>
       <h3>Popup says "UNAVAILABLE" / score won't load</h3>
       <p>
         Fixed in v1.1.1 (large Chrome tab-ids were rejected). Confirm the card reads
-        <strong>1.1.2</strong>; if it shows an older version you're loading a stale copy —
+        <strong>1.1.3</strong>; if it shows an older version you're loading a stale copy —
         remove it and load the current <code>extension/</code> folder. The popup only
         scores <code>http(s)</code> tabs, not <code>chrome://</code> / <code>about:</code>
         pages (a URL-only fallback is shown there).
@@ -325,7 +333,7 @@ node scripts/verify-artifact.mjs</code></pre>
       </p>
 
       <footer>
-        Kedayam Browser Shield v1.1.2 · MV3 · all scanning is local, nothing is uploaded ·
+        Kedayam Browser Shield v1.1.3 · MV3 · all scanning is local, nothing is uploaded ·
         See <a href="STATUS.html">STATUS.html</a> for the roadmap &amp; reality check and
         <a href="test.html">test.html</a> for live test results.
       </footer>

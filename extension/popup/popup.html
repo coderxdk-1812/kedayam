@@ -16,7 +16,21 @@
         </div>
       </div>
       <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Open settings">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.72l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.72l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"
+          />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
       </button>
     </header>
 
@@ -24,8 +38,8 @@
       <section class="hero" id="hero" data-status="loading" aria-live="polite">
         <div class="ring">
           <svg viewBox="0 0 120 120" class="ring-svg" aria-hidden="true">
-            <circle cx="60" cy="60" r="52" class="ring-track"/>
-            <circle cx="60" cy="60" r="52" class="ring-progress" id="ring-progress"/>
+            <circle cx="60" cy="60" r="52" class="ring-track" />
+            <circle cx="60" cy="60" r="52" class="ring-progress" id="ring-progress" />
           </svg>
           <div class="ring-inner">
             <div class="ring-score" id="score">—</div>
@@ -37,13 +51,24 @@
           <p class="hero-sub" id="status-sub">Evaluating browser signals.</p>
           <div class="hero-actions">
             <button id="rescan" class="primary">Rescan</button>
-            <button id="trust" class="secondary">Trust session</button>
+            <button id="always-trust" class="secondary">Always trust</button>
           </div>
+          <a
+            id="vt-link"
+            class="vt-link"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer external"
+            hidden
+            >🔎 Check on VirusTotal</a
+          >
         </div>
       </section>
 
       <nav class="tabs" role="tablist" aria-label="Kedayam details">
-        <button class="tab active" data-tab="signals" role="tab" aria-selected="true">Signals</button>
+        <button class="tab active" data-tab="signals" role="tab" aria-selected="true">
+          Signals
+        </button>
         <button class="tab" data-tab="activity" role="tab" aria-selected="false">Activity</button>
         <button class="tab" data-tab="details" role="tab" aria-selected="false">Details</button>
       </nav>
@@ -54,7 +79,7 @@
     </main>
 
     <footer class="footer">
-      <span>Local sensitive-data scanning · <span id="ext-version">v1.1.2</span></span>
+      <span>Local sensitive-data scanning · <span id="ext-version">v1.1.3</span></span>
     </footer>
 
     <script type="module" src="popup.js"></script>

@@ -173,6 +173,13 @@ export const SCHEMAS = Object.freeze({
     const reason = isStr(m?.reason, MAX_REASON) ? m.reason : "user-trusted";
     return { ok: true, value: { domain: m.domain, reason } };
   },
+  // Permanent trust (user allowlist). The content script only ever knows its
+  // own hostname; the background derives the registrable root and persists it
+  // in settings.allowlist, so a page can never inject an arbitrary root.
+  trustPermanent: (m) => {
+    if (!isDomain(m?.domain)) return { ok: false, error: "trustPermanent.domain" };
+    return { ok: true, value: { domain: m.domain } };
+  },
   getOverride: (m) => {
     if (!isDomain(m?.domain)) return { ok: false, error: "getOverride.domain" };
     return { ok: true, value: { domain: m.domain } };
@@ -183,7 +190,14 @@ export const SCHEMAS = Object.freeze({
 
 /** Types that mutate persistent trust / learning state. */
 export const TRUST_MUTATION_TYPES = Object.freeze(
-  new Set(["trustForSession", "saveSettings", "clearCaches", "logEvent", "refreshThreatFeed"]),
+  new Set([
+    "trustForSession",
+    "trustPermanent",
+    "saveSettings",
+    "clearCaches",
+    "logEvent",
+    "refreshThreatFeed",
+  ]),
 );
 
 /**

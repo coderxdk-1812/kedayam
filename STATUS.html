@@ -182,9 +182,23 @@
     <div class="wrap">
       <h1>🛡️ Kedayam Browser Shield — Status &amp; Reality Check</h1>
       <div class="sub">
-        Last updated: 2026-07-28 · v1.1.2 · MV3 freeware, key-less, local-only · artifact
-        <code>public/kedayam.zip</code> · <a href="test.html"><strong>695 tests green ↗</strong></a> ·
+        Last updated: 2026-08-31 · v1.1.3 · MV3 freeware, key-less, local-only · artifact
+        <code>public/kedayam.zip</code> · <a href="test.html"><strong>703 tests green ↗</strong></a> ·
         CI green
+      </div>
+
+      <div class="callout" style="border-left:4px solid #4fc3f7;background:#12233a;padding:12px 16px;margin:14px 0;border-radius:8px">
+        <strong>2026-08-31 (v1.1.3) — "Always trust this site" + VirusTotal second opinion.</strong>
+        The flag modals and the popup now offer permanent trust: it adds the registrable
+        root to <code>settings.allowlist</code> via the new <code>trustPermanent</code>
+        message (two-click confirm, removable in Options → Allowlist), so the domain
+        stops being flagged. Both surfaces also link to
+        <code>virustotal.com/gui/search?query=&lt;url&gt;</code> for a second opinion —
+        the <strong>origin only</strong>, never the path or query string — rendered as a
+        <strong>full-width CTA</strong> above the decision buttons. Session-only trust was
+        dropped from the verdict modals (it stays on paste/file/ClickFix prompts).
+        Paste/file/clipboard protections stay active on trusted domains.
+        <strong>703 unit + 6 e2e tests green</strong> · shipped as v1.1.3, artifacts rebuilt and certified.
       </div>
 
       <div class="callout" style="border-left:4px solid #4fc3f7;background:#12233a;padding:12px 16px;margin:14px 0;border-radius:8px">

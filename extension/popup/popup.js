@@ -39,6 +39,10 @@ async function init() {
       $("#status-label").textContent = "Not scannable";
       $("#status-sub").textContent =
         "Open a normal website (a page starting with http:// or https://) and Kedayam will score it here.";
+      // Nothing to trust or look up on a browser-internal page — hide the
+      // actions that need a real site rather than leaving them inert.
+      $("#always-trust").hidden = true;
+      setVerifyLink(null);
       renderSignals(null);
       renderDetails(null);
       await renderActivity();
@@ -73,6 +77,7 @@ async function refresh(force) {
   }
   currentResult = result;
   setHero({ score: result.score, status: result.status, host: result.host });
+  setVerifyLink(currentTab.url);
   renderSignals(result);
   renderDetails(result);
 }
@@ -107,6 +112,22 @@ function setHero({ score, status, host }) {
     const pct = typeof score === "number" ? score / 100 : 0;
     const C = 2 * Math.PI * 52;
     ring.style.strokeDashoffset = (C * (1 - pct)).toFixed(2);
+  }
+}
+
+// Second-opinion lookup. Only the origin is sent to VirusTotal — never the
+// path or query string, which can carry session tokens or personal data.
+function setVerifyLink(href) {
+  const link = $("#vt-link");
+  if (!link) return;
+  try {
+    const u = new URL(String(href));
+    if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("not-web");
+    link.href = `https://www.virustotal.com/gui/search?query=${encodeURIComponent(`${u.origin}/`)}`;
+    link.hidden = false;
+  } catch {
+    link.removeAttribute("href");
+    link.hidden = true;
   }
 }
 
@@ -345,11 +366,27 @@ document.querySelectorAll(".tab").forEach((tab) => {
 });
 
 $("#rescan").addEventListener("click", () => refresh(true));
-$("#trust").addEventListener("click", async () => {
+// Permanent trust — adds the registrable root to the user allowlist so the
+// domain stops being flagged. Removable any time from Options → Allowlist.
+$("#always-trust").addEventListener("click", async () => {
   if (!currentResult?.host) return;
-  await send({ type: "trustForSession", domain: currentResult.host, reason: "popup" });
-  $("#trust").textContent = "Trusted";
-  setTimeout(() => ($("#trust").textContent = "Trust session"), 1500);
+  const btn = $("#always-trust");
+  if (btn.dataset.confirm !== "1") {
+    btn.dataset.confirm = "1";
+    btn.textContent = "Confirm?";
+    setTimeout(() => {
+      if (btn.dataset.confirm === "1") {
+        btn.dataset.confirm = "";
+        btn.textContent = "Always trust";
+      }
+    }, 4000);
+    return;
+  }
+  btn.dataset.confirm = "";
+  const res = await send({ type: "trustPermanent", domain: currentResult.host });
+  btn.textContent = res?.ok ? "Always trusted" : "Couldn't save";
+  if (res?.ok) await refresh(true);
+  setTimeout(() => (btn.textContent = "Always trust"), 2000);
 });
 $("#settings-btn").addEventListener("click", () => send({ type: "openOptions" }));
 
